@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        body { background: transparent; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #arrow-container { 
+            position: relative; 
+            width: 800px; /* Juster denne til bredden på ditt scoreboard */
+            display: flex; 
+            justify-content: space-between; 
+            transition: all 0.5s ease-in-out;
+        }
+        .arrow { 
+            font-size: 50px; 
+            color: #00FF41; /* Samme grønnfarge som shotclock */
+            filter: drop-shadow(0 0 10px rgba(0,255,65,0.8));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .active { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div id="arrow-container">
+        <div id="arrowL" class="arrow">▲</div>
+        <div id="arrowR" class="arrow">▲</div>
+    </div>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        db.ref('activePlayer').on('value', snap => {
+            const pos = snap.val();
+            document.getElementById('arrowL').classList.toggle('active', pos === 'left');
+            document.getElementById('arrowR').classList.toggle('active', pos === 'right');
+        });
+    </script>
+</body>
+</html>
