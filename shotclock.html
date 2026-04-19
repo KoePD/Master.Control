@@ -6,93 +6,92 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-    /* Din eksisterende font-innlasting */
-    @font-face {
-        font-family: 'DS-Digital';
-        src: url('DS-DIGIB.TTF') format('truetype');
-        font-weight: bold;
-    }
+        @font-face {
+            font-family: 'DS-Digital';
+            src: url('DS-DIGIB.TTF') format('truetype');
+            font-weight: bold;
+        }
 
-    body { 
-        background: #000000; /* Dette gjør hele nettleservinduet svart */
-        margin: 0; 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        height: 100vh; 
-        overflow: hidden;
-        font-family: 'DS-Digital', sans-serif; 
-}
-    #clock-container {
-        position: relative;
-        /* Beholder responsiv størrelse */
-        width: 85vmin; 
-        height: 85vmin;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        body { 
+            background: #000000; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden;
+            font-family: 'DS-Digital', sans-serif;
+            /* Start som usynlig */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        #clock-container {
+            position: relative;
+            width: 85vmin; 
+            height: 85vmin;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000000; 
+            border-radius: 50%;
+            border: 2.5vmin solid #1a1a1a; 
+            box-shadow: 
+                inset 0 0 20px rgba(0,0,0,1), 
+                0 0 40px rgba(0,0,0,0.8);
+            box-sizing: border-box;
+        }
+
+        #timer {
+            font-size: 45vmin; 
+            font-weight: normal;
+            color: white;
+            z-index: 10;
+            text-shadow: 0 0 20px rgba(0,0,0,1);
+            font-variant-numeric: tabular-nums;
+        }
+
+        #ext-label {
+            position: absolute;
+            top: 22%;
+            font-family: 'Arial', sans-serif;
+            font-size: 5vmin;
+            color: #00E5FF;
+            text-transform: uppercase;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 11;
+            letter-spacing: 2px;
+        }
+
+        svg {
+            position: absolute;
+            width: 106%; /* Litt større for å overlappe metal-rammen fint */
+            height: 106%;
+            transform: rotate(-90deg);
+            pointer-events: none;
+        }
+
+        circle {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+        }
+
+        .bg-ring { stroke: rgba(255,255,255,0.05); }
         
-        /* HER ER METAL BORDER EFFEKTEN */
-        background: #000000; /* Svart bakgrunn inni sirkelen */
-        border-radius: 50%;
-        border: 2.5vmin solid #1a1a1a; /* Mørk metal-grå ramme */
-        box-shadow: 
-            inset 0 0 20px rgba(0,0,0,1), /* Indre skygge */
-            0 0 40px rgba(0,0,0,0.8);    /* Ytre skygge */
-        box-sizing: border-box;
-    }
+        .progress-ring {
+            stroke: #00FF41;
+            transition: stroke 0.3s, stroke-dashoffset 0.1s linear;
+            filter: drop-shadow(0 0 10px currentColor);
+        }
 
-    #timer {
-        font-size: 45vmin; 
-        font-weight: normal;
-        color: white;
-        z-index: 10;
-        text-shadow: 0 0 20px rgba(0,0,0,1);
-        font-variant-numeric: tabular-nums;
-    }
-
-    #ext-label {
-        position: absolute;
-        top: 20%; /* Flyttet litt opp for å ikke kræsje med store tall */
-        font-family: 'Arial', sans-serif;
-        font-size: 5vmin;
-        color: #00E5FF;
-        text-transform: uppercase;
-        font-weight: bold;
-        opacity: 0;
-        transition: opacity 0.3s;
-        z-index: 11;
-        letter-spacing: 2px;
-    }
-
-    svg {
-        position: absolute;
-        width: 105%; /* Litt større enn container for å ligge perfekt over rammen */
-        height: 105%;
-        transform: rotate(-90deg);
-        pointer-events: none;
-    }
-
-    circle {
-        fill: none;
-        stroke-width: 12; /* Tykkelsen på den lysende ringen */
-        stroke-linecap: round;
-    }
-
-    /* Bakgrunnsringen inni metal-rammen */
-    .bg-ring { stroke: rgba(255,255,255,0.05); }
-    
-    .progress-ring {
-        stroke: #00FF41;
-        transition: stroke 0.3s, stroke-dashoffset 0.1s linear;
-        filter: drop-shadow(0 0 10px currentColor); /* Gir ringen en "glow" */
-    }
-
-    .extension-active { stroke: #00E5FF !important; }
-    .warning { stroke: #ffcc00 !important; }
-    .critical { stroke: #ff0000 !important; }
-    .critical-text { color: #ff0000 !important; }
-</style>
+        .extension-active { stroke: #00E5FF !important; }
+        .warning { stroke: #ffcc00 !important; }
+        .critical { stroke: #ff0000 !important; }
+        .critical-text { color: #ff0000 !important; }
+    </style>
 </head>
 <body>
 
@@ -108,143 +107,120 @@
     </div>
 
     <script>
-    // 1. Definer Firebase KONFIGURASJON FØRST
-    const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+        const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-    // 2. Definer elementer
-    const timerEl = document.getElementById('timer');
-    const progressEl = document.getElementById('progress');
-    const extLabel = document.getElementById('ext-label');
-    const warningSound = document.getElementById('warningSound');
-    
-    const radius = 90;
-    const circumference = 2 * Math.PI * radius;
-    progressEl.style.strokeDasharray = circumference;
-
-    let timeLeft = 30;
-    let maxTime = 30;
-    let isRunning = false;
-    let isExtension = false;
-    let timerInterval = null;
-    let soundPlayed = false;
-
-    // 3. Lytt på status (Nå som 'db' eksisterer)
-    db.ref('shotclock/status').on('value', snap => {
-        const status = snap.val();
-        if (status === 'hidden') {
-            document.body.style.opacity = '0';
-            document.body.style.transition = 'opacity 0.5s';
-        } else {
-            document.body.style.opacity = '1';
-        }
-    });
-
-    function updateUI() {
-        const displayTime = Math.ceil(timeLeft);
-        timerEl.innerText = displayTime;
+        const timerEl = document.getElementById('timer');
+        const progressEl = document.getElementById('progress');
+        const extLabel = document.getElementById('ext-label');
+        const warningSound = document.getElementById('warningSound');
         
-        const percent = (timeLeft / maxTime) * 100;
-        const offset = circumference - (percent / 100) * circumference;
-        progressEl.style.strokeDashoffset = offset;
+        const radius = 90;
+        const circumference = 2 * Math.PI * radius;
+        progressEl.style.strokeDasharray = circumference;
 
-        timerEl.classList.remove('critical-text');
-        progressEl.classList.remove('warning', 'critical', 'extension-active');
-        extLabel.style.opacity = isExtension ? "1" : "0";
+        let timeLeft = 30;
+        let maxTime = 30;
+        let isRunning = false;
+        let isExtension = false;
+        let timerInterval = null;
+        let soundPlayed = false;
 
-        if (timeLeft <= 5.5) {
-            progressEl.classList.add('critical');
-            timerEl.classList.add('critical-text');
-        } else if (timeLeft <= 10) {
-            progressEl.classList.add('warning');
-            if (!soundPlayed) {
-                warningSound.play().catch(e => console.log("Lyd krever klikk"));
-                soundPlayed = true;
-            }
-        } else if (isExtension) {
-            progressEl.classList.add('extension-active');
-        }
-    }
-
-    function startTimer() {
-        if (timerInterval) clearInterval(timerInterval);
-        isRunning = true;
-        db.ref('shotclock/status').set('running');
-        timerInterval = setInterval(() => {
-            if (timeLeft > 0) {
-                timeLeft -= 0.1;
-                updateUI();
+        // LYTT PÅ STATUS FOR SYNLIGHET
+        db.ref('shotclock/status').on('value', snap => {
+            const status = snap.val();
+            if (status === 'hidden' || !status) {
+                document.body.style.opacity = '0';
             } else {
-                stopTimer();
-                timerEl.innerText = "0";
-                setProgress(0);
+                document.body.style.opacity = '1';
             }
-        }, 100);
-    }
+        });
 
-    function stopTimer() {
-        clearInterval(timerInterval);
-        isRunning = false;
-        db.ref('shotclock/status').set('paused');
-    }
+        function updateUI() {
+            const displayTime = Math.ceil(timeLeft);
+            timerEl.innerText = displayTime;
+            
+            const percent = (timeLeft / maxTime) * 100;
+            const offset = circumference - (percent / 100) * circumference;
+            progressEl.style.strokeDashoffset = offset;
 
-    function setProgress(percent) {
-        const offset = circumference - (percent / 100) * circumference;
-        progressEl.style.strokeDashoffset = offset;
-    }
+            timerEl.classList.remove('critical-text');
+            progressEl.classList.remove('warning', 'critical', 'extension-active');
+            extLabel.style.opacity = isExtension ? "1" : "0";
 
-    db.ref('shotclock/cmd').on('value', snap => {
-        const cmd = snap.val();
-        if (!cmd) return;
-
-        switch(cmd.action) {
-            case 'reset30':
-                // FIKSET: Fjernet kommentar-krøll her
-                db.ref('shotclock/status').set('paused'); 
-                timeLeft = 30; 
-                maxTime = 30; 
-                isExtension = false; 
-                soundPlayed = false;
-                updateUI(); 
-                startTimer();
-                break;
-            case 'reset60':
-                timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
-                updateUI(); startTimer();
-                break;
-            case 'extension':
-                timeLeft += 30; 
-                maxTime = Math.max(maxTime, timeLeft);
-                isExtension = true;
-                updateUI();
-                break;
-            case 'toggle':
-                if (isRunning) stopTimer(); else startTimer();
-                break;
-            case 'plus':
-                timeLeft += 1; updateUI();
-                break;
-            case 'minus':
-                timeLeft = Math.max(0, timeLeft - 1); updateUI();
-                break;
-            case 'stop': // Lagt til for 'Avslutt Match'
-                stopTimer();
-                timeLeft = 0;
-                updateUI();
-                break;
+            if (timeLeft <= 5.5) {
+                progressEl.classList.add('critical');
+                timerEl.classList.add('critical-text');
+            } else if (timeLeft <= 9.9) {
+                progressEl.classList.add('warning');
+                if (!soundPlayed) {
+                    warningSound.play().catch(() => {});
+                    soundPlayed = true;
+                }
+            } else if (isExtension) {
+                progressEl.classList.add('extension-active');
+            }
         }
-        db.ref('shotclock/cmd').set(null);
-    });
 
-    window.addEventListener('click', () => {
-        warningSound.play().then(() => {
-            warningSound.pause();
-            warningSound.currentTime = 0;
-        }).catch(e => {});
-    }, { once: true });
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            isRunning = true;
+            db.ref('shotclock/status').set('running');
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft -= 0.1;
+                    updateUI();
+                } else {
+                    stopTimer();
+                }
+            }, 100);
+        }
 
-    updateUI();
-</script>
+        function stopTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            db.ref('shotclock/status').set('paused');
+        }
+
+        db.ref('shotclock/cmd').on('value', snap => {
+            const cmd = snap.val();
+            if (!cmd) return;
+
+            switch(cmd.action) {
+                case 'reset30':
+                    timeLeft = 30; maxTime = 30; isExtension = false; soundPlayed = false;
+                    updateUI(); 
+                    // IKKE start timer automatisk her, vent på 'running' status eller toggle
+                    break;
+                case 'reset60':
+                    timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
+                    updateUI(); startTimer();
+                    break;
+                case 'extension':
+                    timeLeft += 30; maxTime = Math.max(maxTime, timeLeft); isExtension = true;
+                    updateUI();
+                    break;
+                case 'toggle':
+                    if (isRunning) stopTimer(); else startTimer();
+                    break;
+                case 'stop':
+                    stopTimer();
+                    timeLeft = 0;
+                    updateUI();
+                    break;
+            }
+            db.ref('shotclock/cmd').set(null);
+        });
+
+        window.addEventListener('click', () => {
+            warningSound.play().then(() => {
+                warningSound.pause();
+                warningSound.currentTime = 0;
+            }).catch(() => {});
+        }, { once: true });
+
+        updateUI();
+    </script>
 </body>
 </html>
