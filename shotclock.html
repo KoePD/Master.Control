@@ -13,17 +13,18 @@
         }
 
         body { 
-            background: #000000; /* Endret fra transparent til svart */
+            background: #000000; 
             margin: 0; 
+            padding: 0;
             display: flex; 
             justify-content: center; 
             align-items: center; 
             height: 100vh; 
+            width: 100vw;
             overflow: hidden;
             font-family: 'DS-Digital', sans-serif;
-            opacity: 0; /* Denne styres fortsatt av status (hidden/running) */
+            opacity: 0;
             transition: opacity 0.5s ease-in-out;
-}
         }
 
         #clock-container {
@@ -49,6 +50,9 @@
             z-index: 10;
             text-shadow: 0 0 20px rgba(0,0,0,1);
             font-variant-numeric: tabular-nums;
+            margin: 0;
+            padding: 0;
+            line-height: 1;
         }
 
         #ext-label {
@@ -67,8 +71,8 @@
 
         svg {
             position: absolute;
-            width: 106%; 
-            height: 106%;
+            width: 105%; 
+            height: 105%;
             transform: rotate(-90deg);
             pointer-events: none;
         }
@@ -127,7 +131,6 @@
         let timerInterval = null;
         let soundPlayed = false;
 
-        // Denne lytteren styrer synlighet
         db.ref('shotclock/status').on('value', snap => {
             const status = snap.val();
             if (status === 'hidden' || !status) {
@@ -140,7 +143,6 @@
         function updateUI() {
             const displayTime = Math.ceil(timeLeft);
             timerEl.innerText = displayTime;
-            
             const percent = (timeLeft / maxTime) * 100;
             const offset = circumference - (percent / 100) * circumference;
             progressEl.style.strokeDashoffset = offset;
@@ -166,7 +168,10 @@
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
             isRunning = true;
-            db.ref('shotclock/status').set('running');
+            // Viktig: Ikke overskriv status hvis vi nettopp har bedt den pause
+            db.ref('shotclock/status').once('value').then(s => {
+                if(s.val() !== 'paused') db.ref('shotclock/status').set('running');
+            });
             timerInterval = setInterval(() => {
                 if (timeLeft > 0) {
                     timeLeft -= 0.1;
@@ -193,20 +198,9 @@
 
             switch(cmd.action) {
                 case 'reset30':
-                    timeLeft = 30; 
-                    maxTime = 30; 
-                    isExtension = false; 
-                    soundPlayed = false;
+                    timeLeft = 30; maxTime = 30; isExtension = false; soundPlayed = false;
                     updateUI(); 
-                    startTimer(); 
-                    break;
-                case 'reset60':
-                    timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
-                    updateUI(); startTimer();
-                    break;
-                case 'extension':
-                    timeLeft += 30; maxTime = Math.max(maxTime, timeLeft); isExtension = true;
-                    updateUI();
+                    startTimer();
                     break;
                 case 'toggle':
                     if (isRunning) stopTimer(); else startTimer();
@@ -219,13 +213,6 @@
             }
             db.ref('shotclock/cmd').set(null);
         });
-
-        window.addEventListener('click', () => {
-            warningSound.play().then(() => {
-                warningSound.pause();
-                warningSound.currentTime = 0;
-            }).catch(() => {});
-        }, { once: true });
 
         updateUI();
     </script>
