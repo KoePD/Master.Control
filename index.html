@@ -93,52 +93,40 @@
     let lastResetTime = Date.now();
 
     function startMatch() {
-    // 1. Gjør den synlig, men sett status til paused
-    db.ref('shotclock/status').set('paused');
-    
-    // 2. Skjul piler
-    db.ref('activePlayer').set(""); 
-    
-    // 3. Reset klokka til 30 (uten å starte den)
-    db.ref('shotclock/cmd').set({ action: 'reset30' });
-    
-    // 4. Legg ut kulene
-    resetPool(9);
-}
+        // 1. Legg ut kulene
+        resetPool(9);
+        // 2. Skjul piler
+        db.ref('activePlayer').set(""); 
+        // 3. Reset klokka til 30
+        db.ref('shotclock/cmd').set({ action: 'reset30' });
+        // 4. Tving status til paused umiddelbart etter reset for å hindre autostart
+        setTimeout(() => {
+            db.ref('shotclock/status').set('paused');
+        }, 200);
+    }
 
     function avsluttMatch() {
-    if(confirm("Vil du avslutte og skjule alt?")) {
-        // Skjuler piler og kuler
-        db.ref('activePlayer').set(null);
-        db.ref('balls').set(null);
-        
-        // SKJULER SHOTCLOCK (Trigger koden over)
-        db.ref('shotclock/status').set('hidden');
-        
-        // Stopper timeren fullstendig
-        db.ref('shotclock/cmd').set({ action: 'stop' });
-    }
-}
-
-function shotReset(player) {
-    const now = Date.now();
-    const timeSpent = (now - lastResetTime) / 1000;
-    try {
-        if (timeSpent > 1.5 && timeSpent < 120) { 
-            db.ref('stats/history').push({ time: timeSpent, player: player }); 
+        if(confirm("Vil du avslutte og skjule alt?")) {
+            db.ref('activePlayer').set(null);
+            db.ref('balls').set(null);
+            db.ref('shotclock/status').set('hidden');
+            db.ref('shotclock/cmd').set({ action: 'stop' });
         }
-    } catch(e) { console.log("Stats error", e); }
+    }
 
-    lastResetTime = now;
-    db.ref('activePlayer').set(player);
-    
-    // Denne linjen sender kommandoen som resetter til 30 OG starter klokka:
-    db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
-}
-    
+    function shotReset(player) {
+        const now = Date.now();
+        const timeSpent = (now - lastResetTime) / 1000;
+        try {
+            if (timeSpent > 1.5 && timeSpent < 120) { 
+                db.ref('stats/history').push({ time: timeSpent, player: player }); 
+            }
         } catch(e) { console.log("Stats error", e); }
+
         lastResetTime = now;
         db.ref('activePlayer').set(player);
+        
+        // Sender reset-kommando som trigger startTimer() i displayet
         db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
     }
 
@@ -161,6 +149,7 @@ function shotReset(player) {
         }
     });
 
+    // Ball grid generator
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
