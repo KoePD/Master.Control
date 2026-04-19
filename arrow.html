@@ -18,48 +18,49 @@
         
         #arrow-container { 
             position: relative; 
-            /* JUSTER DENNE bredden slik at pilene treffer under navnene i OBS */
+            /* JUSTER denne bredden (f.eks. 700px eller 900px) for å treffe under navnene i OBS */
             width: 800px; 
             display: flex; 
             justify-content: space-between; 
             pointer-events: none;
         }
         
-        .arrow { 
-            font-size: 60px; 
-            color: #FFFFFF; 
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.9));
-            -webkit-text-stroke: 1px rgba(0,0,0,0.5);
+        /* Her tegner vi trekanten med ren CSS istedenfor tekst */
+        .arrow-shape { 
+            width: 0; 
+            height: 0; 
+            border-left: 30px solid transparent;  /* Bredde venstre */
+            border-right: 30px solid transparent; /* Bredde høyre */
+            border-bottom: 50px solid #FFFFFF;    /* Høyde og farge (Hvit) */
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.9));
             opacity: 0;
-            transition: opacity 0.4s ease-in-out;
-            line-height: 1;
+            transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+            transform: translateY(20px); /* Starter litt lavere */
         }
         
+        /* Når pilen er aktiv, fader den inn og flytter seg opp */
         .active { 
             opacity: 1; 
+            transform: translateY(0);
         }
     </style>
 </head>
 <body>
 
     <div id="arrow-container">
-        <div id="arrowL" class="arrow">&#9650;</div>
-        <div id="arrowR" class="arrow">&#9650;</div>
+        <div id="arrowL" class="arrow-shape"></div>
+        <div id="arrowR" class="arrow-shape"></div>
     </div>
 
     <script>
-        // Konfigurasjon - Bruker samme database som resten av systemet
         const firebaseConfig = { 
             databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" 
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Lytter på aktiv spiller fra Master Control
         db.ref('activePlayer').on('value', snap => {
             const pos = snap.val();
-            console.log("Aktiv spiller posisjon:", pos);
-            
             document.getElementById('arrowL').classList.toggle('active', pos === 'left');
             document.getElementById('arrowR').classList.toggle('active', pos === 'right');
         });
