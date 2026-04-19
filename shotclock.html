@@ -33,9 +33,14 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://shotclock-b506e-default-rtdb.europe-west1.firebasedatabase.app" };
+        // VIKTIG: Bruker nå samme database som kulene
+        const firebaseConfig = { 
+            databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" 
+        };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('cmd');
+        const db = firebase.database();
+        const cmdRef = db.ref('shotclock/cmd');
+        const statusRef = db.ref('shotclock/status');
 
         let timeLeft = 30, totalTime = 30, timerInterval = null, isExtensionUsed = false;
         const display = document.getElementById('timer-text'), progress = document.getElementById('progress-bar'), ui = document.getElementById('clockUI');
@@ -46,21 +51,36 @@
             progress.style.strokeDashoffset = circumference - (timeLeft / totalTime) * circumference;
             ui.classList.remove('warning', 'critical', 'ext-active');
             if (isExtensionUsed) ui.classList.add('ext-active');
+            
             if (timeLeft === 10) { sndCountdown.currentTime = 0; sndCountdown.play().catch(()=>{}); }
-            if (timeLeft <= 0) { ui.classList.add('critical'); stopTimer(true); }
+            
+            if (timeLeft <= 0) { 
+                ui.classList.add('critical'); 
+                stopTimer(true); 
+            }
             else if (timeLeft <= 5) { ui.classList.add('critical'); }
             else if (timeLeft <= 10) { ui.classList.add('warning'); }
         }
 
         function stopTimer(isNaturalEnd = false) { 
-            clearInterval(timerInterval); timerInterval = null; 
+            clearInterval(timerInterval); 
+            timerInterval = null; 
+            statusRef.set('paused'); // Oppdaterer Master Control
             if (!isNaturalEnd) sndCountdown.pause();
         }
 
         function startCountdown() { 
             if(timerInterval || timeLeft <= 0) return;
+            statusRef.set('running'); // Oppdaterer Master Control
             if (timeLeft <= 10) { sndCountdown.currentTime = 10 - timeLeft; sndCountdown.play().catch(()=>{}); }
-            timerInterval = setInterval(() => { if(timeLeft > 0){ timeLeft--; updateUI(); } else { stopTimer(true); } }, 1000); 
+            timerInterval = setInterval(() => { 
+                if(timeLeft > 0){ 
+                    timeLeft--; 
+                    updateUI(); 
+                } else { 
+                    stopTimer(true); 
+                } 
+            }, 1000); 
         }
 
         function handleCmd(cmd) {
@@ -72,11 +92,13 @@
             if (cmd === 'minus') { timeLeft = Math.max(0, timeLeft - 1); updateUI(); }
         }
 
-        db.on('value', (snapshot) => {
+        // Lytter på kommandoer fra Master Control
+        cmdRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.action) {
                 handleCmd(data.action);
-                db.set({ action: null }); // Nullstiller så samme kommando kan sendes igjen
+                // Nullstiller kommandoen i databasen etter at den er utført
+                cmdRef.set({ action: null }); 
             }
         });
 
