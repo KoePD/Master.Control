@@ -19,20 +19,16 @@
         .ball-container {
             display: flex;
             justify-content: center;
-            gap: 10px; /* Litt tettere mellom selve kulene også */
+            gap: 10px; 
             background: rgba(255, 255, 255, 0.95);
-            
-            /* JUSTERT PADDING: Mindre luft på sidene (12px) og topp/bunn (8px) */
             padding: 8px 12px; 
-            
             border-radius: 50px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            
-            /* Justert min-width så den passer 9 kuler perfekt uten for mye gap */
             min-width: 520px; 
             height: 52px; 
         }
 
+        /* HOVEDCONTAINER FOR KULA */
         .ball {
             width: 50px;
             height: 50px;
@@ -41,8 +37,27 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            box-shadow: inset -3px -3px 6px rgba(0,0,0,0.3), 1px 2px 4px rgba(0,0,0,0.2);
-            border: 1px solid rgba(0,0,0,0.1);
+            /* Ingen skygge her, den flyttes */
+            overflow: hidden; /* Viktig for stripene */
+            background-color: #fff; /* Standard hvit base for alle */
+        }
+
+        /* DETTE ER NYTT: 3D-LAGET SOM LIGGER ØVERST */
+        .ball-overlay-3d {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            z-index: 10; /* Høyest z-index, ligger over alt */
+            
+            /* HER ER 3D-EFFEKTEN (Kopiert fra de hele kulene) */
+            box-shadow: 
+                inset -3px -3px 6px rgba(0,0,0,0.4), /* Indre skygge (dybde) */
+                inset 2px 2px 5px rgba(255,255,255,0.2); /* Indre glans (lys) */
+            border: 1px solid rgba(0,0,0,0.15); /* Tynn kantlinje */
+            box-sizing: border-box;
         }
 
         .num-label {
@@ -56,7 +71,7 @@
             align-items: center;
             font-size: 16px;
             font-weight: 900;
-            z-index: 5;
+            z-index: 5; /* Ligger under 3D-overlayen, men over stripene */
             border: 1.5px solid #000;
         }
 
@@ -65,9 +80,23 @@
             visibility: hidden; 
         }
 
-        .striped { background: #000 !important; overflow: hidden; }
-        .stripe-band { position: absolute; width: 100%; height: 35px; z-index: 1; }
+        /* STRIPETE KULER - OPPDATERT LOGIKK */
+        .striped { 
+            /* Bakgrunnen må være hvit for stripete kuler */
+            background-color: #ffffff !important; 
+        }
 
+        .stripe-band { 
+            position: absolute; 
+            width: 100%; 
+            /* Bred stripe (som vi snakket om sist) */
+            height: 34px; 
+            /* Posisjonering: (Ball høyde - Stripe høyde) / 2 */
+            top: 8px; 
+            z-index: 1; /* Ligger under nummeret */
+        }
+
+        /* Farger for kulene/stripene */
         .f-1, .b9 { background-color: #ffcc00; } 
         .f-2, .b10 { background-color: #0055aa; }
         .f-3, .b11 { background-color: #cc0000; } 
@@ -100,6 +129,9 @@
                 
                 let cIdx = i > 8 ? i - 8 : i;
                 
+                // --- NY STRUKTUR FOR Å FÅ 3D EFFEKT ---
+
+                // 1. Legg til det fargede båndet (kun for stripete)
                 if (i > 8) {
                     b.classList.add('striped');
                     let band = document.createElement('div');
@@ -109,10 +141,16 @@
                     b.classList.add(`f-${cIdx}`);
                 }
 
+                // 2. Legg til nummeret
                 let num = document.createElement('div');
                 num.className = 'num-label';
                 num.innerText = i;
                 b.appendChild(num);
+
+                // 3. Legg til det gjennomsiktige 3D-overlay-laget (DETTE ER NYTT)
+                let overlay = document.createElement('div');
+                overlay.className = 'ball-overlay-3d';
+                b.appendChild(overlay);
                 
                 display.appendChild(b);
             }
