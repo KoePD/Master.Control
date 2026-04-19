@@ -67,6 +67,34 @@
     </div>
 </div>
 <script>
+    function startMatch() {
+    // 1. Vis piler (nullstiller til ingen aktiv, men klar for valg)
+    db.ref('activePlayer').set(""); 
+    
+    // 2. Start shotclock (sett til 30 sek og pause så den er klar)
+    db.ref('shotclock/cmd').set({ action: 'reset30' });
+    setTimeout(() => db.ref('shotclock/cmd').set({ action: 'toggle' }), 100); // Pauser den med en gang
+    
+    // 3. Legg ut kulene (f.eks. 9-ball som standard)
+    resetPool(9);
+    
+    console.log("Match startet: Alt er rigget og klart.");
+}
+
+function avsluttMatch() {
+    if(confirm("Er du sikker på at du vil avslutte og skjule alt?")) {
+        // 1. Skjul piler
+        db.ref('activePlayer').set(null);
+        
+        // 2. Tøm kulebordet
+        db.ref('balls').set(null);
+        
+        // 3. Skjul/Nullstill shotclock (vi sender en kommando som tømmer displayet)
+        db.ref('shotclock/cmd').set({ action: 'minus', value: 99 }); 
+        
+        console.log("Match avsluttet: Alt er skjult.");
+    }
+}
     const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
