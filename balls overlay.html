@@ -16,13 +16,19 @@
             overflow: hidden;
         }
 
+        /* FAST BREDDE PÅ BAKGRUNNEN */
         .ball-container {
             display: flex;
+            justify-content: center; /* Sørger for at ballene sentreres inni den faste boksen */
             gap: 12px;
             background: rgba(255, 255, 255, 0.9);
             padding: 10px 25px;
             border-radius: 50px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            
+            /* Juster disse to verdiene for å passe til antall baller */
+            min-width: 580px; 
+            height: 55px; 
         }
 
         .ball {
@@ -35,33 +41,32 @@
             position: relative;
             box-shadow: inset -4px -4px 8px rgba(0,0,0,0.3), 2px 4px 6px rgba(0,0,0,0.2);
             border: 1px solid rgba(0,0,0,0.1);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* TALL-SIRKELEN (GJORT STØRRE) */
         .num-label {
             background: white;
             color: black;
-            width: 24px; /* Økt fra ca 18-20px */
+            width: 24px;
             height: 24px;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 16px; /* Økt fontstørrelse */
-            font-weight: 900; /* Ekstra fet */
+            font-size: 16px;
+            font-weight: 900;
             z-index: 5;
-            border: 1.5px solid #000; /* Tydeligere kant rundt tallet */
+            border: 1.5px solid #000;
         }
 
+        /* Endret fra display: none til visibility: hidden */
+        /* Dette gjør at ballen blir usynlig, men beholder plassen sin i rekka */
         .sunk {
-            display: none; /* Skjuler ballen helt når den er senket */
+            visibility: hidden; 
         }
 
         .striped { background: #000 !important; overflow: hidden; }
         .stripe-band { position: absolute; width: 100%; height: 26px; z-index: 1; }
 
-        /* Farger for ballene */
         .f-1, .b9 { background-color: #ffcc00; } 
         .f-2, .b10 { background-color: #0055aa; }
         .f-3, .b11 { background-color: #cc0000; } 
@@ -86,7 +91,6 @@
             const display = document.getElementById('display');
             display.innerHTML = '';
 
-            // Går gjennom alle baller (1-15)
             for (let i = 1; i <= 15; i++) {
                 if (data[i] === undefined) continue;
 
