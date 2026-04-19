@@ -49,6 +49,7 @@
         .player-btn { padding: 22px 5px; font-size: 15px; border-width: 3px; line-height: 1.2; }
         .active-l, .active-r { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
 
+        /* KULER SEKSJON */
         .ball-grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -56,25 +57,47 @@
             justify-items: center; 
             margin-bottom: 15px; 
         }
+        
+        /* FIX HER: Lagt til display flex for å sentrere tallet inni */
         .ball-btn { 
             width: 68px; height: 68px; 
             min-width: 68px; min-height: 68px; 
             border-radius: 50%; border: 2px solid #000; 
-            position: relative; overflow: hidden; 
+            position: relative; overflow: hidden;
+            
+            /* SIKRER SENTRERING */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 0;
+            box-sizing: border-box;
         }
+        
+        /* FIX HER: Endret posisjonering fra absolutt til fast størrelse */
         .num-label { 
             background: white; color: black; 
             width: 20px; height: 20px; 
             border-radius: 50%; 
             display: flex; justify-content: center; align-items: center; 
             font-size: 11px; font-weight: 900;
-            position: absolute; z-index: 5; border: 1px solid black;
-            top: 4px; left: 4px;
+            border: 1px solid black;
+            
+            /* Viktig: Nullstiller posisjoneringen */
+            position: relative;
+            top: auto;
+            left: auto;
+            z-index: 5;
+            
+            /* Sørger for at tallet ikke påvirkes av stripen */
+            margin: 0;
+            box-sizing: border-box;
         }
+        
         .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
         .striped { background: black !important; }
         .stripe-band { position: absolute; width: 100%; height: 32px; top: 18px; z-index: 1; }
         
+        /* Farger */
         .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
         .f-3, .b11 { background-color: #cc0000; } .f-4, .b12 { background-color: #ff66aa; }
         .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
@@ -107,12 +130,9 @@
         <div class="grid">
             <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ SPILLER 1<br><small>RESET 30s</small></button>
             <button id="btnR" class="player-btn" onclick="shotReset('right')">SPILLER 2 ▶<br><small>RESET 30s</small></button>
-            
             <button class="full btn-ext" onclick="sendClock('extension')">+ BRUK EXTENSION</button>
-            
             <button id="toggleBtn" class="paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
             <button onclick="sendClock('reset60')">⚡ 60s BREAK</button>
-            
             <button class="mini-btn" onclick="sendClock('minus')">-1s</button>
             <button class="mini-btn" onclick="sendClock('plus')">+1s</button>
         </div>
@@ -154,15 +174,19 @@
         const b = document.createElement('div');
         b.id = `btn-${i}`; b.className = 'ball-btn';
         let cIdx = i > 8 ? i - 8 : i;
+        
+        // FIX: Sørger for at tallet genereres FØR stripen for riktig rekkefølge
+        let num = document.createElement('div');
+        num.className = 'num-label'; num.innerText = i;
+        b.appendChild(num);
+
         if (i > 8) {
             b.classList.add('striped');
             let band = document.createElement('div');
             band.className = `stripe-band f-${cIdx}`;
             b.appendChild(band);
         } else b.classList.add(`f-${cIdx}`);
-        let num = document.createElement('div');
-        num.className = 'num-label'; num.innerText = i;
-        b.appendChild(num);
+        
         b.onclick = () => {
             const ref = db.ref(`balls/${i}`);
             ref.once('value').then(s => ref.set(s.val() === false));
