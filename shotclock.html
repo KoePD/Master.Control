@@ -13,7 +13,7 @@
         }
 
         body { 
-            background: #000000; 
+            background: transparent; /* Gjør bakgrunnen gjennomsiktig for OBS */
             margin: 0; 
             display: flex; 
             justify-content: center; 
@@ -21,7 +21,7 @@
             height: 100vh; 
             overflow: hidden;
             font-family: 'DS-Digital', sans-serif;
-            /* Start som usynlig */
+            /* Start som usynlig, scriptet skrur den på */
             opacity: 0;
             transition: opacity 0.5s ease-in-out;
         }
@@ -67,7 +67,7 @@
 
         svg {
             position: absolute;
-            width: 106%; /* Litt større for å overlappe metal-rammen fint */
+            width: 106%; 
             height: 106%;
             transform: rotate(-90deg);
             pointer-events: none;
@@ -127,18 +127,15 @@
         let timerInterval = null;
         let soundPlayed = false;
 
-        // Lytt på status for å skjule/vise hele klokka
-db.ref('shotclock/status').on('value', snap => {
-    const status = snap.val();
-    if (status === 'hidden') {
-        // Dette gjør alt inni body (inkludert metal-rammen) helt usynlig
-        document.body.style.opacity = '0';
-        document.body.style.transition = 'opacity 0.5s ease-in-out';
-    } else {
-        // Viser den igjen når status er 'running' eller 'paused'
-        document.body.style.opacity = '1';
-    }
-});
+        // --- VIKTIG: DENNE FUNKSJONEN SKJULER ALT ---
+        db.ref('shotclock/status').on('value', snap => {
+            const status = snap.val();
+            if (status === 'hidden' || !status) {
+                document.body.style.opacity = '0';
+            } else {
+                document.body.style.opacity = '1';
+            }
+        });
 
         function updateUI() {
             const displayTime = Math.ceil(timeLeft);
@@ -176,6 +173,7 @@ db.ref('shotclock/status').on('value', snap => {
                     updateUI();
                 } else {
                     stopTimer();
+                    timerEl.innerText = "0";
                 }
             }, 100);
         }
@@ -183,7 +181,10 @@ db.ref('shotclock/status').on('value', snap => {
         function stopTimer() {
             clearInterval(timerInterval);
             isRunning = false;
-            db.ref('shotclock/status').set('paused');
+            // Vi sjekker om vi skal sette status til paused eller beholde hidden
+            db.ref('shotclock/status').once('value').then(snap => {
+                if(snap.val() !== 'hidden') db.ref('shotclock/status').set('paused');
+            });
         }
 
         db.ref('shotclock/cmd').on('value', snap => {
@@ -194,7 +195,6 @@ db.ref('shotclock/status').on('value', snap => {
                 case 'reset30':
                     timeLeft = 30; maxTime = 30; isExtension = false; soundPlayed = false;
                     updateUI(); 
-                    // IKKE start timer automatisk her, vent på 'running' status eller toggle
                     break;
                 case 'reset60':
                     timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
