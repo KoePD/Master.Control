@@ -2,7 +2,6 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Shotclock Display</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -14,33 +13,26 @@
             align-items: center; 
             height: 100vh; 
             overflow: hidden;
-            font-family: 'Courier New', Courier, monospace; /* Monospace hindrer tallene i å hoppe */
+            font-family: sans-serif;
         }
 
         #clock-container {
             position: relative;
-            /* Denne skalerer basert på skjermstørrelsen (viewport min) */
-            width: 80vmin; 
-            height: 80vmin;
+            width: 85vmin; 
+            height: 85vmin;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.6);
-            border: 10px solid #333;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
 
-        /* Selve tallet */
         #timer {
-            font-size: 40vmin; /* Gigantisk font som følger sirkelen */
+            font-size: 45vmin; 
             font-weight: 900;
             color: white;
             z-index: 10;
-            text-shadow: 0 0 20px rgba(0,0,0,1);
+            text-shadow: 4px 4px 15px rgba(0,0,0,0.8);
         }
 
-        /* Progress ring som fylles/tømmes */
         svg {
             position: absolute;
             width: 100%;
@@ -50,19 +42,16 @@
 
         circle {
             fill: none;
-            stroke-width: 15;
+            stroke-width: 12;
             stroke-linecap: round;
+        }
+
+        .bg-ring { stroke: rgba(255,255,255,0.1); }
+        .progress-ring {
+            stroke: #00FF41;
             transition: stroke 0.3s, stroke-dashoffset 0.1s linear;
         }
 
-        .bg-ring { stroke: #222; }
-        .progress-ring {
-            stroke: #00FF41;
-            stroke-dasharray: 1000; /* Blir satt i JS */
-            stroke-dashoffset: 0;
-        }
-
-        /* Fargeendring ved lav tid */
         .warning { stroke: #ffcc00 !important; }
         .critical { stroke: #ff0000 !important; }
         .critical-text { color: #ff0000 !important; }
@@ -95,7 +84,6 @@
             progressEl.style.strokeDashoffset = offset;
         }
 
-        // Lytt på klokke-data fra Firebase
         db.ref('shotclock').on('value', snap => {
             const data = snap.val();
             if (!data) return;
@@ -107,7 +95,6 @@
             timerEl.innerText = timeLeft;
             setProgress(percent);
 
-            // Farge-feedback
             timerEl.classList.remove('critical-text');
             progressEl.classList.remove('warning', 'critical');
 
