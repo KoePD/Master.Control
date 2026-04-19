@@ -120,13 +120,22 @@
     }
 }
 
-    function shotReset(player) {
-        const now = Date.now();
-        const timeSpent = (now - lastResetTime) / 1000;
-        try {
-            if (timeSpent > 1.5 && timeSpent < 120) { 
-                db.ref('stats/history').push({ time: timeSpent, player: player }); 
-            }
+function shotReset(player) {
+    const now = Date.now();
+    const timeSpent = (now - lastResetTime) / 1000;
+    try {
+        if (timeSpent > 1.5 && timeSpent < 120) { 
+            db.ref('stats/history').push({ time: timeSpent, player: player }); 
+        }
+    } catch(e) { console.log("Stats error", e); }
+
+    lastResetTime = now;
+    db.ref('activePlayer').set(player);
+    
+    // Denne linjen sender kommandoen som resetter til 30 OG starter klokka:
+    db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
+}
+    
         } catch(e) { console.log("Stats error", e); }
         lastResetTime = now;
         db.ref('activePlayer').set(player);
