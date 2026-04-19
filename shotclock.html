@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>KØ-PÅDD Firebase Shotclock</title>
+    <style>
+        @font-face { font-family: 'DSDigi'; src: url('DS-DIGIB.TTF') format('truetype'); }
+        :root { --bg-black: #000000; --metal-border: #1a1a1a; --color-ok: #00FF41; --color-warning: #FFAD00; --color-critical: #FF0000; --color-ext: #00E5FF; }
+        body { background-color: var(--bg-black); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'DSDigi', sans-serif; overflow: hidden; }
+        .shotclock-wrapper { position: relative; width: 280px; height: 280px; background: var(--bg-black); border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 8px solid var(--metal-border); }
+        .timer-svg { position: absolute; transform: rotate(-90deg); width: 270px; height: 270px; }
+        .timer-svg circle { fill: none; stroke-width: 16; stroke-linecap: round; transition: stroke 0.3s, stroke-dashoffset 0.1s linear; }
+        #progress-bar { stroke: var(--color-ok); stroke-dasharray: 754; stroke-dashoffset: 0; filter: drop-shadow(0 0 15px currentColor); }
+        #timer-text { font-size: 130px; color: #FFFFFF; z-index: 10; text-shadow: 0 0 15px rgba(255, 255, 255, 0.3); line-height: 1; }
+        #ext-indicator { font-family: 'Arial', sans-serif; font-weight: bold; font-size: 14px; color: var(--color-ext); text-transform: uppercase; visibility: hidden; position: absolute; top: 55px; z-index: 10; letter-spacing: 2px; }
+        .ext-active #ext-indicator { visibility: visible; }
+        .ext-active #progress-bar { stroke: var(--color-ext); }
+        .warning #progress-bar { stroke: var(--color-warning); }
+        .critical #progress-bar { stroke: var(--color-critical); }
+        .critical #timer-text { animation: blink-text 0.5s infinite alternate; }
+        @keyframes blink-text { from { opacity: 1; } to { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+    <div class="shotclock-wrapper" id="clockUI">
+        <svg class="timer-svg"><circle cx="135" cy="135" r="120" id="progress-bar"></circle></svg>
+        <div id="ext-indicator">Extension</div>
+        <div id="timer-text">30</div>
+    </div>
+    <audio id="snd-countdown" preload="auto"><source src="10 sec +.wav" type="audio/wav"></audio>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://shotclock-b506e-default-rtdb.europe-west1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database().ref('cmd');
+
+        let timeLeft = 30, totalTime = 30, timerInterval = null, isExtensionUsed = false;
+        const display = document.getElementById('timer-text'), progress = document.getElementById('progress-bar'), ui = document.getElementById('clockUI');
+        const sndCountdown = document.getElementById('snd-countdown'), circumference = 2 * Math.PI * 120;
+
+        function updateUI() {
+            display.textContent = timeLeft < 10 ? `0${timeLeft}` : timeLeft;
+            progress.style.strokeDashoffset = circumference - (timeLeft / totalTime) * circumference;
+            ui.classList.remove('warning', 'critical', 'ext-active');
+            if (isExtensionUsed) ui.classList.add('ext-active');
+            if (timeLeft === 10) { sndCountdown.currentTime = 0; sndCountdown.play().catch(()=>{}); }
+            if (timeLeft <= 0) { ui.classList.add('critical'); stopTimer(true); }
+            else if (timeLeft <= 5) { ui.classList.add('critical'); }
+            else if (timeLeft <= 10) { ui.classList.add('warning'); }
+        }
+
+        function stopTimer(isNaturalEnd = false) { 
+            clearInterval(timerInterval); timerInterval = null; 
+            if (!isNaturalEnd) sndCountdown.pause();
+        }
+
+        function startCountdown() { 
+            if(timerInterval || timeLeft <= 0) return;
+            if (timeLeft <= 10) { sndCountdown.currentTime = 10 - timeLeft; sndCountdown.play().catch(()=>{}); }
+            timerInterval = setInterval(() => { if(timeLeft > 0){ timeLeft--; updateUI(); } else { stopTimer(true); } }, 1000); 
+        }
+
+        function handleCmd(cmd) {
+            if (cmd === 'reset30') { stopTimer(false); timeLeft = 30; totalTime = 30; isExtensionUsed = false; updateUI(); startCountdown(); }
+            if (cmd === 'reset60') { stopTimer(false); timeLeft = 60; totalTime = 60; isExtensionUsed = false; updateUI(); startCountdown(); }
+            if (cmd === 'toggle') { timerInterval ? stopTimer(false) : startCountdown(); }
+            if (cmd === 'extension') { timeLeft += 30; totalTime = Math.max(totalTime, timeLeft); isExtensionUsed = true; updateUI(); }
+            if (cmd === 'plus') { timeLeft++; totalTime = Math.max(totalTime, timeLeft); updateUI(); }
+            if (cmd === 'minus') { timeLeft = Math.max(0, timeLeft - 1); updateUI(); }
+        }
+
+        db.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.action) {
+                handleCmd(data.action);
+                db.set({ action: null }); // Nullstiller så samme kommando kan sendes igjen
+            }
+        });
+
+        updateUI();
+    </script>
+</body>
+</html>

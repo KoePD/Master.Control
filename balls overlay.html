@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>Aramith Black Overlay - Fixed Stripes</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        #balls-container { 
+    display: flex; 
+    gap: 12px; 
+    justify-content: center; 
+    align-items: center;
+    
+    /* Bakgrunns-designet */
+    background-color: rgba(255, 255, 255, 0.95); /* Hvit med ørlite gjennomsiktighet */
+    padding: 10px 20px;       /* Luft rundt kulene */
+    border-radius: 30px;      /* Avrundede hjørner */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); /* Gir den litt løft fra bakgrunnen */
+    
+    /* Sentrering */
+    margin: 0 auto;
+    width: fit-content;       /* Viktig: Gjør at bakgrunnen følger antall kuler */
+    min-height: 55px;         /* Sørger for at den har en høyde selv om kuler er borte */
+}
+
+/* Sørger for at hele overlay-beholderen er sentrert horisontalt i OBS */
+body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center; /* Horisontal sentrering */
+    align-items: flex-end;   /* Plasserer den i bunnen (juster med padding-bottom) */
+    padding-bottom: 50px;    /* Avstand fra bunnen av skjermen */
+    background: transparent;
+}
+        
+        .ball {
+            width: 50px; height: 50px; border-radius: 50%;
+            position: relative; box-shadow: inset -3px -3px 6px rgba(0,0,0,0.4), 2px 2px 5px rgba(0,0,0,0.3);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: block;
+        }
+
+        .ball-num {
+            background: white; color: black; width: 22px; height: 22px; border-radius: 50%;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            display: flex; justify-content: center; align-items: center;
+            font-weight: 900; font-size: 14px; border: 1.5px solid black; z-index: 5;
+        }
+
+        /* ARAMITH BLACK DESIGN: Alle stripete (9-15) er svarte i bunn */
+        .striped { background: black !important; overflow: hidden; }
+        
+        .stripe-band { 
+            position: absolute; 
+            width: 100%; 
+            height: 28px; 
+            top: 11px; 
+            z-index: 2; 
+        }
+
+        /* FARGE-PALETT (Gjenbrukbare farger for både solide og bånd) */
+        .f-1 { background-color: #ffcc00; } /* Gul */
+        .f-2 { background-color: #0055aa; } /* Blå */
+        .f-3 { background-color: #cc0000; } /* Rød */
+        .f-4 { background-color: #ff66aa; } /* Rosa */
+        .f-5 { background-color: #663399; } /* Lilla */
+        .f-6 { background-color: #007744; } /* Grønn */
+        .f-7 { background-color: #884422; } /* Brun */
+        .f-8 { background-color: #111; }    /* Svart */
+
+        .ball.sunk { opacity: 0; transform: scale(0.8); }
+        .ball.hidden { display: none; }
+
+    </style>
+</head>
+<body>
+    <div id="balls-container"></div>
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const container = document.getElementById('balls-container');
+
+        for (let i = 1; i <= 15; i++) {
+            const ball = document.createElement('div');
+            ball.id = `ball-${i}`;
+            
+            // Finn farge-indeksen (1-7)
+            let colorIdx = i > 8 ? i - 8 : i;
+
+            if (i > 8) {
+                // Stripete kuler (Aramith Black stil)
+                ball.className = 'ball striped';
+                const band = document.createElement('div');
+                band.className = `stripe-band f-${colorIdx}`; // Bruker farge-klassen på båndet
+                ball.appendChild(band);
+            } else {
+                // Solide kuler
+                ball.className = `ball f-${colorIdx}`;
+            }
+
+            const num = document.createElement('div');
+            num.className = 'ball-num';
+            num.innerText = i;
+            ball.appendChild(num);
+            container.appendChild(ball);
+        }
+
+        db.ref('balls').on('value', snap => {
+            const data = snap.val() || {};
+            for (let i = 1; i <= 15; i++) {
+                const ballElement = document.getElementById(`ball-${i}`);
+                const status = data[i];
+
+                if (status === undefined) {
+                    ballElement.classList.add('hidden');
+                } else if (status === false) {
+                    ballElement.classList.add('sunk');
+                    ballElement.classList.remove('hidden');
+                } else {
+                    ballElement.classList.remove('sunk');
+                    ballElement.classList.remove('hidden');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
