@@ -131,46 +131,14 @@
         let timerInterval = null;
         let soundPlayed = false;
 
-        db.ref('shotclock/cmd').on('value', snap => {
-            const cmd = snap.val();
-            if (!cmd) return;
-
-            switch(cmd.action) {
-                case 'reset30':
-                    timeLeft = 30; maxTime = 30; isExtension = false; soundPlayed = false;
-                    updateUI(); 
-                    startTimer(); 
-                    break;
-                case 'reset60':
-                    timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
-                    updateUI(); 
-                    startTimer();
-                    break;
-                case 'extension':
-                    timeLeft += 30; 
-                    maxTime = Math.max(maxTime, timeLeft); 
-                    isExtension = true;
-                    updateUI();
-                    break;
-                case 'toggle':
-                    if (isRunning) stopTimer(); else startTimer();
-                    break;
-                case 'plus':
-                    timeLeft += 1; 
-                    maxTime = Math.max(maxTime, timeLeft);
-                    updateUI();
-                    break;
-                case 'minus':
-                    timeLeft = Math.max(0, timeLeft - 1); 
-                    updateUI();
-                    break;
-                case 'stop':
-                    stopTimer();
-                    timeLeft = 30; // Denne sikrer at den står på 30 ved kampstart
-                    updateUI();
-                    break;
+        // Styring av synlighet
+        db.ref('shotclock/status').on('value', snap => {
+            const status = snap.val();
+            if (status === 'hidden' || !status) {
+                document.body.style.opacity = '0';
+            } else {
+                document.body.style.opacity = '1';
             }
-            db.ref('shotclock/cmd').set(null);
         });
 
         function updateUI() {
@@ -201,10 +169,7 @@
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
             isRunning = true;
-            // Viktig: Ikke overskriv status hvis vi nettopp har bedt den pause
-            db.ref('shotclock/status').once('value').then(s => {
-                if(s.val() !== 'paused') db.ref('shotclock/status').set('running');
-            });
+            db.ref('shotclock/status').set('running');
             timerInterval = setInterval(() => {
                 if (timeLeft > 0) {
                     timeLeft -= 0.1;
@@ -235,8 +200,28 @@
                     updateUI(); 
                     startTimer();
                     break;
+                case 'reset60':
+                    timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
+                    updateUI(); 
+                    startTimer();
+                    break;
+                case 'extension':
+                    timeLeft += 30; 
+                    maxTime = Math.max(maxTime, timeLeft); 
+                    isExtension = true;
+                    updateUI();
+                    break;
                 case 'toggle':
                     if (isRunning) stopTimer(); else startTimer();
+                    break;
+                case 'plus':
+                    timeLeft += 1; 
+                    maxTime = Math.max(maxTime, timeLeft);
+                    updateUI();
+                    break;
+                case 'minus':
+                    timeLeft = Math.max(0, timeLeft - 1); 
+                    updateUI();
                     break;
                 case 'stop':
                     stopTimer();
@@ -246,6 +231,13 @@
             }
             db.ref('shotclock/cmd').set(null);
         });
+
+        window.addEventListener('click', () => {
+            warningSound.play().then(() => {
+                warningSound.pause();
+                warningSound.currentTime = 0;
+            }).catch(() => {});
+        }, { once: true });
 
         updateUI();
     </script>
