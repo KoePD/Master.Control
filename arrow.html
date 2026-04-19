@@ -1,24 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="no">
 <head>
+    <meta charset="UTF-8">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        body { background: transparent; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        body { 
+            background: transparent; 
+            overflow: hidden; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        
         #arrow-container { 
             position: relative; 
-            width: 800px; /* Juster denne til bredden på ditt scoreboard */
+            /* JUSTER DENNE bredden for å matche ditt scoreboard i OBS */
+            width: 800px; 
             display: flex; 
             justify-content: space-between; 
             transition: all 0.5s ease-in-out;
         }
+        
         .arrow { 
             font-size: 50px; 
-            color: #00FF41; /* Samme grønnfarge som shotclock */
-            filter: drop-shadow(0 0 10px rgba(0,255,65,0.8));
+            /* ENDRET TIL REN HVIT */
+            color: #FFFFFF; 
+            /* ENDRET GLØD TIL HVIT */
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
+            /* Lagt til en liten grå kantlinje for synlighet mot hvit bakgrunn */
+            -webkit-text-stroke: 1px rgba(0,0,0,0.3);
+            
             opacity: 0;
             transition: opacity 0.3s;
         }
+        
         .active { opacity: 1; }
     </style>
 </head>
@@ -29,10 +47,14 @@
     </div>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
+        // Kobler til databasen din
+        const firebaseConfig = { 
+            databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" 
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // Lytter på spiller-valg fra Master Control
         db.ref('activePlayer').on('value', snap => {
             const pos = snap.val();
             document.getElementById('arrowL').classList.toggle('active', pos === 'left');
