@@ -17,62 +17,44 @@
         .container { width: 100%; max-width: 450px; height: 100%; display: flex; flex-direction: column; gap: 8px; }
         .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; }
         
-        /* Justert høyde for å se 3 rader med kuler (9 totalt) uten scroll */
-        .pool-section { flex: 3; min-height: 320px; } 
+        /* Pool section øverst nå */
+        .pool-section { flex: 1; min-height: 0; } 
         
-        h2 { font-size: 0.75rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; }
+        h2 { font-size: 0.7rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; opacity: 0.7; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        
         button { padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px; border: 2px solid #333; background: #111; color: white; text-transform: uppercase; }
         button:active { transform: scale(0.95); background: #222; }
         
-        .player-btn { padding: 20px 5px; font-size: 14px; border-width: 3px; line-height: 1.2; }
+        /* Mindre spillerknapper */
+        .player-btn { padding: 14px 5px; font-size: 13px; border-width: 2px; line-height: 1.1; }
         .active-l, .active-r { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
         
         .ball-scroll-area { flex: 1; overflow-y: auto; margin-bottom: 8px; padding-right: 4px; }
         .ball-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; justify-items: center; }
-        .ball-btn { width: 60px; height: 60px; min-width: 60px; min-height: 60px; border-radius: 50%; border: 2px solid #000; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        .num-label { background: white; color: black; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: 900; border: 1px solid black; position: relative; z-index: 10; flex-shrink: 0; }
+        .ball-btn { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #000; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .num-label { background: white; color: black; width: 20px; height: 20px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: 900; border: 1px solid black; position: relative; z-index: 10; }
         
         .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
         .striped { background: black !important; }
-        .stripe-band { position: absolute; width: 100%; height: 28px; top: 16px; z-index: 1; }
+        .stripe-band { position: absolute; width: 100%; height: 26px; top: 14.5px; z-index: 1; }
         .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
         .f-3, .b11 { background-color: #cc0000; } .f-4, .b12 { background-color: #ff66aa; }
         .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
         .f-7, .b15 { background-color: #884422; } .f-8 { background-color: black; }
         
-        .btn-ext { border-color: var(--ext); color: var(--ext); padding: 15px 5px; grid-column: span 2; }
+        .btn-ext { border-color: var(--ext); color: var(--ext); padding: 12px 5px; grid-column: span 2; }
         #toggleBtn.running { border-color: var(--red); color: var(--red); }
         #toggleBtn.paused { border-color: var(--green); color: var(--green); }
         .mini-btn { padding: 8px 2px; font-size: 10px; }
 
-        .btn-start { background-color: #1b5e20 !important; border-color: #2e7d32 !important; color: #fff !important; }
-        .btn-stop { background-color: #b71c1c !important; border-color: #c62828 !important; color: #fff !important; }
+        .btn-start { background-color: #1b5e20 !important; border-color: #2e7d32 !important; color: #fff !important; padding: 15px 5px; }
+        .btn-stop { background-color: #b71c1c !important; border-color: #c62828 !important; color: #fff !important; padding: 15px 5px; }
     </style>
 </head>
 <body>
 <div class="container">
     
-    <div class="section">
-        <h2>Shotclock & Match</h2>
-        <div class="grid">
-            <button class="btn-start" onclick="startMatch()">🟢 START MATCH</button>
-            <button class="btn-stop" onclick="avsluttMatch()">🔴 AVSLUTT MATCH</button>
-            
-            <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ SPILLER 1<br><small>30s</small></button>
-            <button id="btnR" class="player-btn" onclick="shotReset('right')">SPILLER 2 ▶<br><small>30s</small></button>
-
-            <button class="btn-ext" onclick="sendClock('extension')">+ BRUK EXTENSION</button>
-            <button id="toggleBtn" class="paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
-            
-            <button onclick="sendClock('reset60')">⚡ 60s BREAK</button>
-            <button class="mini-btn" onclick="hideArrows()" style="border-color: #444;">🚫 SKJUL PILER</button>
-            
-            <button class="mini-btn" onclick="sendClock('minus')">-1s</button>
-            <button class="mini-btn" onclick="sendClock('plus')">+1s</button>
-        </div>
-    </div>
-
     <div class="section pool-section">
         <h2>Pool Control</h2>
         <div class="ball-scroll-area">
@@ -85,6 +67,26 @@
             <button class="mini-btn" onclick="resetPool(15)">8-Ball</button>
         </div>
     </div>
+
+    <div class="section">
+        <h2>Shotclock & Match</h2>
+        <div class="grid">
+            <button class="btn-start" onclick="startMatch()">🟢 START</button>
+            <button class="btn-stop" onclick="avsluttMatch()">🔴 STOPP</button>
+            
+            <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ S1</button>
+            <button id="btnR" class="player-btn" onclick="shotReset('right')">S2 ▶</button>
+
+            <button id="toggleBtn" class="paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
+            <button onclick="sendClock('reset60')">⚡ 60s BREAK</button>
+            
+            <button class="btn-ext" onclick="sendClock('extension')">+ BRUK EXTENSION</button>
+            
+            <button class="mini-btn" onclick="sendClock('minus')">-1s</button>
+            <button class="mini-btn" onclick="sendClock('plus')">+1s</button>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -135,7 +137,7 @@
         const status = snap.val();
         const btn = document.getElementById('toggleBtn');
         if(btn) {
-            btn.textContent = (status === 'running') ? "⏸ PAUSE" : "▶ START / RESUME";
+            btn.textContent = (status === 'running') ? "⏸ PAUSE" : "▶ RESUME";
             btn.className = (status === 'running') ? "running" : "paused";
         }
     });
@@ -173,10 +175,6 @@
             if (window.currentActiveData[i] !== undefined) updates[i] = true;
         }
         db.ref('balls').update(updates);
-    }
-
-    function hideArrows() {
-        db.ref('activePlayer').set(null);
     }
 </script>
 </body>
