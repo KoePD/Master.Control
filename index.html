@@ -58,14 +58,11 @@
             margin-bottom: 15px; 
         }
         
-        /* FIX HER: Lagt til display flex for å sentrere tallet inni */
         .ball-btn { 
             width: 68px; height: 68px; 
             min-width: 68px; min-height: 68px; 
             border-radius: 50%; border: 2px solid #000; 
             position: relative; overflow: hidden;
-            
-            /* SIKRER SENTRERING */
             display: flex; 
             justify-content: center; 
             align-items: center; 
@@ -73,24 +70,19 @@
             box-sizing: border-box;
         }
         
-        /* FIX HER: Endret posisjonering fra absolutt til fast størrelse */
+        /* HER ER ENDRINGENE FOR STØRRE SIRKLER */
         .num-label { 
             background: white; color: black; 
-            width: 20px; height: 20px; 
+            width: 26px; height: 26px; /* Økt fra 20px */
             border-radius: 50%; 
             display: flex; justify-content: center; align-items: center; 
-            font-size: 11px; font-weight: 900;
+            font-size: 14px; font-weight: 900; /* Økt fra 11px */
             border: 1px solid black;
-            
-            /* Viktig: Nullstiller posisjoneringen */
             position: relative;
-            top: auto;
-            left: auto;
-            z-index: 5;
-            
-            /* Sørger for at tallet ikke påvirkes av stripen */
+            z-index: 10; /* Økt for å ligge over stripen */
             margin: 0;
             box-sizing: border-box;
+            flex-shrink: 0; /* Hindrer sirkelen i å bli trykket flat */
         }
         
         .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
@@ -175,7 +167,6 @@
         b.id = `btn-${i}`; b.className = 'ball-btn';
         let cIdx = i > 8 ? i - 8 : i;
         
-        // FIX: Sørger for at tallet genereres FØR stripen for riktig rekkefølge
         let num = document.createElement('div');
         num.className = 'num-label'; num.innerText = i;
         b.appendChild(num);
