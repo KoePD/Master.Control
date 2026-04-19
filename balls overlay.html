@@ -16,19 +16,21 @@
             overflow: hidden;
         }
 
-        /* FAST BREDDE PÅ BAKGRUNNEN */
         .ball-container {
             display: flex;
-            justify-content: center; /* Sørger for at ballene sentreres inni den faste boksen */
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px 25px;
-            border-radius: 30px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            justify-content: center;
+            gap: 10px; /* Litt tettere mellom selve kulene også */
+            background: rgba(255, 255, 255, 0.95);
             
-            /* Juster disse to verdiene for å passe til antall baller */
-            min-width: 580px; 
-            height: 55px; 
+            /* JUSTERT PADDING: Mindre luft på sidene (12px) og topp/bunn (8px) */
+            padding: 8px 12px; 
+            
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            
+            /* Justert min-width så den passer 9 kuler perfekt uten for mye gap */
+            min-width: 520px; 
+            height: 52px; 
         }
 
         .ball {
@@ -39,7 +41,7 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.3), 2px 4px 6px rgba(0,0,0,0.2);
+            box-shadow: inset -3px -3px 6px rgba(0,0,0,0.3), 1px 2px 4px rgba(0,0,0,0.2);
             border: 1px solid rgba(0,0,0,0.1);
         }
 
@@ -58,8 +60,7 @@
             border: 1.5px solid #000;
         }
 
-        /* Endret fra display: none til visibility: hidden */
-        /* Dette gjør at ballen blir usynlig, men beholder plassen sin i rekka */
+        /* Beholder plassen selv om kula forsvinner */
         .sunk {
             visibility: hidden; 
         }
