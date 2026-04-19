@@ -2,6 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
+    <title>KØ-PÅDD Spiller-pil</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -17,46 +18,48 @@
         
         #arrow-container { 
             position: relative; 
-            /* JUSTER DENNE bredden for å matche ditt scoreboard i OBS */
+            /* JUSTER DENNE bredden slik at pilene treffer under navnene i OBS */
             width: 800px; 
             display: flex; 
             justify-content: space-between; 
-            transition: all 0.5s ease-in-out;
+            pointer-events: none;
         }
         
         .arrow { 
-            font-size: 50px; 
-            /* ENDRET TIL REN HVIT */
+            font-size: 60px; 
             color: #FFFFFF; 
-            /* ENDRET GLØD TIL HVIT */
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
-            /* Lagt til en liten grå kantlinje for synlighet mot hvit bakgrunn */
-            -webkit-text-stroke: 1px rgba(0,0,0,0.3);
-            
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.9));
+            -webkit-text-stroke: 1px rgba(0,0,0,0.5);
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.4s ease-in-out;
+            line-height: 1;
         }
         
-        .active { opacity: 1; }
+        .active { 
+            opacity: 1; 
+        }
     </style>
 </head>
 <body>
+
     <div id="arrow-container">
-        <div id="arrowL" class="arrow">▲</div>
-        <div id="arrowR" class="arrow">▲</div>
+        <div id="arrowL" class="arrow">&#9650;</div>
+        <div id="arrowR" class="arrow">&#9650;</div>
     </div>
 
     <script>
-        // Kobler til databasen din
+        // Konfigurasjon - Bruker samme database som resten av systemet
         const firebaseConfig = { 
             databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" 
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Lytter på spiller-valg fra Master Control
+        // Lytter på aktiv spiller fra Master Control
         db.ref('activePlayer').on('value', snap => {
             const pos = snap.val();
+            console.log("Aktiv spiller posisjon:", pos);
+            
             document.getElementById('arrowL').classList.toggle('active', pos === 'left');
             document.getElementById('arrowR').classList.toggle('active', pos === 'right');
         });
