@@ -2,22 +2,22 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Commentator Pro Stats</title>
+    <title>KØ-PÅDD Commentator Pro Stats + Graph</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --gold: #ffcc00; --s1-color: #00FF41; --s2-color: #00E5FF;
             --bg: #050505; --card: #111; --border: #222;
         }
-        body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        .dashboard { max-width: 900px; margin: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; overflow-x: hidden; }
+        .dashboard { max-width: 1000px; margin: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         .header { grid-column: span 3; text-align: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
         .header h1 { color: var(--gold); text-transform: uppercase; margin: 0; font-size: 1.5rem; }
         
         .stat-card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; text-align: center; }
         .full-width { grid-column: span 3; }
-        .half-width { grid-column: span 1.5; }
         
         .label { font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 8px; font-weight: bold; }
         .value { font-size: 1.8rem; font-weight: 800; color: #fff; }
@@ -27,15 +27,17 @@
         #bar-s1 { height: 100%; background: var(--s1-color); transition: width 0.5s; }
         #bar-s2 { height: 100%; background: var(--s2-color); transition: width 0.5s; }
 
+        /* Graf-container */
+        .graph-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; grid-column: span 3; height: 300px; }
+
         .btn-reset { grid-column: span 3; background: #331111; color: #ff4444; border: 1px solid #442222; padding: 10px; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; margin-top: 20px; }
-        .btn-reset:hover { background: #551111; }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
     <div class="header">
-        <h1>🎙️ Commentator Dashboard</h1>
+        <h1>🎙️ Commentator Pro Dashboard</h1>
         <div id="matchDuration" style="font-size: 0.9rem; color: #666; margin-top: 5px;">Match Duration: 00:00</div>
     </div>
 
@@ -44,8 +46,8 @@
         <div id="totalShots" class="value">0</div>
     </div>
     <div class="stat-card">
-        <div class="label">Match Pace (Avg)</div>
-        <div id="avgMatchTime" class="value">0s</div>
+        <div class="label">Pressure Index (Last 3)</div>
+        <div id="pressureIndex" class="value" style="color: #ff4444;">0s</div>
     </div>
     <div class="stat-card">
         <div class="label">Fastest Shot</div>
@@ -53,29 +55,21 @@
     </div>
 
     <div class="stat-card">
-        <div class="label">S1 Avg Time</div>
-        <div id="s1Avg" class="value s1">0s</div>
+        <div class="label">S1 Avg / Shots / Ext</div>
+        <div class="value s1"><span id="s1Avg">0s</span> | <span id="s1Shots">0</span> | <span id="s1Ext">0</span></div>
     </div>
     <div class="stat-card">
-        <div class="label">S1 Shots</div>
-        <div id="s1Shots" class="value s1">0</div>
+        <div class="label">Match Pace (Avg)</div>
+        <div id="avgMatchTime" class="value">0s</div>
     </div>
     <div class="stat-card">
-        <div class="label">S1 Extensions</div>
-        <div id="s1Ext" class="value s1">0</div>
+        <div class="label">S2 Avg / Shots / Ext</div>
+        <div class="value s2"><span id="s2Avg">0s</span> | <span id="s2Shots">0</span> | <span id="s2Ext">0</span></div>
     </div>
 
-    <div class="stat-card">
-        <div class="label">S2 Avg Time</div>
-        <div id="s2Avg" class="value s2">0s</div>
-    </div>
-    <div class="stat-card">
-        <div class="label">S2 Shots</div>
-        <div id="s2Shots" class="value s2">0</div>
-    </div>
-    <div class="stat-card">
-        <div class="label">S2 Extensions</div>
-        <div id="s2Ext" class="value s2">0</div>
+    <div class="graph-container">
+        <div class="label" style="text-align: center; margin-bottom: 10px;">Shot Time Timeline (Seconds per Shot)</div>
+        <canvas id="shotChart"></canvas>
     </div>
 
     <div class="stat-card full-width">
@@ -89,7 +83,7 @@
 
     <div class="stat-card full-width">
         <div class="label">Commentator Insight</div>
-        <div id="insightText" style="font-style: italic; color: var(--gold);">Waiting for more match data...</div>
+        <div id="insightText" style="font-style: italic; color: var(--gold);">Analyzing match flow...</div>
     </div>
 
     <button class="btn-reset" onclick="resetAllStats()">Clear All Match Data</button>
@@ -101,42 +95,103 @@
     const db = firebase.database();
 
     let matchStartTime = Date.now();
+    let shotChart;
 
-    // Lytt på historikk (støt-tider)
+    // Initialiser Grafen
+    function initChart() {
+        const ctx = document.getElementById('shotChart').getContext('2d');
+        shotChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [], // Shot numbers
+                datasets: [
+                    {
+                        label: 'S1 Shot Time',
+                        data: [],
+                        borderColor: '#00FF41',
+                        backgroundColor: 'rgba(0, 255, 65, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 4
+                    },
+                    {
+                        label: 'S2 Shot Time',
+                        data: [],
+                        borderColor: '#00E5FF',
+                        backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#222' }, ticks: { color: '#888' } },
+                    x: { grid: { display: false }, ticks: { color: '#888' } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
     db.ref('stats/history').on('value', snap => {
         const history = snap.val();
         if (!history) {
-            updateUI(null);
+            updateUI([]);
             return;
         }
         updateUI(Object.values(history));
     });
 
-    // Lytt på extensions (må legges til i index.html for å telle)
     db.ref('stats/extensions').on('value', snap => {
-    const ext = snap.val() || { left: 0, right: 0 };
-    document.getElementById('s1Ext').innerText = ext.left || 0;
-    document.getElementById('s2Ext').innerText = ext.right || 0;
-});
+        const ext = snap.val() || { left: 0, right: 0 };
+        document.getElementById('s1Ext').innerText = ext.left || 0;
+        document.getElementById('s2Ext').innerText = ext.right || 0;
+    });
 
     function updateUI(entries) {
-        if (!entries) return;
+        if (!entries || entries.length === 0) {
+            if (shotChart) {
+                shotChart.data.labels = [];
+                shotChart.data.datasets[0].data = [];
+                shotChart.data.datasets[1].data = [];
+                shotChart.update();
+            }
+            return;
+        }
 
         const totalShots = entries.length;
         let s1T = 0, s1C = 0, s2T = 0, s2C = 0;
         let fastest = 999;
+        
+        // Data for graf
+        let s1Data = [];
+        let s2Data = [];
+        let labels = [];
 
-        entries.forEach(e => {
+        entries.forEach((e, index) => {
             if (e.time < fastest) fastest = e.time;
-            if (e.player === 'left') { s1T += e.time; s1C++; }
-            else { s2T += e.time; s2C++; }
+            labels.push(index + 1);
+            
+            if (e.player === 'left') {
+                s1T += e.time; s1C++;
+                s1Data.push(e.time);
+                s2Data.push(null); // Tomt punkt for S2 når S1 skyter
+            } else {
+                s2T += e.time; s2C++;
+                s2Data.push(e.time);
+                s1Data.push(null);
+            }
         });
 
+        // Oppdater verdier i dashboard
         const s1Avg = s1C > 0 ? (s1T / s1C).toFixed(1) : 0;
         const s2Avg = s2C > 0 ? (s2T / s2C).toFixed(1) : 0;
         const totalAvg = ((s1T + s2T) / totalShots).toFixed(1);
 
-        // Oppdater verdier
         document.getElementById('totalShots').innerText = totalShots;
         document.getElementById('avgMatchTime').innerText = totalAvg + "s";
         document.getElementById('fastestShot').innerText = fastest.toFixed(1) + "s";
@@ -145,19 +200,36 @@
         document.getElementById('s2Avg').innerText = s2Avg + "s";
         document.getElementById('s2Shots').innerText = s2C;
 
-        // Oppdater Bar
-        const s1P = ((s1C / totalShots) * 100).toFixed(0);
+        // Pressure Index (Siste 3)
+        const last3 = entries.slice(-3);
+        const pressureIdx = last3.length > 0 ? (last3.reduce((a, b) => a + b.time, 0) / last3.length).toFixed(1) : 0;
+        document.getElementById('pressureIndex').innerText = pressureIdx + "s";
+
+        // Possession bar
+        const s1P = totalShots > 0 ? ((s1C / totalShots) * 100).toFixed(0) : 50;
         const s2P = 100 - s1P;
         document.getElementById('bar-s1').style.width = s1P + "%";
         document.getElementById('bar-s2').style.width = s2P + "%";
         document.getElementById('possessionText').innerText = `S1 ${s1P}% - S2 ${s2P}%`;
 
-        // Generer Insight
-        let insight = "";
-        if (s1Avg < s2Avg - 3) insight = "S1 spiller merkbart raskere enn S2 og prøver å holde tempoet oppe.";
-        else if (s2Avg < s1Avg - 3) insight = "S2 dikterer tempoet og spiller raskere enn sin motstander.";
-        else insight = "Begge spillere holder et veldig likt tempo i denne matchen.";
-        document.getElementById('insightText').innerText = insight;
+        // Insight & Trend
+        const firstHalf = entries.slice(0, Math.floor(entries.length / 2));
+        const secondHalf = entries.slice(Math.floor(entries.length / 2));
+        let trend = "Stable";
+        if (secondHalf.length > 2 && firstHalf.length > 2) {
+            const diff = (secondHalf.reduce((a,b)=>a+b.time,0)/secondHalf.length) - (firstHalf.reduce((a,b)=>a+b.time,0)/firstHalf.length);
+            if (diff > 2.5) trend = "Slowing Down 🐢";
+            else if (diff < -2.5) trend = "Speeding Up ⚡";
+        }
+        document.getElementById('insightText').innerText = `Match Trend: ${trend} | Overall Pace: ${totalAvg}s`;
+
+        // Oppdater grafen
+        if (shotChart) {
+            shotChart.data.labels = labels;
+            shotChart.data.datasets[0].data = s1Data;
+            shotChart.data.datasets[1].data = s2Data;
+            shotChart.update('none'); // 'none' for bedre ytelse uten animasjon på hvert støt
+        }
     }
 
     // Match klokke
@@ -174,6 +246,8 @@
             matchStartTime = Date.now();
         }
     }
+
+    window.onload = initChart;
 </script>
 </body>
 </html>
