@@ -78,7 +78,7 @@
             <button id="toggleBtn" class="paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
             <button onclick="sendClock('reset60')">⚡ 60s BREAK</button>
             
-            <button class="btn-ext" onclick="sendClock('extension')">+ BRUK EXTENSION</button>
+            <button class="btn-ext" onclick="useExtension()">+ BRUK EXTENSION</button>
             
             <button class="mini-btn" onclick="sendClock('minus')">-1s</button>
             <button class="mini-btn" onclick="sendClock('plus')">+1s</button>
@@ -93,22 +93,15 @@
     let lastResetTime = Date.now();
 
     function startMatch() {
-    // 1. Legg ut kulene
-    resetPool(9);
-    
-    // 2. Fjern aktive piler
-    db.ref('activePlayer').set(""); 
-    
-    // 3. Reset klokka til 30 (denne vil prøve å starte den)
-    db.ref('shotclock/cmd').set({ action: 'reset30' });
-    
-    // 4. Tving PAUSE etter 300ms
-    // Vi sender både en status-endring og en spesifikk stopp-kommando
-    setTimeout(() => {
-        db.ref('shotclock/status').set('paused');
-        db.ref('shotclock/cmd').set({ action: 'stop' }); 
-    }, 300);
-}
+        resetPool(9);
+        db.ref('activePlayer').set(""); 
+        db.ref('shotclock/cmd').set({ action: 'reset30' });
+        
+        setTimeout(() => {
+            db.ref('shotclock/status').set('paused');
+            db.ref('shotclock/cmd').set({ action: 'stop' }); 
+        }, 300);
+    }
 
     function avsluttMatch() {
         if(confirm("Vil du avslutte og skjule alt?")) {
@@ -130,9 +123,18 @@
 
         lastResetTime = now;
         db.ref('activePlayer').set(player);
-        
-        // Sender reset-kommando som trigger startTimer() i displayet
         db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
+    }
+
+    // NY FUNKSJON FOR Å LOGGE EXTENSIONS
+    function useExtension() {
+        db.ref('activePlayer').once('value', snap => {
+            const player = snap.val();
+            if (player === 'left' || player === 'right') {
+                db.ref(`stats/extensions/${player}`).transaction(current => (current || 0) + 1);
+            }
+        });
+        sendClock('extension');
     }
 
     function sendClock(cmd) { db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
@@ -154,7 +156,6 @@
         }
     });
 
-    // Ball grid generator
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
