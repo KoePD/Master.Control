@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Spiller-pil Outwards</title>
+    <title>KØ-PÅDD Spiller-pil Instant Out</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -18,7 +18,6 @@
         
         #arrow-container { 
             position: relative; 
-            /* JUSTER denne bredden slik at pilene står ved siden av navnene */
             width: 850px; 
             display: flex; 
             justify-content: space-between; 
@@ -29,30 +28,34 @@
             width: 0; 
             height: 0; 
             filter: drop-shadow(0 0 15px rgba(255,255,255,0.9));
+            /* Når pilen går BORT: Ingen animasjon (0s) */
             opacity: 0;
-            transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+            transition: none; 
         }
 
         /* Venstre pil - peker mot VENSTRE */
         #arrowL {
             border-top: 25px solid transparent;
             border-bottom: 25px solid transparent;
-            border-right: 40px solid #FFFFFF; /* Fargen på høyre side gjør at den peker mot venstre */
-            transform: translateX(20px); /* Glir utover til venstre */
+            border-right: 40px solid #FFFFFF;
         }
         
         /* Høyre pil - peker mot HØYRE */
         #arrowR {
             border-top: 25px solid transparent;
             border-bottom: 25px solid transparent;
-            border-left: 40px solid #FFFFFF; /* Fargen på venstre side gjør at den peker mot høyre */
-            transform: translateX(-20px); /* Glir utover til høyre */
+            border-left: 40px solid #FFFFFF;
         }
         
+        /* Når pilen blir AKTIV: Animer inn */
         .active { 
-            opacity: 1; 
-            transform: translateX(0) !important;
+            opacity: 1 !important; 
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out !important;
         }
+
+        /* Spesifikk glide-inn-startposisjon for aktiv tilstand */
+        #arrowL.active { transform: translateX(-15px); }
+        #arrowR.active { transform: translateX(15px); }
     </style>
 </head>
 <body>
