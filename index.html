@@ -3,72 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KØ-PÅDD Master Control Pro</title>
+    <title>KØ-PÅDD Master Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
-            --bg: #000; --card: #0a0a0a; --border: #1a1a1a;
+            --bg: #000; --card: #0d0d0d; --border: #222;
             --accent: #ffcc00; --green: #00FF41; --blue: #0055ff;
             --red: #FF0000; --ext: #00E5FF;
         }
-        html, body { height: 100%; overflow: hidden; margin: 0; }
+        
         body { 
             background: var(--bg); color: white; font-family: sans-serif;
-            padding: 8px; display: flex; flex-direction: column; box-sizing: border-box;
+            margin: 0; padding: 10px; box-sizing: border-box;
+            display: flex; flex-direction: column; align-items: center;
         }
-        .container { display: flex; flex-direction: column; height: 100%; gap: 6px; max-width: 500px; margin: 0 auto; width: 100%; }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
         .section { 
-            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-            padding: 10px; display: flex; flex-direction: column; justify-content: center; flex: 1; min-height: 0;
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 16px;
+            padding: 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        h2 { font-size: 0.75rem; color: var(--accent); text-align: center; margin: 0 0 6px 0; text-transform: uppercase; }
+
+        h2 { font-size: 0.8rem; color: var(--accent); text-align: center; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px; }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .full { grid-column: span 2; }
         
         button {
-            padding: 12px 2px; font-size: 14px; font-weight: 800; border-radius: 8px;
-            border: 2px solid #222; background: #111; color: white; text-transform: uppercase;
+            padding: 15px 5px; font-size: 14px; font-weight: 800; border-radius: 10px;
+            border: 2px solid #333; background: #111; color: white; text-transform: uppercase;
         }
-        button:active { transform: scale(0.96); background: #222; }
+        button:active { transform: scale(0.95); background: #222; }
 
-        /* Spiller spesifikk styling */
-        .player-btn { padding: 20px 2px; border-width: 3px; font-size: 16px; }
-        .active-l { border-color: var(--green) !important; background: rgba(0, 255, 65, 0.1) !important; color: var(--green) !important; }
-        .active-r { border-color: var(--green) !important; background: rgba(0, 255, 65, 0.1) !important; color: var(--green) !important; }
+        /* Spiller-knapper */
+        .player-btn { padding: 25px 5px; font-size: 16px; border-width: 3px; line-height: 1.2; }
+        .active-l, .active-r { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
 
-        /* Ball grid styling */
-        .ball-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; justify-items: center; }
-        .ball-btn { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #000; position: relative; overflow: hidden; }
+        /* FIX FOR KULER: Låst til helt runde sirkler */
+        .ball-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 15px; 
+            justify-items: center; 
+            margin-bottom: 15px; 
+        }
+        .ball-btn { 
+            width: 70px; 
+            height: 70px; 
+            min-width: 70px; /* Sikrer at de ikke blir ovale */
+            min-height: 70px; 
+            border-radius: 50%; 
+            border: 2px solid #000; 
+            position: relative; 
+            overflow: hidden; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            padding: 0; /* Fjerner padding som kan dytte på tekst */
+        }
         .num-label { 
-            background: white; color: black; width: 18px; height: 18px; border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: 900;
+            background: white; color: black; 
+            width: 22px; height: 22px; 
+            border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 12px; font-weight: 900;
             position: absolute; z-index: 5; border: 1px solid black;
+            top: 5px; left: 5px; /* Fast posisjon inni kula */
         }
-        .sunk { opacity: 0.1; filter: grayscale(1); }
+        .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
         .striped { background: black !important; }
-        .stripe-band { position: absolute; width: 100%; height: 28px; top: 13.5px; z-index: 1; }
+        .stripe-band { position: absolute; width: 100%; height: 34px; top: 18px; z-index: 1; }
+        
+        /* Farger */
         .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
         .f-3, .b11 { background-color: #cc0000; } .f-4, .b12 { background-color: #ff66aa; }
         .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
         .f-7, .b15 { background-color: #884422; } .f-8 { background-color: black; }
 
-        /* Shotclock knapper */
         .btn-ext { border-color: var(--ext); color: var(--ext); }
         #toggleBtn.running { border-color: var(--red); color: var(--red); }
         #toggleBtn.paused { border-color: var(--green); color: var(--green); }
+        .mini-btn { padding: 10px 2px; font-size: 11px; }
 
-        .mini-btn { padding: 8px 2px; font-size: 10px; }
+        .settings { font-size: 11px; color: #444; text-align: center; margin-top: 5px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="section" style="flex: 1.5;">
+    <div class="section">
         <h2>Pool Control</h2>
         <div class="ball-grid" id="ball-grid"></div>
-        <div class="grid" style="margin-top: 6px; gap: 4px;">
+        <div class="grid" style="gap: 8px;">
             <button class="mini-btn" onclick="reputtActiveBalls()">♻️ Re-Rack</button>
             <button class="mini-btn" onclick="resetPool(9)">9-Ball</button>
             <button class="mini-btn" onclick="resetPool(10)">10-Ball</button>
@@ -76,7 +111,7 @@
         </div>
     </div>
 
-    <div class="section" style="flex: 1.2;">
+    <div class="section">
         <h2>Neste Støt</h2>
         <div class="grid">
             <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ SPILLER 1<br><small>RESET 30s</small></button>
@@ -85,13 +120,16 @@
         </div>
     </div>
 
-    <div class="section" style="flex: 0.8;">
+    <div class="section">
         <h2>Shotclock Manuell</h2>
         <div class="grid">
             <button id="toggleBtn" class="paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
             <button onclick="sendClock('reset60')">⚡ 60s BREAK</button>
             <button class="mini-btn" onclick="sendClock('minus')">-1s</button>
             <button class="mini-btn" onclick="sendClock('plus')">+1s</button>
+        </div>
+        <div class="settings">
+            <input type="checkbox" id="autoStart" checked> Auto-start ved reset
         </div>
     </div>
 </div>
@@ -101,7 +139,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Integrert Reset Funksjon
     function shotReset(player) {
         db.ref('activePlayer').set(player);
         db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
@@ -111,14 +148,12 @@
         db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() });
     }
 
-    // Oppdater spiller-knapper
     db.ref('activePlayer').on('value', snap => {
         const p = snap.val();
-        document.getElementById('btnL').className = 'player-btn' + (p === 'left' ? ' active-l' : '');
-        document.getElementById('btnR').className = 'player-btn' + (p === 'right' ? ' active-r' : '');
+        document.getElementById('btnL').classList.toggle('active-l', p === 'left');
+        document.getElementById('btnR').classList.toggle('active-r', p === 'right');
     });
 
-    // Shotclock status
     db.ref('shotclock/status').on('value', snap => {
         const status = snap.val();
         const btn = document.getElementById('toggleBtn');
@@ -126,7 +161,6 @@
         btn.className = (status === 'running') ? "running" : "paused";
     });
 
-    // Ball Generering
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
