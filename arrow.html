@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Spiller-pil</title>
+    <title>KØ-PÅDD Spiller-pil Outwards</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -18,30 +18,40 @@
         
         #arrow-container { 
             position: relative; 
-            /* JUSTER denne bredden (f.eks. 700px eller 900px) for å treffe under navnene i OBS */
-            width: 800px; 
+            /* JUSTER denne bredden slik at pilene står ved siden av navnene */
+            width: 850px; 
             display: flex; 
             justify-content: space-between; 
             pointer-events: none;
         }
         
-        /* Her tegner vi trekanten med ren CSS istedenfor tekst */
         .arrow-shape { 
             width: 0; 
             height: 0; 
-            border-left: 30px solid transparent;  /* Bredde venstre */
-            border-right: 30px solid transparent; /* Bredde høyre */
-            border-bottom: 50px solid #FFFFFF;    /* Høyde og farge (Hvit) */
             filter: drop-shadow(0 0 15px rgba(255,255,255,0.9));
             opacity: 0;
             transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
-            transform: translateY(20px); /* Starter litt lavere */
+        }
+
+        /* Venstre pil - peker mot VENSTRE */
+        #arrowL {
+            border-top: 25px solid transparent;
+            border-bottom: 25px solid transparent;
+            border-right: 40px solid #FFFFFF; /* Fargen på høyre side gjør at den peker mot venstre */
+            transform: translateX(20px); /* Glir utover til venstre */
         }
         
-        /* Når pilen er aktiv, fader den inn og flytter seg opp */
+        /* Høyre pil - peker mot HØYRE */
+        #arrowR {
+            border-top: 25px solid transparent;
+            border-bottom: 25px solid transparent;
+            border-left: 40px solid #FFFFFF; /* Fargen på venstre side gjør at den peker mot høyre */
+            transform: translateX(-20px); /* Glir utover til høyre */
+        }
+        
         .active { 
             opacity: 1; 
-            transform: translateY(0);
+            transform: translateX(0) !important;
         }
     </style>
 </head>
