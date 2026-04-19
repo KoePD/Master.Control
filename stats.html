@@ -2,96 +2,124 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Pro Stats</title>
+    <title>KØ-PÅDD Match Stats</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .stats-container { width: 400px; display: flex; flex-direction: column; gap: 15px; }
-        .card { background: #0d0d0d; border: 1px solid #222; border-radius: 16px; padding: 20px; text-align: center; }
-        h1 { font-size: 0.8rem; color: #ffcc00; text-transform: uppercase; margin: 0 0 15px 0; letter-spacing: 2px; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        
-        .main-val { font-size: 3.5rem; font-weight: 800; color: #00FF41; margin: 5px 0; }
-        .grid-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .sub-card { background: #151515; padding: 15px; border-radius: 10px; border: 1px solid #222; }
-        
-        .label { color: #888; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; }
-        .small-val { font-size: 1.5rem; font-weight: 700; color: #fff; display: block; margin-top: 5px; }
-        
-        .player-l { color: #00FF41; } /* Grønn */
-        .player-r { color: #00E5FF; } /* Cyan */
-
-        button { margin-top: 20px; background: transparent; border: 1px solid #333; color: #444; padding: 8px; border-radius: 6px; cursor: pointer; width: 100%; }
-        button:hover { color: #ff4444; border-color: #ff4444; }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .stats-container {
+            background: #0d0d0d;
+            border: 2px solid #222;
+            border-radius: 20px;
+            padding: 30px;
+            width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        h1 { color: #ffcc00; text-transform: uppercase; font-size: 1.2rem; margin-bottom: 20px; letter-spacing: 2px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .stat-box { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #333; }
+        .label { font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        .value { font-size: 1.5rem; font-weight: bold; color: #fff; }
+        .player-name { color: #00FF41; font-size: 0.9rem; }
+        .reset-btn {
+            margin-top: 25px;
+            background: #b71c1c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        .reset-btn:hover { background: #ff0000; }
     </style>
 </head>
 <body>
-    <div class="stats-container">
-        <div class="card">
-            <h1>Total Snitt-tid</h1>
-            <div id="totalAvg" class="main-val">0.0s</div>
-            <div class="label">Basert på <span id="totalShots" style="color:white">0</span> støt</div>
-        </div>
 
-        <div class="grid-stats">
-            <div class="sub-card">
-                <span class="label">Snitt P1</span>
-                <span id="avgP1" class="small-val player-l">0.0s</span>
-            </div>
-            <div class="sub-card">
-                <span class="label">Snitt P2</span>
-                <span id="avgP2" class="small-val player-r">0.0s</span>
-            </div>
+<div class="stats-container">
+    <h1>Match Statistics</h1>
+    <div class="stat-grid">
+        <div class="stat-box">
+            <div class="label">Total Shots</div>
+            <div id="totalShots" class="value">0</div>
         </div>
-
-        <div class="card">
-            <h1>Match Rekorder</h1>
-            <div class="grid-stats">
-                <div>
-                    <span class="label">Lengste tenkepause</span>
-                    <span id="longest" class="small-val">0.0s</span>
-                </div>
-                <div>
-                    <span class="label">Korteste støt</span>
-                    <span id="shortest" class="small-val">0.0s</span>
-                </div>
-            </div>
-            <button onclick="reset()">Nullstill Match Statistikk</button>
+        <div class="stat-box">
+            <div class="label">Avg. Shot Time</div>
+            <div id="avgTime" class="value">0s</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">S1 Avg. Time</div>
+            <div id="s1Avg" class="value">0s</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">S2 Avg. Time</div>
+            <div id="s2Avg" class="value">0s</div>
         </div>
     </div>
+    <button class="reset-btn" onclick="resetStats()">Nullstill Stats</button>
+</div>
 
-    <script>
-        const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+<script>
+    const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        db.ref('stats/history').on('value', snap => {
-            const data = snap.val();
-            if (!data) {
-                updateUI({ total: 0, p1: [], p2: [], max: 0, min: 0 });
-                return;
+    db.ref('stats/history').on('value', snap => {
+        const history = snap.val();
+        if (!history) {
+            updateDisplay(0, 0, 0, 0);
+            return;
+        }
+
+        const entries = Object.values(history);
+        const totalShots = entries.length;
+        
+        let totalTime = 0;
+        let s1Time = 0, s1Count = 0;
+        let s2Time = 0, s2Count = 0;
+
+        entries.forEach(entry => {
+            totalTime += entry.time;
+            if (entry.player === 'left') {
+                s1Time += entry.time;
+                s1Count++;
+            } else if (entry.player === 'right') {
+                s2Time += entry.time;
+                s2Count++;
             }
-
-            const entries = Object.values(data);
-            const p1Times = [];
-            const p2Times = [];
-            
-            // Vi må vite hvem som slo støtet. 
-            // Her antar vi at Master Control lagrer spiller-info sammen med tiden.
-            // Siden vi ikke har endret Master Control til å lagre spiller-id ennå, 
-            // regner vi her bare totalen først:
-            
-            const totalAvg = entries.reduce((a, b) => a + b, 0) / entries.length;
-            const longest = Math.max(...entries);
-            const shortest = Math.min(...entries);
-
-            document.getElementById('totalAvg').textContent = totalAvg.toFixed(1) + "s";
-            document.getElementById('totalShots').textContent = entries.length;
-            document.getElementById('longest').textContent = longest.toFixed(1) + "s";
-            document.getElementById('shortest').textContent = shortest.toFixed(1) + "s";
         });
 
-        function reset() { if(confirm("Nullstill all statistikk for denne kampen?")) db.ref('stats').remove(); }
-    </script>
+        updateDisplay(
+            totalShots, 
+            (totalTime / totalShots).toFixed(1),
+            s1Count > 0 ? (s1Time / s1Count).toFixed(1) : 0,
+            s2Count > 0 ? (s2Time / s2Count).toFixed(1) : 0
+        );
+    });
+
+    function updateDisplay(total, avg, s1, s2) {
+        document.getElementById('totalShots').innerText = total;
+        document.getElementById('avgTime').innerText = avg + "s";
+        document.getElementById('s1Avg').innerText = s1 + "s";
+        document.getElementById('s2Avg').innerText = s2 + "s";
+    }
+
+    function resetStats() {
+        if(confirm("Vil du slette all statistikk for denne matchen?")) {
+            db.ref('stats/history').remove();
+        }
+    }
+</script>
 </body>
 </html>
