@@ -6,8 +6,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        /* Legg inn din digitale font her hvis du har en lokal fil eller Google Font */
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
+        /* Laster inn din spesifikke font fra GitHub-mappen */
+        @font-face {
+            font-family: 'DS-Digital';
+            src: url('DS-DIGIB.TTF') format('truetype');
+            font-weight: bold;
+        }
 
         body { 
             background: transparent; 
@@ -17,7 +21,8 @@
             align-items: center; 
             height: 100vh; 
             overflow: hidden;
-            font-family: 'Orbitron', sans-serif; /* Endre til din spesifikke font-familie */
+            /* Bruker din digitale font */
+            font-family: 'DS-Digital', sans-serif; 
         }
 
         #clock-container {
@@ -30,23 +35,25 @@
         }
 
         #timer {
-            font-size: 45vmin; 
-            font-weight: 900;
+            font-size: 55vmin; /* Justert litt opp da digitale fonter ofte er smale */
+            font-weight: normal;
             color: white;
             z-index: 10;
-            text-shadow: 4px 4px 20px rgba(0,0,0,0.8);
+            text-shadow: 0 0 30px rgba(255,255,255,0.2), 4px 4px 20px rgba(0,0,0,0.8);
+            /* Sikrer at tallene ikke "hopper" sideveis */
+            font-variant-numeric: tabular-nums;
         }
 
         #ext-label {
             position: absolute;
-            bottom: 15%;
-            font-size: 5vmin;
+            bottom: 18%;
+            font-size: 6vmin;
             color: #00E5FF;
             text-transform: uppercase;
-            font-weight: 900;
             opacity: 0;
             transition: opacity 0.3s;
             z-index: 11;
+            letter-spacing: 2px;
         }
 
         svg {
@@ -58,7 +65,7 @@
 
         circle {
             fill: none;
-            stroke-width: 12;
+            stroke-width: 10;
             stroke-linecap: round;
         }
 
@@ -70,7 +77,7 @@
         }
 
         /* FARGE-MODUS */
-        .extension-active { stroke: #00E5FF !important; } /* Lyseblå */
+        .extension-active { stroke: #00E5FF !important; }
         .warning { stroke: #ffcc00 !important; }
         .critical { stroke: #ff0000 !important; }
         .critical-text { color: #ff0000 !important; }
@@ -78,7 +85,7 @@
 </head>
 <body>
 
-    <audio id="warningSound" src="10sec_warning.mp3" preload="auto"></audio>
+    <audio id="warningSound" src="10 sec +.wav" preload="auto"></audio>
 
     <div id="clock-container">
         <div id="ext-label">Extension</div>
@@ -118,20 +125,18 @@
             const offset = circumference - (percent / 100) * circumference;
             progressEl.style.strokeDashoffset = offset;
 
-            // Reset farger
             timerEl.classList.remove('critical-text');
             progressEl.classList.remove('warning', 'critical', 'extension-active');
             extLabel.style.opacity = isExtension ? "1" : "0";
 
-            // Farge-prioritet
             if (timeLeft <= 5.5) {
                 progressEl.classList.add('critical');
                 timerEl.classList.add('critical-text');
             } else if (timeLeft <= 10.5) {
                 progressEl.classList.add('warning');
-                // SPILL LYD ved 10 sekunder
+                // SPILL LYD
                 if (!soundPlayed) {
-                    warningSound.play().catch(e => console.log("Lyd blokkert av nettleser"));
+                    warningSound.play().catch(e => console.log("Lyd krever et klikk på siden først."));
                     soundPlayed = true;
                 }
             } else if (isExtension) {
@@ -149,6 +154,8 @@
                     updateUI();
                 } else {
                     stopTimer();
+                    timerEl.innerText = "0";
+                    setProgress(0);
                 }
             }, 100);
         }
@@ -157,6 +164,11 @@
             clearInterval(timerInterval);
             isRunning = false;
             db.ref('shotclock/status').set('paused');
+        }
+
+        function setProgress(percent) {
+            const offset = circumference - (percent / 100) * circumference;
+            progressEl.style.strokeDashoffset = offset;
         }
 
         db.ref('shotclock/cmd').on('value', snap => {
@@ -190,6 +202,15 @@
             }
             db.ref('shotclock/cmd').set(null);
         });
+
+        // Viktig: Nettlesere blokkerer lyd hvis man ikke har interaktert med siden.
+        // Klikk én gang på nettbrettet etter at siden er lastet.
+        window.addEventListener('click', () => {
+            warningSound.play().then(() => {
+                warningSound.pause();
+                warningSound.currentTime = 0;
+            }).catch(e => {});
+        }, { once: true });
 
         updateUI();
     </script>
