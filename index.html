@@ -17,7 +17,6 @@
         .container { width: 100%; max-width: 450px; height: 100%; display: flex; flex-direction: column; gap: 8px; }
         .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; }
         
-        /* Pool section øverst nå */
         .pool-section { flex: 1; min-height: 0; } 
         
         h2 { font-size: 0.7rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; opacity: 0.7; }
@@ -26,7 +25,6 @@
         button { padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px; border: 2px solid #333; background: #111; color: white; text-transform: uppercase; }
         button:active { transform: scale(0.95); background: #222; }
         
-        /* Mindre spillerknapper */
         .player-btn { padding: 14px 5px; font-size: 13px; border-width: 2px; line-height: 1.1; }
         .active-l, .active-r { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
         
@@ -86,7 +84,6 @@
             <button class="mini-btn" onclick="sendClock('plus')">+1s</button>
         </div>
     </div>
-
 </div>
 
 <script>
@@ -96,6 +93,7 @@
     let lastResetTime = Date.now();
 
     function startMatch() {
+        // Viser piler (klar for valg), resetter shotclock til 30 og legger ut 9 kuler
         db.ref('activePlayer').set(""); 
         db.ref('shotclock/cmd').set({ action: 'reset30' });
         setTimeout(() => db.ref('shotclock/cmd').set({ action: 'toggle' }), 150);
@@ -103,10 +101,18 @@
     }
 
     function avsluttMatch() {
-        if(confirm("Avslutt og skjule alt?")) {
+        if(confirm("Vil du avslutte matchen og skjule alt fra streamen?")) {
+            // 1. Skjul piler
             db.ref('activePlayer').set(null);
+            
+            // 2. Skjul alle kuler (setter kule-data til null)
             db.ref('balls').set(null);
-            db.ref('shotclock/cmd').set({ action: 'minus', value: 99 }); 
+            
+            // 3. Skjul shotclock (setter status til noe som gjør den usynlig)
+            db.ref('shotclock/status').set('hidden');
+            db.ref('shotclock/cmd').set({ action: 'stop' }); 
+            
+            console.log("Match avsluttet og alt skjult.");
         }
     }
 
