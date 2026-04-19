@@ -2,72 +2,97 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Match Stats</title>
+    <title>KØ-PÅDD Commentator Pro Stats</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        body {
-            background: #000;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+        :root {
+            --gold: #ffcc00; --s1-color: #00FF41; --s2-color: #00E5FF;
+            --bg: #050505; --card: #111; --border: #222;
         }
-        .stats-container {
-            background: #0d0d0d;
-            border: 2px solid #222;
-            border-radius: 20px;
-            padding: 30px;
-            width: 400px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-        h1 { color: #ffcc00; text-transform: uppercase; font-size: 1.2rem; margin-bottom: 20px; letter-spacing: 2px; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .stat-box { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #333; }
-        .label { font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
-        .value { font-size: 1.5rem; font-weight: bold; color: #fff; }
-        .player-name { color: #00FF41; font-size: 0.9rem; }
-        .reset-btn {
-            margin-top: 25px;
-            background: #b71c1c;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-        }
-        .reset-btn:hover { background: #ff0000; }
+        body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .dashboard { max-width: 900px; margin: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .header { grid-column: span 3; text-align: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
+        .header h1 { color: var(--gold); text-transform: uppercase; margin: 0; font-size: 1.5rem; }
+        
+        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; text-align: center; }
+        .full-width { grid-column: span 3; }
+        .half-width { grid-column: span 1.5; }
+        
+        .label { font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 8px; font-weight: bold; }
+        .value { font-size: 1.8rem; font-weight: 800; color: #fff; }
+        .s1 { color: var(--s1-color); } .s2 { color: var(--s2-color); }
+        
+        .comparison-bar { height: 10px; background: #222; border-radius: 5px; margin-top: 10px; overflow: hidden; display: flex; }
+        #bar-s1 { height: 100%; background: var(--s1-color); transition: width 0.5s; }
+        #bar-s2 { height: 100%; background: var(--s2-color); transition: width 0.5s; }
+
+        .btn-reset { grid-column: span 3; background: #331111; color: #ff4444; border: 1px solid #442222; padding: 10px; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; margin-top: 20px; }
+        .btn-reset:hover { background: #551111; }
     </style>
 </head>
 <body>
 
-<div class="stats-container">
-    <h1>Match Statistics</h1>
-    <div class="stat-grid">
-        <div class="stat-box">
-            <div class="label">Total Shots</div>
-            <div id="totalShots" class="value">0</div>
-        </div>
-        <div class="stat-box">
-            <div class="label">Avg. Shot Time</div>
-            <div id="avgTime" class="value">0s</div>
-        </div>
-        <div class="stat-box">
-            <div class="label">S1 Avg. Time</div>
-            <div id="s1Avg" class="value">0s</div>
-        </div>
-        <div class="stat-box">
-            <div class="label">S2 Avg. Time</div>
-            <div id="s2Avg" class="value">0s</div>
+<div class="dashboard">
+    <div class="header">
+        <h1>🎙️ Commentator Dashboard</h1>
+        <div id="matchDuration" style="font-size: 0.9rem; color: #666; margin-top: 5px;">Match Duration: 00:00</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="label">Total Shots</div>
+        <div id="totalShots" class="value">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Match Pace (Avg)</div>
+        <div id="avgMatchTime" class="value">0s</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Fastest Shot</div>
+        <div id="fastestShot" class="value">0s</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="label">S1 Avg Time</div>
+        <div id="s1Avg" class="value s1">0s</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">S1 Shots</div>
+        <div id="s1Shots" class="value s1">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">S1 Extensions</div>
+        <div id="s1Ext" class="value s1">0</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="label">S2 Avg Time</div>
+        <div id="s2Avg" class="value s2">0s</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">S2 Shots</div>
+        <div id="s2Shots" class="value s2">0</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">S2 Extensions</div>
+        <div id="s2Ext" class="value s2">0</div>
+    </div>
+
+    <div class="stat-card full-width">
+        <div class="label">Table Control (Shot Distribution)</div>
+        <div id="possessionText" style="font-size: 0.9rem; margin-bottom: 5px;">S1 50% - S2 50%</div>
+        <div class="comparison-bar">
+            <div id="bar-s1" style="width: 50%;"></div>
+            <div id="bar-s2" style="width: 50%;"></div>
         </div>
     </div>
-    <button class="reset-btn" onclick="resetStats()">Nullstill Stats</button>
+
+    <div class="stat-card full-width">
+        <div class="label">Commentator Insight</div>
+        <div id="insightText" style="font-style: italic; color: var(--gold);">Waiting for more match data...</div>
+    </div>
+
+    <button class="btn-reset" onclick="resetAllStats()">Clear All Match Data</button>
 </div>
 
 <script>
@@ -75,49 +100,78 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    let matchStartTime = Date.now();
+
+    // Lytt på historikk (støt-tider)
     db.ref('stats/history').on('value', snap => {
         const history = snap.val();
         if (!history) {
-            updateDisplay(0, 0, 0, 0);
+            updateUI(null);
             return;
         }
-
-        const entries = Object.values(history);
-        const totalShots = entries.length;
-        
-        let totalTime = 0;
-        let s1Time = 0, s1Count = 0;
-        let s2Time = 0, s2Count = 0;
-
-        entries.forEach(entry => {
-            totalTime += entry.time;
-            if (entry.player === 'left') {
-                s1Time += entry.time;
-                s1Count++;
-            } else if (entry.player === 'right') {
-                s2Time += entry.time;
-                s2Count++;
-            }
-        });
-
-        updateDisplay(
-            totalShots, 
-            (totalTime / totalShots).toFixed(1),
-            s1Count > 0 ? (s1Time / s1Count).toFixed(1) : 0,
-            s2Count > 0 ? (s2Time / s2Count).toFixed(1) : 0
-        );
+        updateUI(Object.values(history));
     });
 
-    function updateDisplay(total, avg, s1, s2) {
-        document.getElementById('totalShots').innerText = total;
-        document.getElementById('avgTime').innerText = avg + "s";
-        document.getElementById('s1Avg').innerText = s1 + "s";
-        document.getElementById('s2Avg').innerText = s2 + "s";
+    // Lytt på extensions (må legges til i index.html for å telle)
+    db.ref('stats/extensions').on('value', snap => {
+        const ext = snap.val() || { left: 0, right: 0 };
+        document.getElementById('s1Ext').innerText = ext.left || 0;
+        document.getElementById('s2Ext').innerText = ext.right || 0;
+    });
+
+    function updateUI(entries) {
+        if (!entries) return;
+
+        const totalShots = entries.length;
+        let s1T = 0, s1C = 0, s2T = 0, s2C = 0;
+        let fastest = 999;
+
+        entries.forEach(e => {
+            if (e.time < fastest) fastest = e.time;
+            if (e.player === 'left') { s1T += e.time; s1C++; }
+            else { s2T += e.time; s2C++; }
+        });
+
+        const s1Avg = s1C > 0 ? (s1T / s1C).toFixed(1) : 0;
+        const s2Avg = s2C > 0 ? (s2T / s2C).toFixed(1) : 0;
+        const totalAvg = ((s1T + s2T) / totalShots).toFixed(1);
+
+        // Oppdater verdier
+        document.getElementById('totalShots').innerText = totalShots;
+        document.getElementById('avgMatchTime').innerText = totalAvg + "s";
+        document.getElementById('fastestShot').innerText = fastest.toFixed(1) + "s";
+        document.getElementById('s1Avg').innerText = s1Avg + "s";
+        document.getElementById('s1Shots').innerText = s1C;
+        document.getElementById('s2Avg').innerText = s2Avg + "s";
+        document.getElementById('s2Shots').innerText = s2C;
+
+        // Oppdater Bar
+        const s1P = ((s1C / totalShots) * 100).toFixed(0);
+        const s2P = 100 - s1P;
+        document.getElementById('bar-s1').style.width = s1P + "%";
+        document.getElementById('bar-s2').style.width = s2P + "%";
+        document.getElementById('possessionText').innerText = `S1 ${s1P}% - S2 ${s2P}%`;
+
+        // Generer Insight
+        let insight = "";
+        if (s1Avg < s2Avg - 3) insight = "S1 spiller merkbart raskere enn S2 og prøver å holde tempoet oppe.";
+        else if (s2Avg < s1Avg - 3) insight = "S2 dikterer tempoet og spiller raskere enn sin motstander.";
+        else insight = "Begge spillere holder et veldig likt tempo i denne matchen.";
+        document.getElementById('insightText').innerText = insight;
     }
 
-    function resetStats() {
-        if(confirm("Vil du slette all statistikk for denne matchen?")) {
-            db.ref('stats/history').remove();
+    // Match klokke
+    setInterval(() => {
+        const diff = Math.floor((Date.now() - matchStartTime) / 1000);
+        const min = Math.floor(diff / 60).toString().padStart(2, '0');
+        const sec = (diff % 60).toString().padStart(2, '0');
+        document.getElementById('matchDuration').innerText = `Match Duration: ${min}:${sec}`;
+    }, 1000);
+
+    function resetAllStats() {
+        if(confirm("Dette sletter all match-historikk. Er du sikker?")) {
+            db.ref('stats').remove();
+            matchStartTime = Date.now();
         }
     }
 </script>
