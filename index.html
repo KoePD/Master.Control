@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KØ-PÅDD Master Control XL</title>
+    <title>KØ-PÅDD Master Control</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -49,6 +49,8 @@
             border-radius: 22px;
             padding: 20px;
             box-shadow: 0 5px 25px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
         }
 
         h2 { 
@@ -73,6 +75,7 @@
             color: white;
             text-transform: uppercase;
             transition: transform 0.05s, background 0.2s;
+            cursor: pointer;
         }
 
         button:active { transform: scale(0.94); background: #222; }
@@ -83,11 +86,12 @@
         #toggleBtn.paused { border-color: var(--green); color: var(--green); background: rgba(0, 255, 65, 0.05); }
         #toggleBtn.running { border-color: var(--red); color: var(--red); background: rgba(255, 0, 0, 0.1); }
 
+        /* Ball grid med 4 i bredden */
         .ball-grid { 
             display: grid; 
             grid-template-columns: repeat(4, 1fr); 
             gap: 15px; 
-            margin-bottom: 20px; 
+            margin-bottom: 10px; 
             justify-items: center;
         }
 
@@ -123,6 +127,7 @@
         .striped { background: black !important; }
         .stripe-band { position: absolute; width: 100%; height: 35px; top: 17.5px; z-index: 1; }
 
+        /* Farger */
         .f-1, .b9 { background-color: #ffcc00; } 
         .f-2, .b10 { background-color: #0055aa; }
         .f-3, .b11 { background-color: #cc0000; } 
@@ -140,14 +145,17 @@
         }
         .mode-row button { padding: 18px 2px; font-size: 13px; border-color: #333; }
 
-        /* Stil for Re-Rack knappen */
+        /* Re-Rack knapp styling */
         .rerack-btn {
-            margin-top: 20px;
+            margin-top: 10px;
+            margin-bottom: 5px;
             border-color: #444;
             color: #ddd;
             font-size: 15px;
             padding: 20px;
             background: linear-gradient(180deg, #1a1a1a 0%, #111 100%);
+            width: 100%;
+            grid-column: span 2; /* Brukes hvis den ligger i en grid, men her er den full-width */
         }
 
         .settings-label {
@@ -174,13 +182,13 @@
             <h2>Pool Control</h2>
             <div class="ball-grid" id="ball-grid"></div>
             
+            <button class="rerack-btn" onclick="reputtActiveBalls()">RE-RACK</button>
+
             <div class="mode-row">
                 <button onclick="resetPool(9)" style="border-color: #ffcc00; color: #ffcc00;">9-Ball</button>
                 <button onclick="resetPool(10)" style="border-color: #0055ff; color: #0055ff;">10-Ball</button>
                 <button onclick="resetPool(15)" style="border-color: #cc0000; color: #cc0000;">8-Ball</button>
             </div>
-
-            <button class="full rerack-btn" onclick="reputtActiveBalls()">♻️ RE-RACK</button>
         </div>
 
         <div class="section">
@@ -206,6 +214,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // SHOTCLOCK FUNKSJONER
         function sendClock(cmd) {
             db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() });
         }
@@ -222,6 +231,7 @@
             }
         });
 
+        // POOL BALLS GENERERING
         const grid = document.getElementById('ball-grid');
         for (let i = 1; i <= 15; i++) {
             const b = document.createElement('div');
