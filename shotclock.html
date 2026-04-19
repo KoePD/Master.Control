@@ -26,7 +26,6 @@
         }
 
         #clock-container {
-            background-color: #000;
             position: relative;
             width: 85vmin; 
             height: 85vmin;
@@ -70,9 +69,12 @@
             stroke-linecap: round;
         }
 
-        .bg-ring { stroke: rgba(255,255,255,0.1); }
+        .bg-ring { stroke: rgba(255,255,255,0.1); 
+                    fill: #000000;
+        }
         
         .progress-ring {
+            fill: none;
             stroke: #00FF41;
             transition: stroke 0.3s, stroke-dashoffset 0.1s linear;
         }
