@@ -93,15 +93,19 @@
     let lastResetTime = Date.now();
 
     function startMatch() {
-        resetPool(9);
-        db.ref('activePlayer').set(""); 
-        db.ref('shotclock/cmd').set({ action: 'reset30' });
-        
-        setTimeout(() => {
-            db.ref('shotclock/status').set('paused');
-            db.ref('shotclock/cmd').set({ action: 'stop' }); 
-        }, 300);
-    }
+    resetPool(9);
+    db.ref('activePlayer').set(""); 
+    
+    // NY LINJE: Lagrer starttidspunktet for matchen
+    db.ref('stats/startTime').set(Date.now());
+    
+    db.ref('shotclock/cmd').set({ action: 'reset30' });
+    
+    setTimeout(() => {
+        db.ref('shotclock/status').set('paused');
+        db.ref('shotclock/cmd').set({ action: 'stop' }); 
+    }, 300);
+}
 
     function avsluttMatch() {
         if(confirm("Vil du avslutte og skjule alt?")) {
