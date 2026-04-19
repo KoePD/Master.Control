@@ -13,18 +13,27 @@
             --red: #FF0000; --ext: #00E5FF;
         }
         
+        /* Hindrer hele siden i å scrolle */
+        html, body { 
+            height: 100%; 
+            overflow: hidden; 
+            margin: 0; 
+            padding: 0;
+        }
+
         body { 
             background: var(--bg); color: white; font-family: sans-serif;
-            margin: 0; padding: 10px; box-sizing: border-box;
+            padding: 10px; box-sizing: border-box;
             display: flex; flex-direction: column; align-items: center;
         }
 
         .container {
             width: 100%;
             max-width: 450px;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .section { 
@@ -33,9 +42,17 @@
             border-radius: 16px;
             padding: 15px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
         }
 
-        h2 { font-size: 0.8rem; color: var(--accent); text-align: center; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px; }
+        /* Spesifikk fiks for Kule-seksjonen */
+        .pool-section {
+            flex: 1; /* Tar resten av den ledige plassen */
+            min-height: 0; /* Viktig for at scroll skal fungere */
+        }
+
+        h2 { font-size: 0.8rem; color: var(--accent); text-align: center; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px; }
         
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .full { grid-column: span 2; }
@@ -49,13 +66,19 @@
         .player-btn { padding: 22px 5px; font-size: 15px; border-width: 3px; line-height: 1.2; }
         .active-l, .active-r { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
 
-        /* KULER SEKSJON */
+        /* SCROLLBART OMRÅDE FOR KULER */
+        .ball-scroll-area {
+            flex: 1;
+            overflow-y: auto; /* Aktiverer scroll kun her */
+            margin-bottom: 10px;
+            padding-right: 5px; /* Plass til scrollbar */
+        }
+
         .ball-grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
             gap: 15px; 
             justify-items: center; 
-            margin-bottom: 15px; 
         }
         
         .ball-btn { 
@@ -63,26 +86,18 @@
             min-width: 68px; min-height: 68px; 
             border-radius: 50%; border: 2px solid #000; 
             position: relative; overflow: hidden;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 0;
-            box-sizing: border-box;
+            display: flex; justify-content: center; align-items: center; 
         }
         
-        /* HER ER ENDRINGENE FOR STØRRE SIRKLER */
         .num-label { 
             background: white; color: black; 
-            width: 26px; height: 26px; /* Økt fra 20px */
+            width: 26px; height: 26px; 
             border-radius: 50%; 
             display: flex; justify-content: center; align-items: center; 
-            font-size: 14px; font-weight: 900; /* Økt fra 11px */
+            font-size: 14px; font-weight: 900; 
             border: 1px solid black;
-            position: relative;
-            z-index: 10; /* Økt for å ligge over stripen */
-            margin: 0;
-            box-sizing: border-box;
-            flex-shrink: 0; /* Hindrer sirkelen i å bli trykket flat */
+            position: relative; z-index: 10;
+            flex-shrink: 0;
         }
         
         .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
@@ -106,9 +121,11 @@
 <body>
 
 <div class="container">
-    <div class="section">
+    <div class="section pool-section">
         <h2>Pool Control</h2>
-        <div class="ball-grid" id="ball-grid"></div>
+        <div class="ball-scroll-area">
+            <div class="ball-grid" id="ball-grid"></div>
+        </div>
         <div class="grid" style="gap: 8px;">
             <button class="mini-btn" onclick="reputtActiveBalls()">♻️ Re-Rack</button>
             <button class="mini-btn" onclick="resetPool(9)">9-Ball</button>
@@ -166,18 +183,15 @@
         const b = document.createElement('div');
         b.id = `btn-${i}`; b.className = 'ball-btn';
         let cIdx = i > 8 ? i - 8 : i;
-        
         let num = document.createElement('div');
         num.className = 'num-label'; num.innerText = i;
         b.appendChild(num);
-
         if (i > 8) {
             b.classList.add('striped');
             let band = document.createElement('div');
             band.className = `stripe-band f-${cIdx}`;
             b.appendChild(band);
         } else b.classList.add(`f-${cIdx}`);
-        
         b.onclick = () => {
             const ref = db.ref(`balls/${i}`);
             ref.once('value').then(s => ref.set(s.val() === false));
