@@ -93,13 +93,13 @@
     let lastResetTime = Date.now();
 
     function startMatch() {
-    // 1. Sett status til paused (dette gjør den synlig igjen i shotclock.html)
+    // 1. Gjør den synlig, men sett status til paused
     db.ref('shotclock/status').set('paused');
     
-    // 2. Vis piler
+    // 2. Skjul piler
     db.ref('activePlayer').set(""); 
     
-    // 3. Reset og klargjør klokka
+    // 3. Reset klokka til 30 (uten å starte den)
     db.ref('shotclock/cmd').set({ action: 'reset30' });
     
     // 4. Legg ut kulene
