@@ -13,7 +13,6 @@
             --red: #FF0000; --ext: #00E5FF;
         }
         
-        /* Hindrer hele siden i å scrolle */
         html, body { 
             height: 100%; 
             overflow: hidden; 
@@ -23,7 +22,7 @@
 
         body { 
             background: var(--bg); color: white; font-family: sans-serif;
-            padding: 10px; box-sizing: border-box;
+            padding: 8px; box-sizing: border-box;
             display: flex; flex-direction: column; align-items: center;
         }
 
@@ -33,57 +32,59 @@
             height: 100%;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         .section { 
             background: var(--card); 
             border: 1px solid var(--border); 
             border-radius: 16px;
-            padding: 15px; 
+            padding: 12px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
         }
 
-        /* Spesifikk fiks for Kule-seksjonen */
+        /* ØKT PRIORITET: Gir mer plass til kule-seksjonen */
         .pool-section {
-            flex: 1; /* Tar resten av den ledige plassen */
-            min-height: 0; /* Viktig for at scroll skal fungere */
+            flex: 2.2; 
+            min-height: 0;
         }
 
-        h2 { font-size: 0.8rem; color: var(--accent); text-align: center; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { font-size: 0.75rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 1px; }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .full { grid-column: span 2; }
         
         button {
-            padding: 15px 5px; font-size: 14px; font-weight: 800; border-radius: 10px;
+            padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px;
             border: 2px solid #333; background: #111; color: white; text-transform: uppercase;
         }
         button:active { transform: scale(0.95); background: #222; }
 
-        .player-btn { padding: 22px 5px; font-size: 15px; border-width: 3px; line-height: 1.2; }
+        .player-btn { padding: 18px 5px; font-size: 14px; border-width: 3px; line-height: 1.2; }
         .active-l, .active-r { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
 
-        /* SCROLLBART OMRÅDE FOR KULER */
+        /* SCROLLBART OMRÅDE */
         .ball-scroll-area {
             flex: 1;
-            overflow-y: auto; /* Aktiverer scroll kun her */
-            margin-bottom: 10px;
-            padding-right: 5px; /* Plass til scrollbar */
+            overflow-y: auto;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            /* Gjør scrollbar mindre sjenerende på mobil */
+            scrollbar-width: thin;
         }
 
         .ball-grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
-            gap: 15px; 
+            gap: 12px; 
             justify-items: center; 
         }
         
         .ball-btn { 
-            width: 68px; height: 68px; 
-            min-width: 68px; min-height: 68px; 
+            width: 65px; height: 65px; 
+            min-width: 65px; min-height: 65px; 
             border-radius: 50%; border: 2px solid #000; 
             position: relative; overflow: hidden;
             display: flex; justify-content: center; align-items: center; 
@@ -91,10 +92,10 @@
         
         .num-label { 
             background: white; color: black; 
-            width: 26px; height: 26px; 
+            width: 24px; height: 24px; 
             border-radius: 50%; 
             display: flex; justify-content: center; align-items: center; 
-            font-size: 14px; font-weight: 900; 
+            font-size: 13px; font-weight: 900; 
             border: 1px solid black;
             position: relative; z-index: 10;
             flex-shrink: 0;
@@ -102,20 +103,19 @@
         
         .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
         .striped { background: black !important; }
-        .stripe-band { position: absolute; width: 100%; height: 32px; top: 18px; z-index: 1; }
+        .stripe-band { position: absolute; width: 100%; height: 30px; top: 17.5px; z-index: 1; }
         
-        /* Farger */
         .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
         .f-3, .b11 { background-color: #cc0000; } .f-4, .b12 { background-color: #ff66aa; }
         .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
         .f-7, .b15 { background-color: #884422; } .f-8 { background-color: black; }
 
-        .btn-ext { border-color: var(--ext); color: var(--ext); padding: 18px 5px; }
+        .btn-ext { border-color: var(--ext); color: var(--ext); padding: 15px 5px; }
         #toggleBtn.running { border-color: var(--red); color: var(--red); }
         #toggleBtn.paused { border-color: var(--green); color: var(--green); }
-        .mini-btn { padding: 10px 2px; font-size: 11px; }
+        .mini-btn { padding: 8px 2px; font-size: 10px; }
 
-        .settings { font-size: 10px; color: #444; text-align: center; margin-top: 8px; text-transform: uppercase; }
+        .settings { font-size: 10px; color: #444; text-align: center; margin-top: 5px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -126,7 +126,7 @@
         <div class="ball-scroll-area">
             <div class="ball-grid" id="ball-grid"></div>
         </div>
-        <div class="grid" style="gap: 8px;">
+        <div class="grid" style="gap: 5px;">
             <button class="mini-btn" onclick="reputtActiveBalls()">♻️ Re-Rack</button>
             <button class="mini-btn" onclick="resetPool(9)">9-Ball</button>
             <button class="mini-btn" onclick="resetPool(10)">10-Ball</button>
@@ -137,8 +137,8 @@
     <div class="section">
         <h2>Shotclock</h2>
         <div class="grid">
-            <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ SPILLER 1<br><small>RESET 30s</small></button>
-            <button id="btnR" class="player-btn" onclick="shotReset('right')">SPILLER 2 ▶<br><small>RESET 30s</small></button>
+            <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ SPILLER 1<br><small>30s</small></button>
+            <button id="btnR" class="player-btn" onclick="shotReset('right')">SPILLER 2 ▶<br><small>30s</small></button>
             <button class="full btn-ext" onclick="sendClock('extension')">+ BRUK EXTENSION</button>
             <button id="toggleBtn" class="paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
             <button onclick="sendClock('reset60')">⚡ 60s BREAK</button>
@@ -146,7 +146,7 @@
             <button class="mini-btn" onclick="sendClock('plus')">+1s</button>
         </div>
         <div class="settings">
-            <input type="checkbox" id="autoStart" checked> Auto-start ved reset
+            <input type="checkbox" id="autoStart" checked> Auto-start
         </div>
     </div>
 </div>
