@@ -194,9 +194,14 @@ db.ref('shotclock/status').on('value', snap => {
 
             switch(cmd.action) {
                 case 'reset30':
-                    timeLeft = 30; maxTime = 30; isExtension = false; soundPlayed = false;
-                    updateUI(); 
-                    break;
+    db.ref('shotclock/status').set('running'); // Sett status til running med en gang
+    timeLeft = 30; 
+    maxTime = 30; 
+    isExtension = false; 
+    soundPlayed = false;
+    updateUI(); 
+    startTimer(); // Denne linjen MÅ være her for at den skal starte ved spillervalg
+    break;
                 case 'reset60':
                     timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
                     updateUI(); startTimer();
