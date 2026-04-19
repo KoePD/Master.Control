@@ -6,95 +6,94 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        /* Laster inn din spesifikke font fra GitHub-mappen */
-        @font-face {
-            font-family: 'DS-Digital';
-            src: url('DS-DIGIB.TTF') format('truetype');
-            font-weight: bold;
-        }
+    /* Din eksisterende font-innlasting */
+    @font-face {
+        font-family: 'DS-Digital';
+        src: url('DS-DIGIB.TTF') format('truetype');
+        font-weight: bold;
+    }
 
-        body { 
-            background: #000; 
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            overflow: hidden;
-            /* Bruker din digitale font */
-            font-family: 'DS-Digital', sans-serif; 
-        }
+    body { 
+        background: transparent; 
+        margin: 0; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        height: 100vh; 
+        overflow: hidden;
+        font-family: 'DS-Digital', sans-serif; 
+    }
 
-        #clock-container {
-            position: relative;
-            width: 85vmin; 
-            height: 85vmin;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
+    #clock-container {
+        position: relative;
+        /* Beholder responsiv størrelse */
+        width: 85vmin; 
+        height: 85vmin;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        
         /* HER ER METAL BORDER EFFEKTEN */
         background: #000000; /* Svart bakgrunn inni sirkelen */
         border-radius: 50%;
-            border: 2.5vmin solid #1a1a1a; /* Mørk metal-grå ramme */
+        border: 2.5vmin solid #1a1a1a; /* Mørk metal-grå ramme */
         box-shadow: 
             inset 0 0 20px rgba(0,0,0,1), /* Indre skygge */
             0 0 40px rgba(0,0,0,0.8);    /* Ytre skygge */
         box-sizing: border-box;
     }
 
-        #timer {
-            font-size: 55vmin; /* Justert litt opp da digitale fonter ofte er smale */
-            font-weight: normal;
-            color: white;
-            z-index: 10;
-            text-shadow: 0 0 30px rgba(255,255,255,0.2), 4px 4px 20px rgba(0,0,0,0.8);
-            /* Sikrer at tallene ikke "hopper" sideveis */
-            font-variant-numeric: tabular-nums;
-        }
+    #timer {
+        font-size: 45vmin; 
+        font-weight: normal;
+        color: white;
+        z-index: 10;
+        text-shadow: 0 0 20px rgba(0,0,0,1);
+        font-variant-numeric: tabular-nums;
+    }
 
-        #ext-label {
-            position: absolute;
-            bottom: 18%;
-            font-size: 6vmin;
-            color: #00E5FF;
-            text-transform: uppercase;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 11;
-            letter-spacing: 2px;
-        }
+    #ext-label {
+        position: absolute;
+        top: 20%; /* Flyttet litt opp for å ikke kræsje med store tall */
+        font-family: 'Arial', sans-serif;
+        font-size: 5vmin;
+        color: #00E5FF;
+        text-transform: uppercase;
+        font-weight: bold;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 11;
+        letter-spacing: 2px;
+    }
 
-        svg {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            transform: rotate(-90deg);
-        }
+    svg {
+        position: absolute;
+        width: 105%; /* Litt større enn container for å ligge perfekt over rammen */
+        height: 105%;
+        transform: rotate(-90deg);
+        pointer-events: none;
+    }
 
-        circle {
-            fill: none;
-            stroke-width: 10;
-            stroke-linecap: round;
-        }
+    circle {
+        fill: none;
+        stroke-width: 12; /* Tykkelsen på den lysende ringen */
+        stroke-linecap: round;
+    }
 
-        .bg-ring { stroke: rgba(255,255,255,0.1); 
-                    fill: #000000;
-        }
-        
-        .progress-ring {
-            fill: none;
-            stroke: #00FF41;
-            transition: stroke 0.3s, stroke-dashoffset 0.1s linear;
-        }
+    /* Bakgrunnsringen inni metal-rammen */
+    .bg-ring { stroke: rgba(255,255,255,0.05); }
+    
+    .progress-ring {
+        stroke: #00FF41;
+        transition: stroke 0.3s, stroke-dashoffset 0.1s linear;
+        filter: drop-shadow(0 0 10px currentColor); /* Gir ringen en "glow" */
+    }
 
-        /* FARGE-MODUS */
-        .extension-active { stroke: #00E5FF !important; }
-        .warning { stroke: #ffcc00 !important; }
-        .critical { stroke: #ff0000 !important; }
-        .critical-text { color: #ff0000 !important; }
-    </style>
+    .extension-active { stroke: #00E5FF !important; }
+    .warning { stroke: #ffcc00 !important; }
+    .critical { stroke: #ff0000 !important; }
+    .critical-text { color: #ff0000 !important; }
+</style>
 </head>
 <body>
 
