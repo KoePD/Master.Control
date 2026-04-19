@@ -114,10 +114,10 @@
 
     // Lytt på extensions (må legges til i index.html for å telle)
     db.ref('stats/extensions').on('value', snap => {
-        const ext = snap.val() || { left: 0, right: 0 };
-        document.getElementById('s1Ext').innerText = ext.left || 0;
-        document.getElementById('s2Ext').innerText = ext.right || 0;
-    });
+    const ext = snap.val() || { left: 0, right: 0 };
+    document.getElementById('s1Ext').innerText = ext.left || 0;
+    document.getElementById('s2Ext').innerText = ext.right || 0;
+});
 
     function updateUI(entries) {
         if (!entries) return;
