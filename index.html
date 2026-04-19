@@ -93,21 +93,21 @@
     let lastResetTime = Date.now();
 
     function startMatch() {
-    // 1. Legg ut kulene (9-ball som standard)
+    // 1. Legg ut kulene
     resetPool(9);
     
-    // 2. Nullstill aktiv spiller (fjerner piler)
+    // 2. Fjern aktive piler
     db.ref('activePlayer').set(""); 
     
-    // 3. Send reset-kommandoen (som i utgangspunktet starter klokka)
+    // 3. Reset klokka til 30 (denne vil prøve å starte den)
     db.ref('shotclock/cmd').set({ action: 'reset30' });
     
-    // 4. VENT 200ms før vi tvinger den i pause. 
-    // Dette gjør at klokka dukker opp på 30, men stopper med en gang.
+    // 4. Tving PAUSE etter 300ms
+    // Vi sender både en status-endring og en spesifikk stopp-kommando
     setTimeout(() => {
         db.ref('shotclock/status').set('paused');
-        db.ref('shotclock/cmd').set({ action: 'toggle' }); // Stopper den internt hvis den kjører
-    }, 200);
+        db.ref('shotclock/cmd').set({ action: 'stop' }); 
+    }, 300);
 }
 
     function avsluttMatch() {
