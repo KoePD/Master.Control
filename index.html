@@ -12,117 +12,39 @@
             --accent: #ffcc00; --green: #00FF41; --blue: #0055ff;
             --red: #FF0000; --ext: #00E5FF;
         }
-        
-        html, body { 
-            height: 100%; 
-            overflow: hidden; 
-            margin: 0; 
-            padding: 0;
-        }
-
-        body { 
-            background: var(--bg); color: white; font-family: sans-serif;
-            padding: 8px; box-sizing: border-box;
-            display: flex; flex-direction: column; align-items: center;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 450px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .section { 
-            background: var(--card); 
-            border: 1px solid var(--border); 
-            border-radius: 16px;
-            padding: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .pool-section {
-            flex: 2.2; 
-            min-height: 0;
-        }
-
-        h2 { font-size: 0.75rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 1px; }
-        
+        html, body { height: 100%; overflow: hidden; margin: 0; padding: 0; }
+        body { background: var(--bg); color: white; font-family: sans-serif; padding: 8px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 450px; height: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; }
+        .pool-section { flex: 2.2; min-height: 0; }
+        h2 { font-size: 0.75rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .full { grid-column: span 2; }
-        
-        button {
-            padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px;
-            border: 2px solid #333; background: #111; color: white; text-transform: uppercase;
-        }
+        button { padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px; border: 2px solid #333; background: #111; color: white; text-transform: uppercase; }
         button:active { transform: scale(0.95); background: #222; }
-
         .player-btn { padding: 18px 5px; font-size: 14px; border-width: 3px; line-height: 1.2; }
         .active-l, .active-r { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
-
-        .ball-scroll-area {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 8px;
-            padding: 5px 0;
-            scrollbar-width: thin;
-        }
-
-        .ball-grid { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 12px; 
-            justify-items: center; 
-        }
-        
-        .ball-btn { 
-            width: 65px; height: 65px; 
-            min-width: 65px; min-height: 65px; 
-            border-radius: 50%; border: 2px solid #000; 
-            position: relative; overflow: hidden;
-            display: flex; justify-content: center; align-items: center; 
-        }
-        
-        .num-label { 
-            background: white; color: black; 
-            width: 24px; height: 24px; 
-            border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; 
-            font-size: 13px; font-weight: 900; 
-            border: 1px solid black;
-            position: relative; z-index: 10;
-            flex-shrink: 0;
-        }
-        
+        .ball-scroll-area { flex: 1; overflow-y: auto; margin-bottom: 8px; }
+        .ball-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; justify-items: center; }
+        .ball-btn { width: 65px; height: 65px; min-width: 65px; min-height: 65px; border-radius: 50%; border: 2px solid #000; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .num-label { background: white; color: black; width: 24px; height: 24px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 13px; font-weight: 900; border: 1px solid black; position: relative; z-index: 10; flex-shrink: 0; }
         .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
         .striped { background: black !important; }
         .stripe-band { position: absolute; width: 100%; height: 30px; top: 17.5px; z-index: 1; }
-        
         .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
         .f-3, .b11 { background-color: #cc0000; } .f-4, .b12 { background-color: #ff66aa; }
         .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
         .f-7, .b15 { background-color: #884422; } .f-8 { background-color: black; }
-
         .btn-ext { border-color: var(--ext); color: var(--ext); padding: 15px 5px; grid-column: span 2; }
         #toggleBtn.running { border-color: var(--red); color: var(--red); }
         #toggleBtn.paused { border-color: var(--green); color: var(--green); }
         .mini-btn { padding: 8px 2px; font-size: 10px; }
-
-        .settings { font-size: 10px; color: #444; text-align: center; margin-top: 5px; text-transform: uppercase; }
     </style>
 </head>
 <body>
-
 <div class="container">
     <div class="section pool-section">
         <h2>Pool Control</h2>
-        <div class="ball-scroll-area">
-            <div class="ball-grid" id="ball-grid"></div>
-        </div>
+        <div class="ball-scroll-area"><div class="ball-grid" id="ball-grid"></div></div>
         <div class="grid" style="gap: 5px;">
             <button class="mini-btn" onclick="reputtActiveBalls()">♻️ Re-Rack</button>
             <button class="mini-btn" onclick="resetPool(9)">9-Ball</button>
@@ -130,7 +52,6 @@
             <button class="mini-btn" onclick="resetPool(15)">8-Ball</button>
         </div>
     </div>
-
     <div class="section">
         <h2>Shotclock</h2>
         <div class="grid">
@@ -144,69 +65,55 @@
         </div>
     </div>
 </div>
-
 <script>
     const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     let lastResetTime = Date.now();
 
     function shotReset(player) {
         const now = Date.now();
         const timeSpent = (now - lastResetTime) / 1000;
         
-        // Lagrer statistikk med spiller-ID (brukes av stats.html)
-        if (timeSpent > 1.5) { 
-            db.ref('stats/history').push({
-                time: timeSpent,
-                player: player
-            }); 
-        }
+        // Prøv å lagre stats, men i en egen try-catch så det ikke stopper resten av koden
+        try {
+            if (timeSpent > 1.5 && timeSpent < 120) { 
+                db.ref('stats/history').push({ time: timeSpent, player: player }); 
+            }
+        } catch(e) { console.log("Stats error", e); }
 
         lastResetTime = now;
         db.ref('activePlayer').set(player);
         db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
     }
 
-    function sendClock(cmd) {
-        db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() });
-    }
+    function sendClock(cmd) { db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
 
     db.ref('activePlayer').on('value', snap => {
         const p = snap.val();
-        document.getElementById('btnL').classList.toggle('active-l', p === 'left');
-        document.getElementById('btnR').classList.toggle('active-r', p === 'right');
+        const bL = document.getElementById('btnL');
+        const bR = document.getElementById('btnR');
+        if(bL) bL.classList.toggle('active-l', p === 'left');
+        if(bR) bR.classList.toggle('active-r', p === 'right');
     });
 
     db.ref('shotclock/status').on('value', snap => {
         const status = snap.val();
         const btn = document.getElementById('toggleBtn');
-        btn.textContent = (status === 'running') ? "⏸ PAUSE" : "▶ START / RESUME";
-        btn.className = (status === 'running') ? "running" : "paused";
+        if(btn) {
+            btn.textContent = (status === 'running') ? "⏸ PAUSE" : "▶ START / RESUME";
+            btn.className = (status === 'running') ? "running" : "paused";
+        }
     });
 
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
         b.id = `btn-${i}`; b.className = 'ball-btn';
-        let cIdx = i > 8 ? i - 8 : i;
-        
-        let num = document.createElement('div');
-        num.className = 'num-label'; num.innerText = i;
-        b.appendChild(num);
-
-        if (i > 8) {
-            b.classList.add('striped');
-            let band = document.createElement('div');
-            band.className = `stripe-band f-${cIdx}`;
-            b.appendChild(band);
-        } else b.classList.add(`f-${cIdx}`);
-        
-        b.onclick = () => {
-            const ref = db.ref(`balls/${i}`);
-            ref.once('value').then(s => ref.set(s.val() === false));
-        };
+        let num = document.createElement('div'); num.className = 'num-label'; num.innerText = i; b.appendChild(num);
+        if (i > 8) { b.classList.add('striped'); let band = document.createElement('div'); band.className = `stripe-band f-${i-8}`; b.appendChild(band); } 
+        else b.classList.add(`f-${i}`);
+        b.onclick = () => { const ref = db.ref(`balls/${i}`); ref.once('value').then(s => ref.set(s.val() === false)); };
         grid.appendChild(b);
     }
 
@@ -215,27 +122,12 @@
         window.currentActiveData = data;
         for (let i = 1; i <= 15; i++) {
             const btn = document.getElementById(`btn-${i}`);
-            if (btn) {
-                btn.classList.toggle('sunk', data[i] === false);
-                btn.style.display = (data[i] === undefined) ? 'none' : 'flex';
-            }
+            if (btn) { btn.classList.toggle('sunk', data[i] === false); btn.style.display = (data[i] === undefined) ? 'none' : 'flex'; }
         }
     });
 
-    function resetPool(max) {
-        let updates = {};
-        for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null;
-        db.ref('balls').set(updates);
-    }
-
-    function reputtActiveBalls() {
-        if (!window.currentActiveData) return;
-        let updates = {};
-        for (let i = 1; i <= 15; i++) {
-            if (window.currentActiveData[i] !== undefined) updates[i] = true;
-        }
-        db.ref('balls').update(updates);
-    }
+    function resetPool(max) { let updates = {}; for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null; db.ref('balls').set(updates); }
+    function reputtActiveBalls() { if (!window.currentActiveData) return; let updates = {}; for (let i = 1; i <= 15; i++) { if (window.currentActiveData[i] !== undefined) updates[i] = true; } db.ref('balls').update(updates); }
 </script>
 </body>
 </html>
