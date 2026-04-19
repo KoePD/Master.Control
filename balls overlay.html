@@ -117,9 +117,24 @@
         const db = firebase.database();
 
         db.ref('balls').on('value', snap => {
-            const data = snap.val() || {};
-            const display = document.getElementById('display');
-            display.innerHTML = '';
+    const data = snap.val();
+    const display = document.getElementById('display');
+    
+    // Hvis det ikke er noen kuler i databasen (null), skjul hele bakgrunnen
+    if (!data || Object.keys(data).length === 0) {
+        display.style.display = 'none'; 
+        return;
+    } else {
+        display.style.display = 'flex'; // Vis den igjen når kuler legges ut
+    }
+
+    display.innerHTML = '';
+    // ... resten av loopen din som lager kulene ...
+    for (let i = 1; i <= 15; i++) {
+        if (data[i] === undefined) continue;
+        // (Legg til kule-logikken din her)
+    }
+});
 
             for (let i = 1; i <= 15; i++) {
                 if (data[i] === undefined) continue;
