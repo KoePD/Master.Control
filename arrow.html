@@ -23,7 +23,7 @@
             display: flex; 
             justify-content: center; 
             align-items: center;
-            gap: 60px; /* Juster denne for avstand til tallene */
+            gap: 60px; /* Avstand til tallene */
             pointer-events: none;
         }
         
@@ -31,8 +31,7 @@
             width: 0; 
             height: 0; 
             filter: drop-shadow(0 0 8px rgba(255,255,255,0.8));
-            opacity: 0;
-            /* VIKTIG: Ingen transition her betyr at den forsvinner instant */
+            opacity: 0; /* Skjult som standard */
             transition: none; 
         }
 
@@ -48,11 +47,10 @@
             border-left: 20px solid #FFFFFF;
         }
         
-        /* Transition her gjelder KUN når pilen blir aktiv (fades inn) */
+        /* Vises kun når klassen 'active' legges til via JS */
         .active { 
             opacity: 1 !important; 
             transition: opacity 0.2s ease-in-out !important;
-            /* Vi fjerner transform/glidning helt for en renere look */
         }
     </style>
 </head>
@@ -72,8 +70,14 @@
 
         db.ref('activePlayer').on('value', snap => {
             const pos = snap.val();
-            document.getElementById('arrowL').classList.toggle('active', pos === 'left');
-            document.getElementById('arrowR').classList.toggle('active', pos === 'right');
+            
+            const leftArrow = document.getElementById('arrowL');
+            const rightArrow = document.getElementById('arrowR');
+
+            // Sjekker om posisjonen er nøyaktig 'left' eller 'right'
+            // Hvis pos er null eller tom, vil ingen av disse være true, og pilene forblir skjulte
+            leftArrow.classList.toggle('active', pos === 'left');
+            rightArrow.classList.toggle('active', pos === 'right');
         });
     </script>
 </body>
