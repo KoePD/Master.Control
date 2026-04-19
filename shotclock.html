@@ -2,10 +2,13 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Shotclock Display Pro</title>
+    <title>KØ-PÅDD Shotclock Pro Display</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
+        /* Legg inn din digitale font her hvis du har en lokal fil eller Google Font */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
+
         body { 
             background: transparent; 
             margin: 0; 
@@ -14,7 +17,7 @@
             align-items: center; 
             height: 100vh; 
             overflow: hidden;
-            font-family: 'Arial Black', sans-serif;
+            font-family: 'Orbitron', sans-serif; /* Endre til din spesifikke font-familie */
         }
 
         #clock-container {
@@ -32,6 +35,18 @@
             color: white;
             z-index: 10;
             text-shadow: 4px 4px 20px rgba(0,0,0,0.8);
+        }
+
+        #ext-label {
+            position: absolute;
+            bottom: 15%;
+            font-size: 5vmin;
+            color: #00E5FF;
+            text-transform: uppercase;
+            font-weight: 900;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 11;
         }
 
         svg {
@@ -54,6 +69,8 @@
             transition: stroke 0.3s, stroke-dashoffset 0.1s linear;
         }
 
+        /* FARGE-MODUS */
+        .extension-active { stroke: #00E5FF !important; } /* Lyseblå */
         .warning { stroke: #ffcc00 !important; }
         .critical { stroke: #ff0000 !important; }
         .critical-text { color: #ff0000 !important; }
@@ -61,7 +78,10 @@
 </head>
 <body>
 
+    <audio id="warningSound" src="10sec_warning.mp3" preload="auto"></audio>
+
     <div id="clock-container">
+        <div id="ext-label">Extension</div>
         <svg viewBox="0 0 200 200">
             <circle class="bg-ring" cx="100" cy="100" r="90"></circle>
             <circle id="progress" class="progress-ring" cx="100" cy="100" r="90"></circle>
@@ -76,15 +96,19 @@
 
         const timerEl = document.getElementById('timer');
         const progressEl = document.getElementById('progress');
+        const extLabel = document.getElementById('ext-label');
+        const warningSound = document.getElementById('warningSound');
+        
         const radius = 90;
         const circumference = 2 * Math.PI * radius;
-        
         progressEl.style.strokeDasharray = circumference;
 
         let timeLeft = 30;
         let maxTime = 30;
         let isRunning = false;
+        let isExtension = false;
         let timerInterval = null;
+        let soundPlayed = false;
 
         function updateUI() {
             const displayTime = Math.ceil(timeLeft);
@@ -94,14 +118,24 @@
             const offset = circumference - (percent / 100) * circumference;
             progressEl.style.strokeDashoffset = offset;
 
-            // Farger
+            // Reset farger
             timerEl.classList.remove('critical-text');
-            progressEl.classList.remove('warning', 'critical');
+            progressEl.classList.remove('warning', 'critical', 'extension-active');
+            extLabel.style.opacity = isExtension ? "1" : "0";
+
+            // Farge-prioritet
             if (timeLeft <= 5.5) {
                 progressEl.classList.add('critical');
                 timerEl.classList.add('critical-text');
             } else if (timeLeft <= 10.5) {
                 progressEl.classList.add('warning');
+                // SPILL LYD ved 10 sekunder
+                if (!soundPlayed) {
+                    warningSound.play().catch(e => console.log("Lyd blokkert av nettleser"));
+                    soundPlayed = true;
+                }
+            } else if (isExtension) {
+                progressEl.classList.add('extension-active');
             }
         }
 
@@ -109,15 +143,10 @@
             if (timerInterval) clearInterval(timerInterval);
             isRunning = true;
             db.ref('shotclock/status').set('running');
-            
             timerInterval = setInterval(() => {
                 if (timeLeft > 0) {
                     timeLeft -= 0.1;
                     updateUI();
-                    // Synkroniser med Firebase hvert sekund (valgfritt, men bra for andre klienter)
-                    if (Math.abs(timeLeft % 1 === 0)) {
-                        db.ref('shotclock/currentTime').set(timeLeft);
-                    }
                 } else {
                     stopTimer();
                 }
@@ -130,22 +159,23 @@
             db.ref('shotclock/status').set('paused');
         }
 
-        // Lytt på kommandoer fra Master Control
         db.ref('shotclock/cmd').on('value', snap => {
             const cmd = snap.val();
             if (!cmd) return;
 
             switch(cmd.action) {
                 case 'reset30':
-                    timeLeft = 30; maxTime = 30;
+                    timeLeft = 30; maxTime = 30; isExtension = false; soundPlayed = false;
                     updateUI(); startTimer();
                     break;
                 case 'reset60':
-                    timeLeft = 60; maxTime = 60;
+                    timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
                     updateUI(); startTimer();
                     break;
                 case 'extension':
-                    timeLeft += 30; maxTime = Math.max(maxTime, timeLeft);
+                    timeLeft += 30; 
+                    maxTime = Math.max(maxTime, timeLeft);
+                    isExtension = true;
                     updateUI();
                     break;
                 case 'toggle':
@@ -158,7 +188,6 @@
                     timeLeft = Math.max(0, timeLeft - 1); updateUI();
                     break;
             }
-            // Slett kommandoen så den ikke kjører på nytt ved refresh
             db.ref('shotclock/cmd').set(null);
         });
 
