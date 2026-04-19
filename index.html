@@ -93,12 +93,18 @@
     let lastResetTime = Date.now();
 
     function startMatch() {
-        // Viser piler (klar for valg), resetter shotclock til 30 og legger ut 9 kuler
-        db.ref('activePlayer').set(""); 
-        db.ref('shotclock/cmd').set({ action: 'reset30' });
-        setTimeout(() => db.ref('shotclock/cmd').set({ action: 'toggle' }), 150);
-        resetPool(9);
-    }
+    // 1. Sett status til paused (dette gjør den synlig igjen i shotclock.html)
+    db.ref('shotclock/status').set('paused');
+    
+    // 2. Vis piler
+    db.ref('activePlayer').set(""); 
+    
+    // 3. Reset og klargjør klokka
+    db.ref('shotclock/cmd').set({ action: 'reset30' });
+    
+    // 4. Legg ut kulene
+    resetPool(9);
+}
 
     function avsluttMatch() {
         if(confirm("Vil du avslutte matchen og skjule alt fra streamen?")) {
