@@ -127,15 +127,16 @@
         let timerInterval = null;
         let soundPlayed = false;
 
-        // --- VIKTIG: DENNE FUNKSJONEN SKJULER ALT ---
-        db.ref('shotclock/status').on('value', snap => {
-            const status = snap.val();
-            if (status === 'hidden' || !status) {
-                document.body.style.opacity = '0';
-            } else {
-                document.body.style.opacity = '1';
-            }
-        });
+        // Denne lytteren styrer om hele klokka (inkl. ramme) er synlig eller ikke
+db.ref('shotclock/status').on('value', snap => {
+    const status = snap.val();
+    if (status === 'hidden' || status === null) {
+        document.body.style.opacity = '0'; // Gjør alt usynlig
+        document.body.style.transition = 'opacity 0.5s ease-in-out';
+    } else {
+        document.body.style.opacity = '1'; // Vis alt igjen (Start Match)
+    }
+});
 
         function updateUI() {
             const displayTime = Math.ceil(timeLeft);
