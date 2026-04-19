@@ -83,17 +83,16 @@
         #toggleBtn.paused { border-color: var(--green); color: var(--green); background: rgba(0, 255, 65, 0.05); }
         #toggleBtn.running { border-color: var(--red); color: var(--red); background: rgba(255, 0, 0, 0.1); }
 
-        /* OPPDATERT BALL GRID TIL 4 PER RAD */
         .ball-grid { 
             display: grid; 
-            grid-template-columns: repeat(3, 1fr); /* 4 kuler per rad */
-            gap: 15px; /* Litt mer luft mellom */
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 15px; 
             margin-bottom: 20px; 
             justify-items: center;
         }
 
         .ball-btn {
-            width: 70px; /* Økt fra 62px siden vi har bedre plass med 4 i bredden */
+            width: 70px; 
             height: 70px; 
             border-radius: 50%;
             border: 2px solid #000;
@@ -108,7 +107,7 @@
         .num-label {
             background: white;
             color: black;
-            width: 26px; /* Økt litt */
+            width: 26px; 
             height: 26px; 
             border-radius: 50%;
             display: flex;
@@ -141,6 +140,16 @@
         }
         .mode-row button { padding: 18px 2px; font-size: 13px; border-color: #333; }
 
+        /* Stil for Re-Rack knappen */
+        .rerack-btn {
+            margin-top: 20px;
+            border-color: #444;
+            color: #ddd;
+            font-size: 15px;
+            padding: 20px;
+            background: linear-gradient(180deg, #1a1a1a 0%, #111 100%);
+        }
+
         .settings-label {
             text-align: center;
             font-size: 13px;
@@ -164,11 +173,14 @@
         <div class="section">
             <h2>Pool Control</h2>
             <div class="ball-grid" id="ball-grid"></div>
+            
             <div class="mode-row">
                 <button onclick="resetPool(9)" style="border-color: #ffcc00; color: #ffcc00;">9-Ball</button>
                 <button onclick="resetPool(10)" style="border-color: #0055ff; color: #0055ff;">10-Ball</button>
                 <button onclick="resetPool(15)" style="border-color: #cc0000; color: #cc0000;">8-Ball</button>
             </div>
+
+            <button class="full rerack-btn" onclick="reputtActiveBalls()">♻️ RE-RACK (UNDO SUNK)</button>
         </div>
 
         <div class="section">
@@ -215,7 +227,6 @@
             const b = document.createElement('div');
             b.id = `btn-${i}`; b.className = 'ball-btn';
             let cIdx = i > 8 ? i - 8 : i;
-            
             if (i > 8) {
                 b.classList.add('striped');
                 let band = document.createElement('div');
@@ -224,12 +235,9 @@
             } else {
                 b.classList.add(`f-${cIdx}`);
             }
-
             let num = document.createElement('div');
-            num.className = 'num-label'; 
-            num.innerText = i;
+            num.className = 'num-label'; num.innerText = i;
             b.appendChild(num);
-            
             b.onclick = () => {
                 const ref = db.ref(`balls/${i}`);
                 ref.once('value').then(s => ref.set(s.val() === false));
@@ -239,6 +247,7 @@
 
         db.ref('balls').on('value', snap => {
             const data = snap.val() || {};
+            window.currentActiveData = data;
             for (let i = 1; i <= 15; i++) {
                 const btn = document.getElementById(`btn-${i}`);
                 if (btn) {
@@ -254,6 +263,17 @@
                 updates[i] = (i <= max) ? true : null;
             }
             db.ref('balls').set(updates);
+        }
+
+        function reputtActiveBalls() {
+            if (!window.currentActiveData) return;
+            let updates = {};
+            for (let i = 1; i <= 15; i++) {
+                if (window.currentActiveData[i] !== undefined) {
+                    updates[i] = true;
+                }
+            }
+            db.ref('balls').update(updates);
         }
     </script>
 </body>
