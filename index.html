@@ -3,271 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KØ-PÅDD Master Control No-Scroll</title>
-    
+    <title>KØ-PÅDD Master Control Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
     <style>
         :root {
-            --bg: #000000;
-            --card: #0a0a0a;
-            --border: #1a1a1a;
-            --accent: #ffcc00;
-            --green: #00FF41;
-            --blue: #0055ff;
-            --red: #FF0000;
-            --ext: #00E5FF;
+            --bg: #000; --card: #0a0a0a; --border: #1a1a1a;
+            --accent: #ffcc00; --green: #00FF41; --blue: #0055ff;
+            --red: #FF0000; --ext: #00E5FF;
         }
-
-        /* VIKTIG: Låser body til skjermhøyden for å hindre scroll */
-        html, body { 
-            height: 100%; 
-            overflow: hidden; 
-        }
-
+        html, body { height: 100%; overflow: hidden; margin: 0; }
         body { 
-            background: var(--bg); 
-            color: white; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            margin: 0; 
-            padding: 8px; /* Litt mindre padding */
-            display: flex;
-            flex-direction: column;
-            user-select: none;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+            background: var(--bg); color: white; font-family: sans-serif;
+            padding: 8px; display: flex; flex-direction: column; box-sizing: border-box;
         }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            gap: 8px; /* Tett mellom seksjonene */
-            max-width: 500px;
-            margin: 0 auto;
-            width: 100%;
+        .container { display: flex; flex-direction: column; height: 100%; gap: 6px; max-width: 500px; margin: 0 auto; width: 100%; }
+        .section { 
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 10px; display: flex; flex-direction: column; justify-content: center; flex: 1; min-height: 0;
         }
-
-        .section {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 15px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            flex: 1; /* Lar seksjonene dele på plassen */
-            min-height: 0; /* Hindrer seksjoner fra å dytte hverandre ut */
-        }
-
-        h2 { 
-            font-size: 0.8rem;
-            color: var(--accent); 
-            text-align: center; 
-            margin: 0 0 8px 0; 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-        }
-
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        h2 { font-size: 0.75rem; color: var(--accent); text-align: center; margin: 0 0 6px 0; text-transform: uppercase; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .full { grid-column: span 2; }
         
         button {
-            padding: 12px 2px; /* Litt mer kompakte knapper i høyden */
-            font-size: 14px;
-            font-weight: 800;
-            border-radius: 10px;
-            border: 2px solid #222;
-            background: #111;
-            color: white;
-            text-transform: uppercase;
-            cursor: pointer;
+            padding: 12px 2px; font-size: 14px; font-weight: 800; border-radius: 8px;
+            border: 2px solid #222; background: #111; color: white; text-transform: uppercase;
         }
-
-        /* Shotclock knapper trenger litt mer størrelse */
-        .shot-btn { padding: 18px 2px; }
-
         button:active { transform: scale(0.96); background: #222; }
 
-        .btn-30 { border-color: var(--green); color: var(--green); }
-        .btn-60 { border-color: var(--blue); color: var(--blue); }
-        .btn-ext { border-color: var(--ext); color: var(--ext); }
-        #toggleBtn.paused { border-color: var(--green); color: var(--green); background: rgba(0, 255, 65, 0.05); }
-        #toggleBtn.running { border-color: var(--red); color: var(--red); background: rgba(255, 0, 0, 0.1); }
+        /* Spiller spesifikk styling */
+        .player-btn { padding: 20px 2px; border-width: 3px; font-size: 16px; }
+        .active-l { border-color: var(--green) !important; background: rgba(0, 255, 65, 0.1) !important; color: var(--green) !important; }
+        .active-r { border-color: var(--green) !important; background: rgba(0, 255, 65, 0.1) !important; color: var(--green) !important; }
 
-        /* Ball grid med 3 i bredden - skalering */
-        .ball-grid { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 8px; 
-            overflow-y: auto; /* Just in case */
-            justify-items: center;
+        /* Ball grid styling */
+        .ball-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; justify-items: center; }
+        .ball-btn { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #000; position: relative; overflow: hidden; }
+        .num-label { 
+            background: white; color: black; width: 18px; height: 18px; border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: 900;
+            position: absolute; z-index: 5; border: 1px solid black;
         }
-
-        .ball-btn {
-            width: 65px; /* Justert ned litt fra 70 for å sikre plass */
-            height: 65px; 
-            border-radius: 50%;
-            border: 2px solid #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .num-label {
-            background: white; color: black;
-            width: 22px; height: 22px;
-            border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 13px; font-weight: 900;
-            z-index: 5; border: 1px solid black;
-        }
-
         .sunk { opacity: 0.1; filter: grayscale(1); }
         .striped { background: black !important; }
-        .stripe-band { position: absolute; width: 100%; height: 32px; top: 16.5px; z-index: 1; }
+        .stripe-band { position: absolute; width: 100%; height: 28px; top: 13.5px; z-index: 1; }
+        .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
+        .f-3, .b11 { background-color: #cc0000; } .f-4, .b12 { background-color: #ff66aa; }
+        .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
+        .f-7, .b15 { background-color: #884422; } .f-8 { background-color: black; }
 
-        /* Farger */
-        .f-1, .b9 { background-color: #ffcc00; } 
-        .f-2, .b10 { background-color: #0055aa; }
-        .f-3, .b11 { background-color: #cc0000; } 
-        .f-4, .b12 { background-color: #ff66aa; }
-        .f-5, .b13 { background-color: #663399; } 
-        .f-6, .b14 { background-color: #007744; }
-        .f-7, .b15 { background-color: #884422; } 
-        .f-8 { background-color: black; }
+        /* Shotclock knapper */
+        .btn-ext { border-color: var(--ext); color: var(--ext); }
+        #toggleBtn.running { border-color: var(--red); color: var(--red); }
+        #toggleBtn.paused { border-color: var(--green); color: var(--green); }
 
-        .mode-row { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 6px; 
-            margin-top: 8px; 
-        }
-        .mode-row button { padding: 10px 2px; font-size: 11px; }
-
-        .rerack-btn {
-            margin-top: 8px;
-            font-size: 12px;
-            padding: 10px;
-            background: #1a1a1a;
-            border-color: #333;
-        }
-
-        .settings-label {
-            font-size: 11px;
-            color: #444;
-            margin-top: 5px;
-            display: flex;
-            justify-content: center;
-            gap: 5px;
-        }
-        
-        input[type="checkbox"] { transform: scale(1.1); }
+        .mini-btn { padding: 8px 2px; font-size: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="section">
-            <h2>Pool Control</h2>
-            <div class="ball-grid" id="ball-grid"></div>
-            
-            <button class="rerack-btn" onclick="reputtActiveBalls()">♻️ RE-RACK</button>
-
-            <div class="mode-row">
-                <button onclick="resetPool(9)" style="border-color: #ffcc00; color: #ffcc00;">9-Ball</button>
-                <button onclick="resetPool(10)" style="border-color: #0055ff; color: #0055ff;">10-Ball</button>
-                <button onclick="resetPool(15)" style="border-color: #cc0000; color: #cc0000;">8-Ball</button>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>Shotclock</h2>
-            <div class="btn-grid">
-                <button class="shot-btn btn-30" onclick="sendClock('reset30')">🔄 30s</button>
-                <button class="shot-btn btn-60" onclick="sendClock('reset60')">⚡ 60s</button>
-                <button id="toggleBtn" class="shot-btn full paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
-                <button class="shot-btn full btn-ext" onclick="sendClock('extension')">+ BRUK EXTENSION</button>
-                <button class="shot-btn" onclick="sendClock('minus')">-1s</button>
-                <button class="shot-btn" onclick="sendClock('plus')">+1s</button>
-            </div>
-            <div class="settings-label">
-                <input type="checkbox" id="autoStart" checked> Auto-start
-            </div>
+<div class="container">
+    <div class="section" style="flex: 1.5;">
+        <h2>Pool Control</h2>
+        <div class="ball-grid" id="ball-grid"></div>
+        <div class="grid" style="margin-top: 6px; gap: 4px;">
+            <button class="mini-btn" onclick="reputtActiveBalls()">♻️ Re-Rack</button>
+            <button class="mini-btn" onclick="resetPool(9)">9-Ball</button>
+            <button class="mini-btn" onclick="resetPool(10)">10-Ball</button>
+            <button class="mini-btn" onclick="resetPool(15)">8-Ball</button>
         </div>
     </div>
 
-    <script>
-        const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+    <div class="section" style="flex: 1.2;">
+        <h2>Neste Støt</h2>
+        <div class="grid">
+            <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ SPILLER 1<br><small>RESET 30s</small></button>
+            <button id="btnR" class="player-btn" onclick="shotReset('right')">SPILLER 2 ▶<br><small>RESET 30s</small></button>
+            <button class="full btn-ext" onclick="sendClock('extension')">+ BRUK EXTENSION</button>
+        </div>
+    </div>
 
-        function sendClock(cmd) {
-            db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() });
-        }
+    <div class="section" style="flex: 0.8;">
+        <h2>Shotclock Manuell</h2>
+        <div class="grid">
+            <button id="toggleBtn" class="paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
+            <button onclick="sendClock('reset60')">⚡ 60s BREAK</button>
+            <button class="mini-btn" onclick="sendClock('minus')">-1s</button>
+            <button class="mini-btn" onclick="sendClock('plus')">+1s</button>
+        </div>
+    </div>
+</div>
 
-        db.ref('shotclock/status').on('value', snap => {
-            const status = snap.val();
-            const btn = document.getElementById('toggleBtn');
-            if (status === 'running') {
-                btn.textContent = "⏸ PAUSE";
-                btn.className = "shot-btn full running";
-            } else {
-                btn.textContent = "▶ START / RESUME";
-                btn.className = "shot-btn full paused";
-            }
-        });
+<script>
+    const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        const grid = document.getElementById('ball-grid');
+    // Integrert Reset Funksjon
+    function shotReset(player) {
+        db.ref('activePlayer').set(player);
+        db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
+    }
+
+    function sendClock(cmd) {
+        db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() });
+    }
+
+    // Oppdater spiller-knapper
+    db.ref('activePlayer').on('value', snap => {
+        const p = snap.val();
+        document.getElementById('btnL').className = 'player-btn' + (p === 'left' ? ' active-l' : '');
+        document.getElementById('btnR').className = 'player-btn' + (p === 'right' ? ' active-r' : '');
+    });
+
+    // Shotclock status
+    db.ref('shotclock/status').on('value', snap => {
+        const status = snap.val();
+        const btn = document.getElementById('toggleBtn');
+        btn.textContent = (status === 'running') ? "⏸ PAUSE" : "▶ START / RESUME";
+        btn.className = (status === 'running') ? "running" : "paused";
+    });
+
+    // Ball Generering
+    const grid = document.getElementById('ball-grid');
+    for (let i = 1; i <= 15; i++) {
+        const b = document.createElement('div');
+        b.id = `btn-${i}`; b.className = 'ball-btn';
+        let cIdx = i > 8 ? i - 8 : i;
+        if (i > 8) {
+            b.classList.add('striped');
+            let band = document.createElement('div');
+            band.className = `stripe-band f-${cIdx}`;
+            b.appendChild(band);
+        } else b.classList.add(`f-${cIdx}`);
+        let num = document.createElement('div');
+        num.className = 'num-label'; num.innerText = i;
+        b.appendChild(num);
+        b.onclick = () => {
+            const ref = db.ref(`balls/${i}`);
+            ref.once('value').then(s => ref.set(s.val() === false));
+        };
+        grid.appendChild(b);
+    }
+
+    db.ref('balls').on('value', snap => {
+        const data = snap.val() || {};
+        window.currentActiveData = data;
         for (let i = 1; i <= 15; i++) {
-            const b = document.createElement('div');
-            b.id = `btn-${i}`; b.className = 'ball-btn';
-            let cIdx = i > 8 ? i - 8 : i;
-            if (i > 8) {
-                b.classList.add('striped');
-                let band = document.createElement('div');
-                band.className = `stripe-band f-${cIdx}`;
-                b.appendChild(band);
-            } else b.classList.add(`f-${cIdx}`);
-            let num = document.createElement('div');
-            num.className = 'num-label'; num.innerText = i;
-            b.appendChild(num);
-            b.onclick = () => {
-                const ref = db.ref(`balls/${i}`);
-                ref.once('value').then(s => ref.set(s.val() === false));
-            };
-            grid.appendChild(b);
-        }
-
-        db.ref('balls').on('value', snap => {
-            const data = snap.val() || {};
-            window.currentActiveData = data;
-            for (let i = 1; i <= 15; i++) {
-                const btn = document.getElementById(`btn-${i}`);
-                if (btn) {
-                    btn.classList.toggle('sunk', data[i] === false);
-                    btn.style.display = (data[i] === undefined) ? 'none' : 'flex';
-                }
+            const btn = document.getElementById(`btn-${i}`);
+            if (btn) {
+                btn.classList.toggle('sunk', data[i] === false);
+                btn.style.display = (data[i] === undefined) ? 'none' : 'flex';
             }
-        });
-
-        function resetPool(max) {
-            let updates = {};
-            for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null;
-            db.ref('balls').set(updates);
         }
+    });
 
-        function reputtActiveBalls() {
-            if (!window.currentActiveData) return;
-            let updates = {};
-            for (let i = 1; i <= 15; i++) {
-                if (window.currentActiveData[i] !== undefined) updates[i] = true;
-            }
-            db.ref('balls').update(updates);
+    function resetPool(max) {
+        let updates = {};
+        for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null;
+        db.ref('balls').set(updates);
+    }
+
+    function reputtActiveBalls() {
+        if (!window.currentActiveData) return;
+        let updates = {};
+        for (let i = 1; i <= 15; i++) {
+            if (window.currentActiveData[i] !== undefined) updates[i] = true;
         }
-    </script>
+        db.ref('balls').update(updates);
+    }
+</script>
 </body>
 </html>
