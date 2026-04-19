@@ -106,130 +106,127 @@
         <div id="timer">30</div>
     </div>
 
-    <script>
-        const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+    const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        const timerEl = document.getElementById('timer');
-        const progressEl = document.getElementById('progress');
-        const extLabel = document.getElementById('ext-label');
-        const warningSound = document.getElementById('warningSound');
+    const timerEl = document.getElementById('timer');
+    const progressEl = document.getElementById('progress');
+    const extLabel = document.getElementById('ext-label');
+    const warningSound = document.getElementById('warningSound');
+    
+    const radius = 90;
+    const circumference = 2 * Math.PI * radius;
+    progressEl.style.strokeDasharray = circumference;
+
+    let timeLeft = 30;
+    let maxTime = 30;
+    let isRunning = false;
+    let isExtension = false;
+    let timerInterval = null;
+    let soundPlayed = false;
+
+    // 1. VIKTIG: Denne lytteren styrer synlighet (Metal-rammen)
+    db.ref('shotclock/status').on('value', snap => {
+        const status = snap.val();
+        if (status === 'hidden' || !status) {
+            document.body.style.opacity = '0';
+        } else {
+            document.body.style.opacity = '1';
+        }
+    });
+
+    function updateUI() {
+        const displayTime = Math.ceil(timeLeft);
+        timerEl.innerText = displayTime;
         
-        const radius = 90;
-        const circumference = 2 * Math.PI * radius;
-        progressEl.style.strokeDasharray = circumference;
+        const percent = (timeLeft / maxTime) * 100;
+        const offset = circumference - (percent / 100) * circumference;
+        progressEl.style.strokeDashoffset = offset;
 
-        let timeLeft = 30;
-        let maxTime = 30;
-        let isRunning = false;
-        let isExtension = false;
-        let timerInterval = null;
-        let soundPlayed = false;
+        timerEl.classList.remove('critical-text');
+        progressEl.classList.remove('warning', 'critical', 'extension-active');
+        extLabel.style.opacity = isExtension ? "1" : "0";
 
-        // Denne lytteren styrer om hele klokka (inkl. ramme) er synlig eller ikke
-db.ref('shotclock/status').on('value', snap => {
-    const status = snap.val();
-    if (status === 'hidden' || status === null) {
-        document.body.style.opacity = '0'; // Gjør alt usynlig
-        document.body.style.transition = 'opacity 0.5s ease-in-out';
-    } else {
-        document.body.style.opacity = '1'; // Vis alt igjen (Start Match)
+        if (timeLeft <= 5.5) {
+            progressEl.classList.add('critical');
+            timerEl.classList.add('critical-text');
+        } else if (timeLeft <= 9.9) {
+            progressEl.classList.add('warning');
+            if (!soundPlayed && isRunning) {
+                warningSound.play().catch(() => {});
+                soundPlayed = true;
+            }
+        } else if (isExtension) {
+            progressEl.classList.add('extension-active');
+        }
     }
-});
 
-        function updateUI() {
-            const displayTime = Math.ceil(timeLeft);
-            timerEl.innerText = displayTime;
-            
-            const percent = (timeLeft / maxTime) * 100;
-            const offset = circumference - (percent / 100) * circumference;
-            progressEl.style.strokeDashoffset = offset;
-
-            timerEl.classList.remove('critical-text');
-            progressEl.classList.remove('warning', 'critical', 'extension-active');
-            extLabel.style.opacity = isExtension ? "1" : "0";
-
-            if (timeLeft <= 5.5) {
-                progressEl.classList.add('critical');
-                timerEl.classList.add('critical-text');
-            } else if (timeLeft <= 9.9) {
-                progressEl.classList.add('warning');
-                if (!soundPlayed) {
-                    warningSound.play().catch(() => {});
-                    soundPlayed = true;
-                }
-            } else if (isExtension) {
-                progressEl.classList.add('extension-active');
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        isRunning = true;
+        db.ref('shotclock/status').set('running');
+        timerInterval = setInterval(() => {
+            if (timeLeft > 0) {
+                timeLeft -= 0.1;
+                updateUI();
+            } else {
+                stopTimer();
+                timeLeft = 0;
+                updateUI();
             }
-        }
+        }, 100);
+    }
 
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            isRunning = true;
-            db.ref('shotclock/status').set('running');
-            timerInterval = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft -= 0.1;
-                    updateUI();
-                } else {
-                    stopTimer();
-                    timerEl.innerText = "0";
-                }
-            }, 100);
-        }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-            isRunning = false;
-            // Vi sjekker om vi skal sette status til paused eller beholde hidden
-            db.ref('shotclock/status').once('value').then(snap => {
-                if(snap.val() !== 'hidden') db.ref('shotclock/status').set('paused');
-            });
-        }
-
-        db.ref('shotclock/cmd').on('value', snap => {
-            const cmd = snap.val();
-            if (!cmd) return;
-
-            switch(cmd.action) {
-                case 'reset30':
-    db.ref('shotclock/status').set('running'); // Sett status til running med en gang
-    timeLeft = 30; 
-    maxTime = 30; 
-    isExtension = false; 
-    soundPlayed = false;
-    updateUI(); 
-    startTimer(); // Denne linjen MÅ være her for at den skal starte ved spillervalg
-    break;
-                case 'reset60':
-                    timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
-                    updateUI(); startTimer();
-                    break;
-                case 'extension':
-                    timeLeft += 30; maxTime = Math.max(maxTime, timeLeft); isExtension = true;
-                    updateUI();
-                    break;
-                case 'toggle':
-                    if (isRunning) stopTimer(); else startTimer();
-                    break;
-                case 'stop':
-                    stopTimer();
-                    timeLeft = 0;
-                    updateUI();
-                    break;
-            }
-            db.ref('shotclock/cmd').set(null);
+    function stopTimer() {
+        clearInterval(timerInterval);
+        isRunning = false;
+        // Kun sett status til paused hvis vi ikke er i 'hidden' modus
+        db.ref('shotclock/status').once('value', snap => {
+            if(snap.val() !== 'hidden') db.ref('shotclock/status').set('paused');
         });
+    }
 
-        window.addEventListener('click', () => {
-            warningSound.play().then(() => {
-                warningSound.pause();
-                warningSound.currentTime = 0;
-            }).catch(() => {});
-        }, { once: true });
+    db.ref('shotclock/cmd').on('value', snap => {
+        const cmd = snap.val();
+        if (!cmd) return;
 
-        updateUI();
-    </script>
+        switch(cmd.action) {
+            case 'reset30':
+                timeLeft = 30; 
+                maxTime = 30; 
+                isExtension = false; 
+                soundPlayed = false;
+                updateUI(); 
+                startTimer(); // Denne sørger for at den starter ved spillervalg
+                break;
+            case 'reset60':
+                timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
+                updateUI(); startTimer();
+                break;
+            case 'extension':
+                timeLeft += 30; maxTime = Math.max(maxTime, timeLeft); isExtension = true;
+                updateUI();
+                break;
+            case 'toggle':
+                if (isRunning) stopTimer(); else startTimer();
+                break;
+            case 'stop':
+                stopTimer();
+                timeLeft = 0;
+                updateUI();
+                break;
+        }
+        db.ref('shotclock/cmd').set(null);
+    });
+
+    window.addEventListener('click', () => {
+        warningSound.play().then(() => {
+            warningSound.pause();
+            warningSound.currentTime = 0;
+        }).catch(() => {});
+    }, { once: true });
+
+    updateUI();
 </body>
 </html>
