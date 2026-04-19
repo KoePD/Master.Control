@@ -45,7 +45,6 @@
             flex-direction: column;
         }
 
-        /* ØKT PRIORITET: Gir mer plass til kule-seksjonen */
         .pool-section {
             flex: 2.2; 
             min-height: 0;
@@ -65,13 +64,11 @@
         .player-btn { padding: 18px 5px; font-size: 14px; border-width: 3px; line-height: 1.2; }
         .active-l, .active-r { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
 
-        /* SCROLLBART OMRÅDE */
         .ball-scroll-area {
             flex: 1;
             overflow-y: auto;
             margin-bottom: 8px;
             padding: 5px 0;
-            /* Gjør scrollbar mindre sjenerende på mobil */
             scrollbar-width: thin;
         }
 
@@ -110,7 +107,7 @@
         .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
         .f-7, .b15 { background-color: #884422; } .f-8 { background-color: black; }
 
-        .btn-ext { border-color: var(--ext); color: var(--ext); padding: 15px 5px; }
+        .btn-ext { border-color: var(--ext); color: var(--ext); padding: 15px 5px; grid-column: span 2; }
         #toggleBtn.running { border-color: var(--red); color: var(--red); }
         #toggleBtn.paused { border-color: var(--green); color: var(--green); }
         .mini-btn { padding: 8px 2px; font-size: 10px; }
@@ -139,14 +136,11 @@
         <div class="grid">
             <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ SPILLER 1<br><small>30s</small></button>
             <button id="btnR" class="player-btn" onclick="shotReset('right')">SPILLER 2 ▶<br><small>30s</small></button>
-            <button class="full btn-ext" onclick="sendClock('extension')">+ BRUK EXTENSION</button>
+            <button class="btn-ext" onclick="sendClock('extension')">+ BRUK EXTENSION</button>
             <button id="toggleBtn" class="paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
             <button onclick="sendClock('reset60')">⚡ 60s BREAK</button>
             <button class="mini-btn" onclick="sendClock('minus')">-1s</button>
             <button class="mini-btn" onclick="sendClock('plus')">+1s</button>
-        </div>
-        <div class="settings">
-            <input type="checkbox" id="autoStart" checked> Auto-start
         </div>
     </div>
 </div>
@@ -156,9 +150,23 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    let lastResetTime = Date.now();
+
     function shotReset(player) {
+        const now = Date.now();
+        const timeSpent = (now - lastResetTime) / 1000;
+        
+        // Lagrer statistikk med spiller-ID (brukes av stats.html)
+        if (timeSpent > 1.5) { 
+            db.ref('stats/history').push({
+                time: timeSpent,
+                player: player
+            }); 
+        }
+
+        lastResetTime = now;
         db.ref('activePlayer').set(player);
-        db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
+        db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
     }
 
     function sendClock(cmd) {
@@ -183,15 +191,18 @@
         const b = document.createElement('div');
         b.id = `btn-${i}`; b.className = 'ball-btn';
         let cIdx = i > 8 ? i - 8 : i;
+        
         let num = document.createElement('div');
         num.className = 'num-label'; num.innerText = i;
         b.appendChild(num);
+
         if (i > 8) {
             b.classList.add('striped');
             let band = document.createElement('div');
             band.className = `stripe-band f-${cIdx}`;
             b.appendChild(band);
         } else b.classList.add(`f-${cIdx}`);
+        
         b.onclick = () => {
             const ref = db.ref(`balls/${i}`);
             ref.once('value').then(s => ref.set(s.val() === false));
