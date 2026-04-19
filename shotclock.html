@@ -108,134 +108,143 @@
     </div>
 
     <script>
+    // 1. Definer Firebase KONFIGURASJON FØRST
+    const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        // Lytt på status for å skjule/vise hele klokka
-        db.ref('shotclock/status').on('value', snap => {
+    // 2. Definer elementer
+    const timerEl = document.getElementById('timer');
+    const progressEl = document.getElementById('progress');
+    const extLabel = document.getElementById('ext-label');
+    const warningSound = document.getElementById('warningSound');
+    
+    const radius = 90;
+    const circumference = 2 * Math.PI * radius;
+    progressEl.style.strokeDasharray = circumference;
+
+    let timeLeft = 30;
+    let maxTime = 30;
+    let isRunning = false;
+    let isExtension = false;
+    let timerInterval = null;
+    let soundPlayed = false;
+
+    // 3. Lytt på status (Nå som 'db' eksisterer)
+    db.ref('shotclock/status').on('value', snap => {
         const status = snap.val();
         if (status === 'hidden') {
-        document.body.style.opacity = '0';
-        document.body.style.transition = 'opacity 0.5s'; // Fin fade-out
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.5s';
         } else {
-        document.body.style.opacity = '1';
-      }
-});
+            document.body.style.opacity = '1';
+        }
+    });
+
+    function updateUI() {
+        const displayTime = Math.ceil(timeLeft);
+        timerEl.innerText = displayTime;
         
-        const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        const percent = (timeLeft / maxTime) * 100;
+        const offset = circumference - (percent / 100) * circumference;
+        progressEl.style.strokeDashoffset = offset;
 
-        const timerEl = document.getElementById('timer');
-        const progressEl = document.getElementById('progress');
-        const extLabel = document.getElementById('ext-label');
-        const warningSound = document.getElementById('warningSound');
-        
-        const radius = 90;
-        const circumference = 2 * Math.PI * radius;
-        progressEl.style.strokeDasharray = circumference;
+        timerEl.classList.remove('critical-text');
+        progressEl.classList.remove('warning', 'critical', 'extension-active');
+        extLabel.style.opacity = isExtension ? "1" : "0";
 
-        let timeLeft = 30;
-        let maxTime = 30;
-        let isRunning = false;
-        let isExtension = false;
-        let timerInterval = null;
-        let soundPlayed = false;
-
-        function updateUI() {
-            const displayTime = Math.ceil(timeLeft);
-            timerEl.innerText = displayTime;
-            
-            const percent = (timeLeft / maxTime) * 100;
-            const offset = circumference - (percent / 100) * circumference;
-            progressEl.style.strokeDashoffset = offset;
-
-            timerEl.classList.remove('critical-text');
-            progressEl.classList.remove('warning', 'critical', 'extension-active');
-            extLabel.style.opacity = isExtension ? "1" : "0";
-
-            if (timeLeft <= 5.5) {
-                progressEl.classList.add('critical');
-                timerEl.classList.add('critical-text');
-            } else if (timeLeft <= 10) {
-                progressEl.classList.add('warning');
-                // SPILL LYD
-                if (!soundPlayed) {
-                    warningSound.play().catch(e => console.log("Lyd krever et klikk på siden først."));
-                    soundPlayed = true;
-                }
-            } else if (isExtension) {
-                progressEl.classList.add('extension-active');
+        if (timeLeft <= 5.5) {
+            progressEl.classList.add('critical');
+            timerEl.classList.add('critical-text');
+        } else if (timeLeft <= 10) {
+            progressEl.classList.add('warning');
+            if (!soundPlayed) {
+                warningSound.play().catch(e => console.log("Lyd krever klikk"));
+                soundPlayed = true;
             }
+        } else if (isExtension) {
+            progressEl.classList.add('extension-active');
         }
+    }
 
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            isRunning = true;
-            db.ref('shotclock/status').set('running');
-            timerInterval = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft -= 0.1;
-                    updateUI();
-                } else {
-                    stopTimer();
-                    timerEl.innerText = "0";
-                    setProgress(0);
-                }
-            }, 100);
-        }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-            isRunning = false;
-            db.ref('shotclock/status').set('paused');
-        }
-
-        function setProgress(percent) {
-            const offset = circumference - (percent / 100) * circumference;
-            progressEl.style.strokeDashoffset = offset;
-        }
-
-        db.ref('shotclock/cmd').on('value', snap => {
-            const cmd = snap.val();
-            if (!cmd) return;
-
-            switch(cmd.action) {
-                case 'reset30':
-                db.ref('shotclock/status').set('paused'); // Sørger for at den blir synlig igjen timeLeft = 30; maxTime = 30; isExtension = false; soundPlayed = false;
-                    updateUI(); startTimer();
-                    break;
-                case 'reset60':
-                    timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
-                    updateUI(); startTimer();
-                    break;
-                case 'extension':
-                    timeLeft += 30; 
-                    maxTime = Math.max(maxTime, timeLeft);
-                    isExtension = true;
-                    updateUI();
-                    break;
-                case 'toggle':
-                    if (isRunning) stopTimer(); else startTimer();
-                    break;
-                case 'plus':
-                    timeLeft += 1; updateUI();
-                    break;
-                case 'minus':
-                    timeLeft = Math.max(0, timeLeft - 1); updateUI();
-                    break;
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        isRunning = true;
+        db.ref('shotclock/status').set('running');
+        timerInterval = setInterval(() => {
+            if (timeLeft > 0) {
+                timeLeft -= 0.1;
+                updateUI();
+            } else {
+                stopTimer();
+                timerEl.innerText = "0";
+                setProgress(0);
             }
-            db.ref('shotclock/cmd').set(null);
-        });
+        }, 100);
+    }
 
-        // Viktig: Nettlesere blokkerer lyd hvis man ikke har interaktert med siden.
-        // Klikk én gang på nettbrettet etter at siden er lastet.
-        window.addEventListener('click', () => {
-            warningSound.play().then(() => {
-                warningSound.pause();
-                warningSound.currentTime = 0;
-            }).catch(e => {});
-        }, { once: true });
+    function stopTimer() {
+        clearInterval(timerInterval);
+        isRunning = false;
+        db.ref('shotclock/status').set('paused');
+    }
 
-        updateUI();
-    </script>
+    function setProgress(percent) {
+        const offset = circumference - (percent / 100) * circumference;
+        progressEl.style.strokeDashoffset = offset;
+    }
+
+    db.ref('shotclock/cmd').on('value', snap => {
+        const cmd = snap.val();
+        if (!cmd) return;
+
+        switch(cmd.action) {
+            case 'reset30':
+                // FIKSET: Fjernet kommentar-krøll her
+                db.ref('shotclock/status').set('paused'); 
+                timeLeft = 30; 
+                maxTime = 30; 
+                isExtension = false; 
+                soundPlayed = false;
+                updateUI(); 
+                startTimer();
+                break;
+            case 'reset60':
+                timeLeft = 60; maxTime = 60; isExtension = false; soundPlayed = false;
+                updateUI(); startTimer();
+                break;
+            case 'extension':
+                timeLeft += 30; 
+                maxTime = Math.max(maxTime, timeLeft);
+                isExtension = true;
+                updateUI();
+                break;
+            case 'toggle':
+                if (isRunning) stopTimer(); else startTimer();
+                break;
+            case 'plus':
+                timeLeft += 1; updateUI();
+                break;
+            case 'minus':
+                timeLeft = Math.max(0, timeLeft - 1); updateUI();
+                break;
+            case 'stop': // Lagt til for 'Avslutt Match'
+                stopTimer();
+                timeLeft = 0;
+                updateUI();
+                break;
+        }
+        db.ref('shotclock/cmd').set(null);
+    });
+
+    window.addEventListener('click', () => {
+        warningSound.play().then(() => {
+            warningSound.pause();
+            warningSound.currentTime = 0;
+        }).catch(e => {});
+    }, { once: true });
+
+    updateUI();
+</script>
 </body>
 </html>
