@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KØ-PÅDD Master Control</title>
+    <title>KØ-PÅDD Master Control No-Scroll</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -20,65 +20,75 @@
             --ext: #00E5FF;
         }
 
+        /* VIKTIG: Låser body til skjermhøyden for å hindre scroll */
+        html, body { 
+            height: 100%; 
+            overflow: hidden; 
+        }
+
         body { 
             background: var(--bg); 
             color: white; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             margin: 0; 
-            padding: 12px;
+            padding: 8px; /* Litt mindre padding */
             display: flex;
             flex-direction: column;
-            align-items: center;
             user-select: none;
+            box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
 
-        h1 { font-size: 1.2rem; letter-spacing: 5px; color: #222; margin: 15px 0; text-transform: uppercase; }
-
         .container {
-            width: 100%;
-            max-width: 480px;
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            height: 100%;
+            gap: 8px; /* Tett mellom seksjonene */
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         .section {
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 22px;
-            padding: 20px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.7);
+            border-radius: 15px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            flex: 1; /* Lar seksjonene dele på plassen */
+            min-height: 0; /* Hindrer seksjoner fra å dytte hverandre ut */
         }
 
         h2 { 
-            font-size: 1rem;
+            font-size: 0.8rem;
             color: var(--accent); 
             text-align: center; 
-            margin: 0 0 18px 0; 
+            margin: 0 0 8px 0; 
             text-transform: uppercase; 
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .full { grid-column: span 2; }
         
         button {
-            padding: 22px 5px;
-            font-size: 16px;
+            padding: 12px 2px; /* Litt mer kompakte knapper i høyden */
+            font-size: 14px;
             font-weight: 800;
-            border-radius: 14px;
-            border: 2.5px solid #222;
+            border-radius: 10px;
+            border: 2px solid #222;
             background: #111;
             color: white;
             text-transform: uppercase;
-            transition: transform 0.05s, background 0.2s;
             cursor: pointer;
         }
 
-        button:active { transform: scale(0.94); background: #222; }
+        /* Shotclock knapper trenger litt mer størrelse */
+        .shot-btn { padding: 18px 2px; }
+
+        button:active { transform: scale(0.96); background: #222; }
 
         .btn-30 { border-color: var(--green); color: var(--green); }
         .btn-60 { border-color: var(--blue); color: var(--blue); }
@@ -86,18 +96,18 @@
         #toggleBtn.paused { border-color: var(--green); color: var(--green); background: rgba(0, 255, 65, 0.05); }
         #toggleBtn.running { border-color: var(--red); color: var(--red); background: rgba(255, 0, 0, 0.1); }
 
-        /* Ball grid med 3 i bredden */
+        /* Ball grid med 3 i bredden - skalering */
         .ball-grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
-            gap: 15px; 
-            margin-bottom: 10px; 
+            gap: 8px; 
+            overflow-y: auto; /* Just in case */
             justify-items: center;
         }
 
         .ball-btn {
-            width: 70px; 
-            height: 70px; 
+            width: 65px; /* Justert ned litt fra 70 for å sikre plass */
+            height: 65px; 
             border-radius: 50%;
             border: 2px solid #000;
             display: flex;
@@ -105,27 +115,20 @@
             justify-content: center;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
         }
 
         .num-label {
-            background: white;
-            color: black;
-            width: 26px; 
-            height: 26px; 
+            background: white; color: black;
+            width: 22px; height: 22px;
             border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 15px; 
-            font-weight: 900;
-            z-index: 5;
-            border: 1px solid black;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 13px; font-weight: 900;
+            z-index: 5; border: 1px solid black;
         }
 
-        .sunk { opacity: 0.1; filter: grayscale(1); transform: scale(0.9); }
+        .sunk { opacity: 0.1; filter: grayscale(1); }
         .striped { background: black !important; }
-        .stripe-band { position: absolute; width: 100%; height: 35px; top: 17.5px; z-index: 1; }
+        .stripe-band { position: absolute; width: 100%; height: 32px; top: 16.5px; z-index: 1; }
 
         /* Farger */
         .f-1, .b9 { background-color: #ffcc00; } 
@@ -140,49 +143,39 @@
         .mode-row { 
             display: grid; 
             grid-template-columns: 1fr 1fr 1fr; 
-            gap: 10px; 
-            margin-top: 15px; 
+            gap: 6px; 
+            margin-top: 8px; 
         }
-        .mode-row button { padding: 18px 2px; font-size: 13px; border-color: #333; }
+        .mode-row button { padding: 10px 2px; font-size: 11px; }
 
-        /* Re-Rack knapp styling */
         .rerack-btn {
-            margin-top: 10px;
-            margin-bottom: 5px;
-            border-color: #444;
-            color: #ddd;
-            font-size: 15px;
-            padding: 20px;
-            background: linear-gradient(180deg, #1a1a1a 0%, #111 100%);
-            width: 100%;
-            grid-column: span 2; /* Brukes hvis den ligger i en grid, men her er den full-width */
+            margin-top: 8px;
+            font-size: 12px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-color: #333;
         }
 
         .settings-label {
-            text-align: center;
-            font-size: 13px;
+            font-size: 11px;
             color: #444;
-            margin-top: 15px;
+            margin-top: 5px;
             display: flex;
-            align-items: center;
             justify-content: center;
-            gap: 10px;
-            text-transform: uppercase;
+            gap: 5px;
         }
         
-        input[type="checkbox"] { transform: scale(1.3); }
+        input[type="checkbox"] { transform: scale(1.1); }
     </style>
 </head>
 <body>
-
-    <h1>KØ-PÅDD MASTER XL</h1>
 
     <div class="container">
         <div class="section">
             <h2>Pool Control</h2>
             <div class="ball-grid" id="ball-grid"></div>
             
-            <button class="rerack-btn" onclick="reputtActiveBalls()">RE-RACK</button>
+            <button class="rerack-btn" onclick="reputtActiveBalls()">♻️ RE-RACK</button>
 
             <div class="mode-row">
                 <button onclick="resetPool(9)" style="border-color: #ffcc00; color: #ffcc00;">9-Ball</button>
@@ -194,27 +187,24 @@
         <div class="section">
             <h2>Shotclock</h2>
             <div class="btn-grid">
-                <button class="btn-30" onclick="sendClock('reset30')">🔄 30s Reset</button>
-                <button class="btn-60" onclick="sendClock('reset60')">⚡ 60s Reset</button>
-                <button id="toggleBtn" class="full paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
-                <button class="full btn-ext" onclick="sendClock('extension')">+ Bruk Extension</button>
-                <button onclick="sendClock('minus')">-1s</button>
-                <button onclick="sendClock('plus')">+1s</button>
+                <button class="shot-btn btn-30" onclick="sendClock('reset30')">🔄 30s</button>
+                <button class="shot-btn btn-60" onclick="sendClock('reset60')">⚡ 60s</button>
+                <button id="toggleBtn" class="shot-btn full paused" onclick="sendClock('toggle')">▶ START / PAUSE</button>
+                <button class="shot-btn full btn-ext" onclick="sendClock('extension')">+ BRUK EXTENSION</button>
+                <button class="shot-btn" onclick="sendClock('minus')">-1s</button>
+                <button class="shot-btn" onclick="sendClock('plus')">+1s</button>
             </div>
             <div class="settings-label">
-                <input type="checkbox" id="autoStart" checked> Auto-start ved reset
+                <input type="checkbox" id="autoStart" checked> Auto-start
             </div>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = { 
-            databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" 
-        };
+        const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // SHOTCLOCK FUNKSJONER
         function sendClock(cmd) {
             db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() });
         }
@@ -224,14 +214,13 @@
             const btn = document.getElementById('toggleBtn');
             if (status === 'running') {
                 btn.textContent = "⏸ PAUSE";
-                btn.className = "full running";
+                btn.className = "shot-btn full running";
             } else {
                 btn.textContent = "▶ START / RESUME";
-                btn.className = "full paused";
+                btn.className = "shot-btn full paused";
             }
         });
 
-        // POOL BALLS GENERERING
         const grid = document.getElementById('ball-grid');
         for (let i = 1; i <= 15; i++) {
             const b = document.createElement('div');
@@ -242,9 +231,7 @@
                 let band = document.createElement('div');
                 band.className = `stripe-band f-${cIdx}`;
                 b.appendChild(band);
-            } else {
-                b.classList.add(`f-${cIdx}`);
-            }
+            } else b.classList.add(`f-${cIdx}`);
             let num = document.createElement('div');
             num.className = 'num-label'; num.innerText = i;
             b.appendChild(num);
@@ -269,9 +256,7 @@
 
         function resetPool(max) {
             let updates = {};
-            for (let i = 1; i <= 15; i++) {
-                updates[i] = (i <= max) ? true : null;
-            }
+            for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null;
             db.ref('balls').set(updates);
         }
 
@@ -279,9 +264,7 @@
             if (!window.currentActiveData) return;
             let updates = {};
             for (let i = 1; i <= 15; i++) {
-                if (window.currentActiveData[i] !== undefined) {
-                    updates[i] = true;
-                }
+                if (window.currentActiveData[i] !== undefined) updates[i] = true;
             }
             db.ref('balls').update(updates);
         }
