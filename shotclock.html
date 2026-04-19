@@ -2,6 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
+    <title>KØ-PÅDD Shotclock Display Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -13,7 +14,7 @@
             align-items: center; 
             height: 100vh; 
             overflow: hidden;
-            font-family: sans-serif;
+            font-family: 'Arial Black', sans-serif;
         }
 
         #clock-container {
@@ -30,7 +31,7 @@
             font-weight: 900;
             color: white;
             z-index: 10;
-            text-shadow: 4px 4px 15px rgba(0,0,0,0.8);
+            text-shadow: 4px 4px 20px rgba(0,0,0,0.8);
         }
 
         svg {
@@ -47,6 +48,7 @@
         }
 
         .bg-ring { stroke: rgba(255,255,255,0.1); }
+        
         .progress-ring {
             stroke: #00FF41;
             transition: stroke 0.3s, stroke-dashoffset 0.1s linear;
@@ -79,32 +81,88 @@
         
         progressEl.style.strokeDasharray = circumference;
 
-        function setProgress(percent) {
+        let timeLeft = 30;
+        let maxTime = 30;
+        let isRunning = false;
+        let timerInterval = null;
+
+        function updateUI() {
+            const displayTime = Math.ceil(timeLeft);
+            timerEl.innerText = displayTime;
+            
+            const percent = (timeLeft / maxTime) * 100;
             const offset = circumference - (percent / 100) * circumference;
             progressEl.style.strokeDashoffset = offset;
-        }
 
-        db.ref('shotclock').on('value', snap => {
-            const data = snap.val();
-            if (!data) return;
-
-            const timeLeft = Math.max(0, Math.ceil(data.currentTime || 0));
-            const maxTime = data.maxTime || 30;
-            const percent = (timeLeft / maxTime) * 100;
-
-            timerEl.innerText = timeLeft;
-            setProgress(percent);
-
+            // Farger
             timerEl.classList.remove('critical-text');
             progressEl.classList.remove('warning', 'critical');
-
-            if (timeLeft <= 5) {
+            if (timeLeft <= 5.5) {
                 progressEl.classList.add('critical');
                 timerEl.classList.add('critical-text');
-            } else if (timeLeft <= 10) {
+            } else if (timeLeft <= 10.5) {
                 progressEl.classList.add('warning');
             }
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            isRunning = true;
+            db.ref('shotclock/status').set('running');
+            
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft -= 0.1;
+                    updateUI();
+                    // Synkroniser med Firebase hvert sekund (valgfritt, men bra for andre klienter)
+                    if (Math.abs(timeLeft % 1 === 0)) {
+                        db.ref('shotclock/currentTime').set(timeLeft);
+                    }
+                } else {
+                    stopTimer();
+                }
+            }, 100);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            db.ref('shotclock/status').set('paused');
+        }
+
+        // Lytt på kommandoer fra Master Control
+        db.ref('shotclock/cmd').on('value', snap => {
+            const cmd = snap.val();
+            if (!cmd) return;
+
+            switch(cmd.action) {
+                case 'reset30':
+                    timeLeft = 30; maxTime = 30;
+                    updateUI(); startTimer();
+                    break;
+                case 'reset60':
+                    timeLeft = 60; maxTime = 60;
+                    updateUI(); startTimer();
+                    break;
+                case 'extension':
+                    timeLeft += 30; maxTime = Math.max(maxTime, timeLeft);
+                    updateUI();
+                    break;
+                case 'toggle':
+                    if (isRunning) stopTimer(); else startTimer();
+                    break;
+                case 'plus':
+                    timeLeft += 1; updateUI();
+                    break;
+                case 'minus':
+                    timeLeft = Math.max(0, timeLeft - 1); updateUI();
+                    break;
+            }
+            // Slett kommandoen så den ikke kjører på nytt ved refresh
+            db.ref('shotclock/cmd').set(null);
         });
+
+        updateUI();
     </script>
 </body>
 </html>
