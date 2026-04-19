@@ -2,107 +2,122 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Firebase Shotclock</title>
+    <title>KØ-PÅDD Shotclock Display</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        @font-face { font-family: 'DSDigi'; src: url('DS-DIGIB.TTF') format('truetype'); }
-        :root { --bg-black: #000000; --metal-border: #1a1a1a; --color-ok: #00FF41; --color-warning: #FFAD00; --color-critical: #FF0000; --color-ext: #00E5FF; }
-        body { background-color: var(--bg-black); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'DSDigi', sans-serif; overflow: hidden; }
-        .shotclock-wrapper { position: relative; width: 280px; height: 280px; background: var(--bg-black); border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 8px solid var(--metal-border); }
-        .timer-svg { position: absolute; transform: rotate(-90deg); width: 270px; height: 270px; }
-        .timer-svg circle { fill: none; stroke-width: 16; stroke-linecap: round; transition: stroke 0.3s, stroke-dashoffset 0.1s linear; }
-        #progress-bar { stroke: var(--color-ok); stroke-dasharray: 754; stroke-dashoffset: 0; filter: drop-shadow(0 0 15px currentColor); }
-        #timer-text { font-size: 130px; color: #FFFFFF; z-index: 10; text-shadow: 0 0 15px rgba(255, 255, 255, 0.3); line-height: 1; }
-        #ext-indicator { font-family: 'Arial', sans-serif; font-weight: bold; font-size: 14px; color: var(--color-ext); text-transform: uppercase; visibility: hidden; position: absolute; top: 55px; z-index: 10; letter-spacing: 2px; }
-        .ext-active #ext-indicator { visibility: visible; }
-        .ext-active #progress-bar { stroke: var(--color-ext); }
-        .warning #progress-bar { stroke: var(--color-warning); }
-        .critical #progress-bar { stroke: var(--color-critical); }
-        .critical #timer-text { animation: blink-text 0.5s infinite alternate; }
-        @keyframes blink-text { from { opacity: 1; } to { opacity: 0.3; } }
+        body { 
+            background: transparent; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace; /* Monospace hindrer tallene i å hoppe */
+        }
+
+        #clock-container {
+            position: relative;
+            /* Denne skalerer basert på skjermstørrelsen (viewport min) */
+            width: 80vmin; 
+            height: 80vmin;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 10px solid #333;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        /* Selve tallet */
+        #timer {
+            font-size: 40vmin; /* Gigantisk font som følger sirkelen */
+            font-weight: 900;
+            color: white;
+            z-index: 10;
+            text-shadow: 0 0 20px rgba(0,0,0,1);
+        }
+
+        /* Progress ring som fylles/tømmes */
+        svg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        circle {
+            fill: none;
+            stroke-width: 15;
+            stroke-linecap: round;
+            transition: stroke 0.3s, stroke-dashoffset 0.1s linear;
+        }
+
+        .bg-ring { stroke: #222; }
+        .progress-ring {
+            stroke: #00FF41;
+            stroke-dasharray: 1000; /* Blir satt i JS */
+            stroke-dashoffset: 0;
+        }
+
+        /* Fargeendring ved lav tid */
+        .warning { stroke: #ffcc00 !important; }
+        .critical { stroke: #ff0000 !important; }
+        .critical-text { color: #ff0000 !important; }
     </style>
 </head>
 <body>
-    <div class="shotclock-wrapper" id="clockUI">
-        <svg class="timer-svg"><circle cx="135" cy="135" r="120" id="progress-bar"></circle></svg>
-        <div id="ext-indicator">Extension</div>
-        <div id="timer-text">30</div>
-    </div>
-    <audio id="snd-countdown" preload="auto"><source src="10 sec +.wav" type="audio/wav"></audio>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <div id="clock-container">
+        <svg viewBox="0 0 200 200">
+            <circle class="bg-ring" cx="100" cy="100" r="90"></circle>
+            <circle id="progress" class="progress-ring" cx="100" cy="100" r="90"></circle>
+        </svg>
+        <div id="timer">30</div>
+    </div>
 
     <script>
-        // VIKTIG: Bruker nå samme database som kulene
-        const firebaseConfig = { 
-            databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" 
-        };
+        const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const cmdRef = db.ref('shotclock/cmd');
-        const statusRef = db.ref('shotclock/status');
 
-        let timeLeft = 30, totalTime = 30, timerInterval = null, isExtensionUsed = false;
-        const display = document.getElementById('timer-text'), progress = document.getElementById('progress-bar'), ui = document.getElementById('clockUI');
-        const sndCountdown = document.getElementById('snd-countdown'), circumference = 2 * Math.PI * 120;
+        const timerEl = document.getElementById('timer');
+        const progressEl = document.getElementById('progress');
+        const radius = 90;
+        const circumference = 2 * Math.PI * radius;
+        
+        progressEl.style.strokeDasharray = circumference;
 
-        function updateUI() {
-            display.textContent = timeLeft < 10 ? `0${timeLeft}` : timeLeft;
-            progress.style.strokeDashoffset = circumference - (timeLeft / totalTime) * circumference;
-            ui.classList.remove('warning', 'critical', 'ext-active');
-            if (isExtensionUsed) ui.classList.add('ext-active');
-            
-            if (timeLeft === 10) { sndCountdown.currentTime = 0; sndCountdown.play().catch(()=>{}); }
-            
-            if (timeLeft <= 0) { 
-                ui.classList.add('critical'); 
-                stopTimer(true); 
-            }
-            else if (timeLeft <= 5) { ui.classList.add('critical'); }
-            else if (timeLeft <= 10) { ui.classList.add('warning'); }
+        function setProgress(percent) {
+            const offset = circumference - (percent / 100) * circumference;
+            progressEl.style.strokeDashoffset = offset;
         }
 
-        function stopTimer(isNaturalEnd = false) { 
-            clearInterval(timerInterval); 
-            timerInterval = null; 
-            statusRef.set('paused'); // Oppdaterer Master Control
-            if (!isNaturalEnd) sndCountdown.pause();
-        }
+        // Lytt på klokke-data fra Firebase
+        db.ref('shotclock').on('value', snap => {
+            const data = snap.val();
+            if (!data) return;
 
-        function startCountdown() { 
-            if(timerInterval || timeLeft <= 0) return;
-            statusRef.set('running'); // Oppdaterer Master Control
-            if (timeLeft <= 10) { sndCountdown.currentTime = 10 - timeLeft; sndCountdown.play().catch(()=>{}); }
-            timerInterval = setInterval(() => { 
-                if(timeLeft > 0){ 
-                    timeLeft--; 
-                    updateUI(); 
-                } else { 
-                    stopTimer(true); 
-                } 
-            }, 1000); 
-        }
+            const timeLeft = Math.max(0, Math.ceil(data.currentTime || 0));
+            const maxTime = data.maxTime || 30;
+            const percent = (timeLeft / maxTime) * 100;
 
-        function handleCmd(cmd) {
-            if (cmd === 'reset30') { stopTimer(false); timeLeft = 30; totalTime = 30; isExtensionUsed = false; updateUI(); startCountdown(); }
-            if (cmd === 'reset60') { stopTimer(false); timeLeft = 60; totalTime = 60; isExtensionUsed = false; updateUI(); startCountdown(); }
-            if (cmd === 'toggle') { timerInterval ? stopTimer(false) : startCountdown(); }
-            if (cmd === 'extension') { timeLeft += 30; totalTime = Math.max(totalTime, timeLeft); isExtensionUsed = true; updateUI(); }
-            if (cmd === 'plus') { timeLeft++; totalTime = Math.max(totalTime, timeLeft); updateUI(); }
-            if (cmd === 'minus') { timeLeft = Math.max(0, timeLeft - 1); updateUI(); }
-        }
+            timerEl.innerText = timeLeft;
+            setProgress(percent);
 
-        // Lytter på kommandoer fra Master Control
-        cmdRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data && data.action) {
-                handleCmd(data.action);
-                // Nullstiller kommandoen i databasen etter at den er utført
-                cmdRef.set({ action: null }); 
+            // Farge-feedback
+            timerEl.classList.remove('critical-text');
+            progressEl.classList.remove('warning', 'critical');
+
+            if (timeLeft <= 5) {
+                progressEl.classList.add('critical');
+                timerEl.classList.add('critical-text');
+            } else if (timeLeft <= 10) {
+                progressEl.classList.add('warning');
             }
         });
-
-        updateUI();
     </script>
 </body>
 </html>
