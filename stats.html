@@ -18,8 +18,12 @@
         .s1 .value { color: var(--s1); } .s2 .value { color: var(--s2); }
         .highlight .value { color: var(--gold); }
         .graph-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; grid-column: span 4; height: 350px; margin-top: 10px; }
-        .comparison-bar { height: 14px; background: #222; border-radius: 7px; margin-top: 10px; overflow: hidden; display: flex; grid-column: span 4; }
+        
+        /* Oppdatert bar-styling */
+        .comparison-bar { height: 16px; background: #222; border-radius: 8px; margin-top: 5px; overflow: hidden; display: flex; width: 100%; }
         #bar-s1 { height: 100%; background: var(--s1); transition: width 0.5s; }
+        #bar-s2 { height: 100%; background: var(--s2); transition: width 0.5s; }
+
         .btn-reset { grid-column: span 4; background: #221111; color: #ff4444; border: 1px solid #442222; padding: 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; margin-top: 20px; font-weight: bold; }
     </style>
 </head>
@@ -39,19 +43,28 @@
     <div class="stat-card s1"><div class="label">S1 Avg</div><div id="s1Avg" class="value">0s</div></div>
     <div class="stat-card s1"><div class="label">S1 Shots</div><div id="s1Shots" class="value">0</div></div>
     <div class="stat-card s1"><div class="label">S1 Ext</div><div id="s1Ext" class="value">0</div></div>
-    <div class="stat-card s1"><div class="label">S1 Ctrl</div><div id="s1Percent" class="value">50%</div></div>
+    <div class="stat-card s1"><div class="label">S1 Control</div><div id="s1Percent" class="value">50%</div></div>
 
     <div class="stat-card s2"><div class="label">S2 Avg</div><div id="s2Avg" class="value">0s</div></div>
     <div class="stat-card s2"><div class="label">S2 Shots</div><div id="s2Shots" class="value">0</div></div>
     <div class="stat-card s2"><div class="label">S2 Ext</div><div id="s2Ext" class="value">0</div></div>
-    <div class="stat-card s2"><div class="label">S2 Ctrl</div><div id="s2Percent" class="value">50%</div></div>
+    <div class="stat-card s2"><div class="label">S2 Control</div><div id="s2Percent" class="value">50%</div></div>
 
     <div class="graph-container"><canvas id="shotChart"></canvas></div>
 
     <div class="stat-card" style="grid-column: span 4;">
         <div class="label">Match Trend Analysis</div>
-        <div id="trendText" class="value" style="font-size: 1.4rem; color: var(--gold);">Analyzing...</div>
-        <div class="comparison-bar"><div id="bar-s1" style="width: 50%;"></div></div>
+        <div id="trendText" class="value" style="font-size: 1.4rem; color: var(--gold); margin-bottom: 15px;">Analyzing...</div>
+        
+        <div class="label">Table Control Visualization</div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; padding: 0 5px;">
+            <span style="color: var(--s1);">PLAYER 1 (S1)</span>
+            <span style="color: var(--s2);">PLAYER 2 (S2)</span>
+        </div>
+        <div class="comparison-bar">
+            <div id="bar-s1" style="width: 50%;"></div>
+            <div id="bar-s2" style="width: 50%;"></div>
+        </div>
     </div>
 
     <button class="btn-reset" onclick="resetAllStats()">Reset Match Data</button>
@@ -66,7 +79,6 @@
     let matchStartTimestamp = 0;
     let isMatchActive = false;
 
-    // Timer-logikk
     db.ref('stats/startTime').on('value', snap => { matchStartTimestamp = snap.val(); });
     db.ref('shotclock/status').on('value', snap => { isMatchActive = (snap.val() !== 'hidden' && snap.val() !== null); });
 
@@ -83,7 +95,6 @@
         }
     }, 1000);
 
-    // Initialiser Graf
     function initChart() {
         const ctx = document.getElementById('shotChart').getContext('2d');
         shotChart = new Chart(ctx, {
@@ -96,7 +107,6 @@
         });
     }
 
-    // Hent data
     db.ref('stats/history').on('value', snap => { updateUI(snap.val() ? Object.values(snap.val()) : []); });
     db.ref('stats/extensions').on('value', snap => {
         const ext = snap.val() || { left: 0, right: 0 };
@@ -126,14 +136,15 @@
         document.getElementById('s2Shots').innerText = s2C;
 
         const s1P = ((s1C / entries.length) * 100).toFixed(0);
+        const s2P = 100 - s1P;
         document.getElementById('s1Percent').innerText = s1P + "%";
-        document.getElementById('s2Percent').innerText = (100 - s1P) + "%";
+        document.getElementById('s2Percent').innerText = s2P + "%";
         document.getElementById('bar-s1').style.width = s1P + "%";
+        document.getElementById('bar-s2').style.width = s2P + "%";
 
         const last3 = entries.slice(-3);
         document.getElementById('pressureIndex').innerText = (last3.reduce((a,b)=>a+b.time,0)/Math.max(1, last3.length)).toFixed(1) + "s";
 
-        // --- TREND ANALYSE ---
         const firstHalf = entries.slice(0, Math.floor(entries.length/2));
         const secondHalf = entries.slice(Math.floor(entries.length/2));
         if (secondHalf.length >= 2 && firstHalf.length >= 2) {
@@ -143,8 +154,6 @@
             if (diff > 2) document.getElementById('trendText').innerText = "🐢 Slowing Down (Increased Pressure)";
             else if (diff < -2) document.getElementById('trendText').innerText = "⚡ Speeding Up (Higher Confidence)";
             else document.getElementById('trendText').innerText = "⚖️ Stable Pace";
-        } else {
-            document.getElementById('trendText').innerText = "Analyzing Match Flow...";
         }
 
         if (shotChart) {
@@ -160,6 +169,8 @@
             document.getElementById(id).innerText = "0";
         });
         document.getElementById('trendText').innerText = "Waiting for data...";
+        document.getElementById('bar-s1').style.width = "50%";
+        document.getElementById('bar-s2').style.width = "50%";
         if (shotChart) { shotChart.data.labels = []; shotChart.data.datasets.forEach(d => d.data = []); shotChart.update(); }
     }
 
