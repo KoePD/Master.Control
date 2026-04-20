@@ -17,11 +17,10 @@
         .header { grid-column: span 4; text-align: center; border-bottom: 2px solid var(--border); padding: 10px; margin-bottom: 5px; }
         .header h1 { color: var(--gold); text-transform: uppercase; margin: 0; font-size: 1.6rem; letter-spacing: 2px; }
         
-        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-align: center; transition: all 0.3s ease; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-align: center; position: relative; overflow: hidden; transition: all 0.3s ease; }
         .label { font-size: 0.65rem; color: #888; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
         .value { font-size: 1.8rem; font-weight: 800; color: #fff; }
         
-        /* Spillerfarger */
         .s1 .value { color: var(--s1); } 
         .s2 .value { color: var(--s2); }
         .highlight .value { color: var(--gold); }
@@ -35,8 +34,19 @@
         #bar-s1 { height: 100%; background: var(--s1); transition: width 0.5s; }
         #bar-s2 { height: 100%; background: var(--s2); transition: width 0.5s; }
 
-        /* Skjuling av elementer */
-        .hidden { display: none !important; }
+        /* MASKING FOR LÅSTE BOKSER */
+        .card-disabled .disabled-mask { display: flex !important; }
+        .card-disabled .value, .card-disabled .label { opacity: 0.1; filter: blur(1px); }
+
+        .disabled-mask {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 5, 5, 0.9);
+            color: rgba(255, 255, 255, 0.3);
+            display: none; justify-content: center; align-items: center;
+            font-size: 0.6rem; text-transform: uppercase; font-weight: 900;
+            letter-spacing: 1px; padding: 10px; box-sizing: border-box; text-align: center;
+            line-height: 1.2; z-index: 5;
+        }
 
         .btn-reset { grid-column: span 4; background: #221111; color: var(--red); border: 1px solid #442222; padding: 10px; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; margin-top: 15px; font-weight: bold; }
     </style>
@@ -45,7 +55,7 @@
 
 <div class="dashboard">
     <div class="header">
-        <h1 id="matchTitle">🎙️ MATCH INSIGHT PRO</h1>
+        <h1>🎙️ MATCH INSIGHT PRO</h1>
         <div id="matchDuration" style="font-size: 1.3rem; font-family: monospace; color: #fff;">00:00:00</div>
     </div>
 
@@ -57,12 +67,20 @@
     <div class="stat-card s1"><div class="label" id="nameLText">Player 1</div><div id="s1Pots" class="value">0</div><div class="label">Balls Potted</div></div>
     <div class="stat-card s1"><div class="label">Pots Per Visit</div><div id="s1Eff" class="value">0.0</div></div>
     <div class="stat-card s1"><div class="label">Runouts</div><div id="s1Run" class="value">0</div></div>
-    <div id="card-8ball-s1" class="stat-card s1 error-card hidden"><div class="label">Early 8-Loss</div><div id="s1Err" class="value">0</div></div>
+    <div id="card-8ball-s1" class="stat-card s1 error-card card-disabled">
+        <div class="disabled-mask"><span>Locked: Only for 8-Ball</span></div>
+        <div class="label">Early 8-Loss</div>
+        <div id="s1Err" class="value">0</div>
+    </div>
 
     <div class="stat-card s2"><div class="label" id="nameRText">Player 2</div><div id="s2Pots" class="value">0</div><div class="label">Balls Potted</div></div>
     <div class="stat-card s2"><div class="label">Pots Per Visit</div><div id="s2Eff" class="value">0.0</div></div>
     <div class="stat-card s2"><div class="label">Runouts</div><div id="s2Run" class="value">0</div></div>
-    <div id="card-8ball-s2" class="stat-card s2 error-card hidden"><div class="label">Early 8-Loss</div><div id="s2Err" class="value">0</div></div>
+    <div id="card-8ball-s2" class="stat-card s2 error-card card-disabled">
+        <div class="disabled-mask"><span>Locked: Only for 8-Ball</span></div>
+        <div class="label">Early 8-Loss</div>
+        <div id="s2Err" class="value">0</div>
+    </div>
 
     <div class="graph-container"><canvas id="shotChart"></canvas></div>
     
@@ -93,7 +111,6 @@
     let matchStartTimestamp = 0;
     let isMatchActive = false;
 
-    // Timer-logikk
     db.ref('stats/startTime').on('value', snap => { matchStartTimestamp = snap.val(); });
     db.ref('shotclock/status').on('value', snap => { isMatchActive = (snap.val() !== 'hidden' && snap.val() !== null); });
 
@@ -110,7 +127,6 @@
         }
     }, 1000);
 
-    // Initialiser Graf
     function initChart() {
         const ctx = document.getElementById('shotChart').getContext('2d');
         shotChart = new Chart(ctx, {
@@ -124,7 +140,6 @@
         });
     }
 
-    // HOVEDLYTTER - Oppdaterer alt
     db.ref('stats').on('value', snap => {
         const d = snap.val() || {};
         const history = d.history ? Object.values(d.history) : [];
@@ -137,44 +152,34 @@
         const ext = d.extensions || {left:0, right:0};
         const names = d.names || {left: "Player 1", right: "Player 2"};
 
-        // Navn
         document.getElementById('nameLText').innerText = names.left;
         document.getElementById('nameRText').innerText = names.right;
-
-        // Wins & Potter
         document.getElementById('vsWinText').innerText = `${wins.left} - ${wins.right}`;
         document.getElementById('s1Pots').innerText = pots.left || 0;
         document.getElementById('s2Pots').innerText = pots.right || 0;
-        
-        // Effektivitet
         document.getElementById('s1Eff').innerText = (pots.left / Math.max(1, visits.left)).toFixed(1);
         document.getElementById('s2Eff').innerText = (pots.right / Math.max(1, visits.right)).toFixed(1);
-
-        // Runouts & Errors
         document.getElementById('s1Run').innerText = run.left || 0;
         document.getElementById('s2Run').innerText = run.right || 0;
         document.getElementById('s1Err').innerText = err.left || 0;
         document.getElementById('s2Err').innerText = err.right || 0;
-
-        // VS-linjer
         document.getElementById('vsDry').innerText = `${dry.left || 0} - ${dry.right || 0}`;
         document.getElementById('vsExt').innerText = `${ext.left || 0} - ${ext.right || 0}`;
 
         updateVisuals(history);
     });
 
-    // Lytter på modus for dynamisk layout
     db.ref('gameMode').on('value', snap => {
         const mode = snap.val() || 9;
         document.getElementById('modeText').innerText = mode + "-Ball";
         
-        // Vis/skjul 8-ball kort
+        // HÅNDTER LÅSING AV 8-BALL KORT
         const err1 = document.getElementById('card-8ball-s1');
         const err2 = document.getElementById('card-8ball-s2');
         if (mode == 8) {
-            err1.classList.remove('hidden'); err2.classList.remove('hidden');
+            err1.classList.remove('card-disabled'); err2.classList.remove('card-disabled');
         } else {
-            err1.classList.add('hidden'); err2.classList.add('hidden');
+            err1.classList.add('card-disabled'); err2.classList.add('card-disabled');
         }
     });
 
@@ -194,16 +199,6 @@
         
         const last3 = entries.slice(-3);
         document.getElementById('pressureIndex').innerText = (last3.reduce((a,b)=>a+b.time,0)/Math.max(1, last3.length)).toFixed(1) + "s";
-
-        // Trend
-        const firstH = entries.slice(0, Math.floor(entries.length/2));
-        const secondH = entries.slice(Math.floor(entries.length/2));
-        if (secondH.length >= 2) {
-            const fAvg = firstH.reduce((a,b)=>a+b.time,0)/Math.max(1, firstH.length);
-            const sAvg = secondH.reduce((a,b)=>a+b.time,0)/Math.max(1, secondH.length);
-            const diff = sAvg - fAvg;
-            document.getElementById('trendText').innerText = diff > 2 ? "🐢 Match Slowing Down (Pressure Rising)" : (diff < -2 ? "⚡ Speeding Up (High Confidence)" : "⚖️ Stable Match Pace");
-        }
 
         const p1 = (s1C / entries.length * 100);
         document.getElementById('bar-s1').style.width = p1 + "%";
