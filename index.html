@@ -19,7 +19,7 @@
         .pool-section { flex: 1; min-height: 0; } 
         h2 { font-size: 0.7rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; opacity: 0.7; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px; border: 2px solid #333; background: #111; color: white; text-transform: uppercase; }
+        button { padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px; border: 2px solid #333; background: #111; color: white; text-transform: uppercase; transition: all 0.2s ease; }
         .player-btn { padding: 14px 5px; font-size: 13px; border-width: 2px; }
         .active-l, .active-r { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
         .ball-scroll-area { flex: 1; overflow-y: auto; margin-bottom: 8px; }
@@ -34,6 +34,13 @@
         .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
         .f-7, .b15 { background-color: #884422; } .f-8 { background-color: black; }
         .name-input { background: #111; border: 1px solid #333; color: white; padding: 8px; border-radius: 8px; text-align: center; font-size: 12px; }
+
+        /* NY STIL FOR AKTIV GREN */
+        .mode-btn.active-mode {
+            border-color: var(--green) !important;
+            color: var(--green) !important;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -53,9 +60,9 @@
         </div>
         <div class="grid" style="gap: 5px;">
             <button class="mini-btn" onclick="reputtActiveBalls()">♻️ Re-Rack</button>
-            <button class="mini-btn" onclick="resetPool(9)">9-Ball</button>
-            <button class="mini-btn" onclick="resetPool(10)">10-Ball</button>
-            <button class="mini-btn" onclick="resetPool(8)">8-Ball</button>
+            <button id="mode-9" class="mode-btn" onclick="resetPool(9)">9-Ball</button>
+            <button id="mode-10" class="mode-btn" onclick="resetPool(10)">10-Ball</button>
+            <button id="mode-8" class="mode-btn" onclick="resetPool(8)">8-Ball</button>
         </div>
     </div>
 
@@ -98,13 +105,12 @@
     function resetPool(max) {
         let updates = {};
         for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null;
-        if (max === 8) for (let i = 1; i <= 15; i++) updates[i] = true; // 8-ball bruker alle kuler
+        if (max === 8) for (let i = 1; i <= 15; i++) updates[i] = true;
         db.ref('balls').set(updates);
-        db.ref('gameMode').set(max);
+        db.ref('gameMode').set(max); // Lagrer modus i Firebase
         db.ref('breakStatus').set({ active: true, ballsSunk: 0 });
     }
 
-    // Ball-klikk med logikk for 8, 9 og 10-ball
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
@@ -140,9 +146,7 @@
                             } else if (mode == 8) {
                                 db.ref(`stats/errors/${player}`).transaction(c => (c || 0) + 1);
                                 db.ref(`stats/matchWins/${player === 'left' ? 'right' : 'left'}`).transaction(c => (c || 0) + 1);
-                                alert("Tidlig 8-ball! Tap.");
                             } else if (mode == 10) {
-                                alert("10-ball opp igjen!");
                                 db.ref(`balls/${i}`).set(true);
                                 db.ref(`stats/pots/${player}`).transaction(c => (c > 0 ? c - 1 : 0));
                             }
@@ -205,6 +209,16 @@
                 btn.style.display = (data[i] === undefined) ? 'none' : 'flex';
             }
         }
+    });
+
+    // MARKER AKTIV GREN
+    db.ref('gameMode').on('value', snap => {
+        const activeMode = snap.val();
+        const modes = [8, 9, 10];
+        modes.forEach(mode => {
+            const btn = document.getElementById(`mode-${mode}`);
+            if (btn) btn.classList.toggle('active-mode', mode === activeMode);
+        });
     });
 
     function reputtActiveBalls() {
