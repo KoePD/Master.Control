@@ -93,12 +93,17 @@
     let lastResetTime = Date.now();
 
     function startMatch() {
-    // 1. Sett starttidspunktet FØRST
-    db.ref('stats/startTime').set(Date.now());
+    console.log("Match starter...");
     
-    // 2. Resten av logikken
+    // 1. Sett starttidspunktet som et rent tall i Firebase
+    const now = Date.now();
+    db.ref('stats/startTime').set(now);
+    
+    // 2. Resett resten
     resetPool(9);
     db.ref('activePlayer').set(""); 
+    
+    // 3. Klargjør shotclock
     db.ref('shotclock/cmd').set({ action: 'reset30' });
     
     setTimeout(() => {
