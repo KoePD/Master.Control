@@ -160,8 +160,12 @@
 
     // Lyttere
     db.ref('stats/startTime').on('value', snap => { matchStartTimestamp = snap.val(); });
-    db.ref('shotclock/status').on('value', snap => { matchActive = (snap.val() !== 'hidden' && snap.val() !== null); });
-    
+    db.ref('shotclock/status').on('value', snap => {
+        const status = snap.val();
+    // Klokka skal telle så lenge matchen er i gang (uavhengig om den er paused eller running)
+    // Den stopper KUN hvis status er 'hidden' eller null
+    matchActive = (status !== 'hidden' && status !== null);
+});
     db.ref('stats/history').on('value', snap => {
         updateUI(snap.val() ? Object.values(snap.val()) : []);
     });
@@ -246,23 +250,22 @@
     setInterval(() => {
     const timerEl = document.getElementById('matchDuration');
     
-    if (matchActive && matchStartTimestamp && matchStartTimestamp > 0) {
-        const diff = Math.floor((Date.now() - matchStartTimestamp) / 1000);
+    // Hvis matchen er aktiv og vi har fått en starttid fra Firebase
+    if (matchActive && matchStartTimestamp) {
+        const now = Date.now();
+        const diff = Math.floor((now - matchStartTimestamp) / 1000);
         
-        // Hvis diff av en eller annen grunn er negativ, vis 0
-        if (diff < 0) {
-            timerEl.innerText = "00:00:00";
-            return;
+        if (diff >= 0) {
+            const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+            const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+            const s = (diff % 60).toString().padStart(2, '0');
+            timerEl.innerText = `${h}:${m}:${s}`;
         }
-
-        const h = Math.floor(diff / 3600).toString().padStart(2, '0');
-        const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
-        const s = (diff % 60).toString().padStart(2, '0');
-        timerEl.innerText = `${h}:${m}:${s}`;
-    } else if (!matchActive) {
-        // Her kan du velge: vil du at den skal stå stille på tiden den stoppet på?
-        // Hvis du vil nullstille ved stopp, bruk: timerEl.innerText = "00:00:00";
+    } else if (!matchActive && !matchStartTimestamp) {
+        // Hvis alt er resatt, vis null
+        timerEl.innerText = "00:00:00";
     }
+    // Hvis !matchActive (stoppet), blir teksten bare stående på tiden den hadde (Freeze).
 }, 1000);
     function resetAllStats() {
         if(confirm("Dette sletter all historikk for denne matchen. Er du sikker?")) {
