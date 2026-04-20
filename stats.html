@@ -2,48 +2,24 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Commentator Pro Dashboard</title>
+    <title>KØ-PÅDD Match Insight</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --gold: #ffcc00; --s1-color: #00FF41; --s2-color: #00E5FF;
-            --bg: #050505; --card: #111; --border: #222;
-        }
-        body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        
-        .dashboard { 
-            max-width: 1200px; 
-            margin: auto; 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 12px; 
-        }
-
-        .header { grid-column: span 4; text-align: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
-        .header h1 { color: var(--gold); text-transform: uppercase; margin: 0; font-size: 1.8rem; letter-spacing: 3px; }
-        
-        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; text-align: center; display: flex; flex-direction: column; justify-content: center; min-height: 100px; }
-        .full-width { grid-column: span 4; }
-        .double-width { grid-column: span 2; }
-
-        .label { font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
+        :root { --gold: #ffcc00; --s1: #00FF41; --s2: #00E5FF; --bg: #050505; --card: #111; --border: #222; }
+        body { background: var(--bg); color: #eee; font-family: sans-serif; margin: 0; padding: 20px; }
+        .dashboard { max-width: 1200px; margin: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .header { grid-column: span 4; text-align: center; border-bottom: 2px solid var(--border); padding-bottom: 15px; margin-bottom: 10px; }
+        .header h1 { color: var(--gold); text-transform: uppercase; margin: 0; font-size: 1.8rem; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; text-align: center; }
+        .label { font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
         .value { font-size: 2rem; font-weight: 800; color: #fff; }
-        
-        /* Fargekoding */
-        .s1 .value { color: var(--s1-color); }
-        .s2 .value { color: var(--s2-color); }
-        .highlight .value { color: var(--gold); }
-
-        .graph-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; grid-column: span 4; height: 350px; margin-top: 10px; }
-        
-        .comparison-bar { height: 12px; background: #222; border-radius: 6px; margin-top: 10px; overflow: hidden; display: flex; }
-        #bar-s1 { height: 100%; background: var(--s1-color); transition: width 0.5s; }
-        #bar-s2 { height: 100%; background: var(--s2-color); transition: width 0.5s; }
-
-        .btn-reset { grid-column: span 4; background: #221111; color: #ff4444; border: 1px solid #442222; padding: 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; margin-top: 20px; font-weight: bold; }
-        .btn-reset:hover { background: #441111; }
+        .s1 .value { color: var(--s1); } .s2 .value { color: var(--s2); }
+        .graph-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; grid-column: span 4; height: 300px; }
+        .comparison-bar { height: 12px; background: #222; border-radius: 6px; margin-top: 10px; overflow: hidden; display: flex; grid-column: span 4; }
+        #bar-s1 { height: 100%; background: var(--s1); transition: width 0.5s; }
+        .btn-reset { grid-column: span 4; background: #221111; color: #ff4444; border: 1px solid #442222; padding: 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -51,76 +27,26 @@
 <div class="dashboard">
     <div class="header">
         <h1>🎙️ Match Insight Dashboard</h1>
-        <div id="matchDuration" style="font-size: 1.2rem; color: #888; margin-top: 5px;">00:00:00</div>
+        <div id="matchDuration" style="font-size: 1.5rem; color: #fff; font-family: monospace; margin-top: 10px;">00:00:00</div>
     </div>
 
-    <div class="stat-card highlight">
-        <div class="label">Total Shots</div>
-        <div id="totalShots" class="value">0</div>
-    </div>
-    <div class="stat-card">
-        <div class="label">Match Pace (Avg)</div>
-        <div id="avgMatchTime" class="value">0s</div>
-    </div>
-    <div class="stat-card">
-        <div class="label">Pressure (Last 3)</div>
-        <div id="pressureIndex" class="value" style="color: #ff4444;">0s</div>
-    </div>
-    <div class="stat-card">
-        <div class="label">Fastest Shot</div>
-        <div id="fastestShot" class="value">0s</div>
-    </div>
+    <div class="stat-card"><div class="label">Total Shots</div><div id="totalShots" class="value">0</div></div>
+    <div class="stat-card"><div class="label">Avg Pace</div><div id="avgMatchTime" class="value">0s</div></div>
+    <div class="stat-card"><div class="label">Pressure</div><div id="pressureIndex" class="value">0s</div></div>
+    <div class="stat-card"><div class="label">Fastest</div><div id="fastestShot" class="value">0s</div></div>
 
-    <div class="stat-card s1">
-        <div class="label">S1 Avg. Time</div>
-        <div id="s1Avg" class="value">0s</div>
-    </div>
-    <div class="stat-card s1">
-        <div class="label">S1 Total Shots</div>
-        <div id="s1Shots" class="value">0</div>
-    </div>
-    <div class="stat-card s1">
-        <div class="label">S1 Extensions</div>
-        <div id="s1Ext" class="value">0</div>
-    </div>
-    <div class="stat-card s1">
-        <div class="label">S1 Control</div>
-        <div id="s1Percent" class="value">50%</div>
-    </div>
+    <div class="stat-card s1"><div class="label">S1 Avg</div><div id="s1Avg" class="value">0s</div></div>
+    <div class="stat-card s1"><div class="label">S1 Shots</div><div id="s1Shots" class="value">0</div></div>
+    <div class="stat-card s1"><div class="label">S1 Ext</div><div id="s1Ext" class="value">0</div></div>
+    <div class="stat-card s1"><div class="label">S1 Ctrl</div><div id="s1Percent" class="value">50%</div></div>
 
-    <div class="stat-card s2">
-        <div class="label">S2 Avg. Time</div>
-        <div id="s2Avg" class="value">0s</div>
-    </div>
-    <div class="stat-card s2">
-        <div class="label">S2 Total Shots</div>
-        <div id="s2Shots" class="value">0</div>
-    </div>
-    <div class="stat-card s2">
-        <div class="label">S2 Extensions</div>
-        <div id="s2Ext" class="value">0</div>
-    </div>
-    <div class="stat-card s2">
-        <div class="label">S2 Control</div>
-        <div id="s2Percent" class="value">50%</div>
-    </div>
+    <div class="stat-card s2"><div class="label">S2 Avg</div><div id="s2Avg" class="value">0s</div></div>
+    <div class="stat-card s2"><div class="label">S2 Shots</div><div id="s2Shots" class="value">0</div></div>
+    <div class="stat-card s2"><div class="label">S2 Ext</div><div id="s2Ext" class="value">0</div></div>
+    <div class="stat-card s2"><div class="label">S2 Ctrl</div><div id="s2Percent" class="value">50%</div></div>
 
-    <div class="graph-container">
-        <div class="label" style="text-align: center; margin-bottom: 10px;">Shot Time History</div>
-        <canvas id="shotChart"></canvas>
-    </div>
-
-    <div class="stat-card double-width">
-        <div class="label">Match Trend</div>
-        <div id="trendText" class="value" style="font-size: 1.5rem; color: var(--gold);">Waiting...</div>
-    </div>
-    <div class="stat-card double-width">
-        <div class="label">Table Control Visualization</div>
-        <div class="comparison-bar">
-            <div id="bar-s1" style="width: 50%;"></div>
-            <div id="bar-s2" style="width: 50%;"></div>
-        </div>
-    </div>
+    <div class="graph-container"><canvas id="shotChart"></canvas></div>
+    <div class="comparison-bar"><div id="bar-s1" style="width: 50%;"></div></div>
 
     <button class="btn-reset" onclick="resetAllStats()">Reset Match Data</button>
 </div>
@@ -131,43 +57,54 @@
     const db = firebase.database();
 
     let shotChart;
-    let matchStartTimestamp = null;
-    let matchActive = false;
+    let matchStartTimestamp = 0;
+    let isMatchActive = false;
 
-    // Initialiser Graf
+    // 1. Starttid-lytter
+    db.ref('stats/startTime').on('value', snap => {
+        matchStartTimestamp = snap.val();
+        console.log("Starttid mottatt:", matchStartTimestamp);
+    });
+
+    // 2. Status-lytter
+    db.ref('shotclock/status').on('value', snap => {
+        const status = snap.val();
+        isMatchActive = (status !== 'hidden' && status !== null);
+    });
+
+    // 3. Timer-loop (Tvinger oppdatering hver sekund)
+    setInterval(() => {
+        const display = document.getElementById('matchDuration');
+        if (isMatchActive && matchStartTimestamp > 0) {
+            const seconds = Math.floor((Date.now() - matchStartTimestamp) / 1000);
+            if (seconds >= 0) {
+                const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+                const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+                const s = (seconds % 60).toString().padStart(2, '0');
+                display.innerText = `${h}:${m}:${s}`;
+            }
+        } else if (!isMatchActive) {
+            // Beholder tiden den stoppet på, eller nullstiller hvis ingen starttid finnes
+            if (!matchStartTimestamp) display.innerText = "00:00:00";
+        }
+    }, 1000);
+
+    // --- Resten av din eksisterende graf og stats-logikk her ---
     function initChart() {
         const ctx = document.getElementById('shotChart').getContext('2d');
         shotChart = new Chart(ctx, {
             type: 'line',
-            data: {
-                labels: [],
-                datasets: [
-                    { label: 'S1', data: [], borderColor: '#00FF41', backgroundColor: 'rgba(0,255,65,0.1)', tension: 0.3, fill: true, spanGaps: true },
-                    { label: 'S2', data: [], borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.1)', tension: 0.3, fill: true, spanGaps: true }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#222' }, ticks: { color: '#666' } },
-                    x: { grid: { display: false }, ticks: { color: '#666' } }
-                }
-            }
+            data: { labels: [], datasets: [
+                { label: 'S1', data: [], borderColor: '#00FF41', tension: 0.3, fill: false, spanGaps: true },
+                { label: 'S2', data: [], borderColor: '#00E5FF', tension: 0.3, fill: false, spanGaps: true }
+            ]},
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { display: false } } }
         });
     }
 
-    // Lyttere
-    db.ref('stats/startTime').on('value', snap => { matchStartTimestamp = snap.val(); });
-    db.ref('shotclock/status').on('value', snap => {
-        const status = snap.val();
-    // Klokka skal telle så lenge matchen er i gang (uavhengig om den er paused eller running)
-    // Den stopper KUN hvis status er 'hidden' eller null
-    matchActive = (status !== 'hidden' && status !== null);
-});
     db.ref('stats/history').on('value', snap => {
-        updateUI(snap.val() ? Object.values(snap.val()) : []);
+        const history = snap.val() ? Object.values(snap.val()) : [];
+        updateUI(history);
     });
 
     db.ref('stats/extensions').on('value', snap => {
@@ -177,55 +114,30 @@
     });
 
     function updateUI(entries) {
-        if (!entries || entries.length === 0) {
-            resetDisplay();
-            return;
-        }
-
-        let s1T = 0, s1C = 0, s2T = 0, s2C = 0;
-        let fastest = 999;
+        if (!entries || entries.length === 0) return;
+        let s1T = 0, s1C = 0, s2T = 0, s2C = 0, fastest = 999;
         let s1Data = [], s2Data = [], labels = [];
 
         entries.forEach((e, i) => {
             if (e.time < fastest) fastest = e.time;
             labels.push(i + 1);
-            if (e.player === 'left') {
-                s1T += e.time; s1C++;
-                s1Data.push(e.time); s2Data.push(null);
-            } else {
-                s2T += e.time; s2C++;
-                s2Data.push(e.time); s1Data.push(null);
-            }
+            if (e.player === 'left') { s1T += e.time; s1C++; s1Data.push(e.time); s2Data.push(null); }
+            else { s2T += e.time; s2C++; s2Data.push(e.time); s1Data.push(null); }
         });
 
-        // Oppdater tallene
         document.getElementById('totalShots').innerText = entries.length;
         document.getElementById('avgMatchTime').innerText = ((s1T + s2T) / entries.length).toFixed(1) + "s";
-        document.getElementById('fastestShot').innerText = fastest.toFixed(1) + "s";
-        
+        document.getElementById('fastestShot').innerText = (fastest === 999 ? 0 : fastest).toFixed(1) + "s";
         document.getElementById('s1Avg').innerText = (s1C > 0 ? s1T/s1C : 0).toFixed(1) + "s";
         document.getElementById('s1Shots').innerText = s1C;
-        
         document.getElementById('s2Avg').innerText = (s2C > 0 ? s2T/s2C : 0).toFixed(1) + "s";
         document.getElementById('s2Shots').innerText = s2C;
 
-        const s1P = ((s1C / entries.length) * 100).toFixed(0);
+        const s1P = entries.length > 0 ? ((s1C / entries.length) * 100).toFixed(0) : 50;
         document.getElementById('s1Percent').innerText = s1P + "%";
         document.getElementById('s2Percent').innerText = (100 - s1P) + "%";
         document.getElementById('bar-s1').style.width = s1P + "%";
 
-        const last3 = entries.slice(-3);
-        document.getElementById('pressureIndex').innerText = (last3.reduce((a,b)=>a+b.time,0)/Math.max(1, last3.length)).toFixed(1) + "s";
-
-        // Trend logikk
-        const firstHalf = entries.slice(0, Math.floor(entries.length/2));
-        const secondHalf = entries.slice(Math.floor(entries.length/2));
-        if (secondHalf.length > 2) {
-            const diff = (secondHalf.reduce((a,b)=>a+b.time,0)/secondHalf.length) - (firstHalf.reduce((a,b)=>a+b.time,0)/firstHalf.length);
-            document.getElementById('trendText').innerText = diff > 2 ? "🐢 Slowing Down" : (diff < -2 ? "⚡ Speeding Up" : "⚖️ Stable");
-        }
-
-        // Oppdater graf
         if (shotChart) {
             shotChart.data.labels = labels;
             shotChart.data.datasets[0].data = s1Data;
@@ -234,46 +146,13 @@
         }
     }
 
-    function resetDisplay() {
-        ["totalShots", "avgMatchTime", "fastestShot", "s1Avg", "s1Shots", "s1Percent", "s2Avg", "s2Shots", "s2Percent", "pressureIndex"].forEach(id => {
-            document.getElementById(id).innerText = "0";
-        });
-        document.getElementById('trendText').innerText = "Waiting...";
-        if (shotChart) {
-            shotChart.data.labels = [];
-            shotChart.data.datasets.forEach(d => d.data = []);
-            shotChart.update();
-        }
-    }
-
-    // Match Timer
-    setInterval(() => {
-    const timerEl = document.getElementById('matchDuration');
-    
-    // Hvis matchen er aktiv og vi har fått en starttid fra Firebase
-    if (matchActive && matchStartTimestamp) {
-        const now = Date.now();
-        const diff = Math.floor((now - matchStartTimestamp) / 1000);
-        
-        if (diff >= 0) {
-            const h = Math.floor(diff / 3600).toString().padStart(2, '0');
-            const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
-            const s = (diff % 60).toString().padStart(2, '0');
-            timerEl.innerText = `${h}:${m}:${s}`;
-        }
-    } else if (!matchActive && !matchStartTimestamp) {
-        // Hvis alt er resatt, vis null
-        timerEl.innerText = "00:00:00";
-    }
-    // Hvis !matchActive (stoppet), blir teksten bare stående på tiden den hadde (Freeze).
-}, 1000);
     function resetAllStats() {
-        if(confirm("Dette sletter all historikk for denne matchen. Er du sikker?")) {
+        if(confirm("Slette all match-data?")) {
             db.ref('stats').remove();
-            matchStartTimestamp = null;
+            matchStartTimestamp = 0;
+            document.getElementById('matchDuration').innerText = "00:00:00";
         }
     }
-
     window.onload = initChart;
 </script>
 </body>
