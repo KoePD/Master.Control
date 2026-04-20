@@ -93,12 +93,12 @@
     let lastResetTime = Date.now();
 
     function startMatch() {
-    resetPool(9);
-    db.ref('activePlayer').set(""); 
-    
-    // NY LINJE: Lagrer starttidspunktet for matchen
+    // 1. Sett starttidspunktet FØRST
     db.ref('stats/startTime').set(Date.now());
     
+    // 2. Resten av logikken
+    resetPool(9);
+    db.ref('activePlayer').set(""); 
     db.ref('shotclock/cmd').set({ action: 'reset30' });
     
     setTimeout(() => {
