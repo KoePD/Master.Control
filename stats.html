@@ -7,66 +7,124 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --gold: #ffcc00; --s1: #00FF41; --s2: #00E5FF; --bg: #050505; --card: #111; --border: #222; }
-        body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
+        :root { 
+            --gold: #ffcc00; --s1: #00FF41; --s2: #00E5FF; 
+            --bg: #050505; --card: #111; --border: #222; --red: #ff4444;
+        }
+        body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; overflow-x: hidden; }
         .dashboard { max-width: 1400px; margin: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .header { grid-column: span 4; text-align: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
-        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-align: center; }
+        
+        .header { grid-column: span 4; text-align: center; border-bottom: 2px solid var(--border); padding: 10px; margin-bottom: 5px; }
+        .header h1 { color: var(--gold); text-transform: uppercase; margin: 0; font-size: 1.6rem; letter-spacing: 2px; }
+        
+        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-align: center; transition: all 0.3s ease; }
         .label { font-size: 0.65rem; color: #888; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
-        .value { font-size: 1.7rem; font-weight: 800; color: #fff; }
-        .s1 .value { color: var(--s1); } .s2 .value { color: var(--s2); }
+        .value { font-size: 1.8rem; font-weight: 800; color: #fff; }
+        
+        /* Spillerfarger */
+        .s1 .value { color: var(--s1); } 
+        .s2 .value { color: var(--s2); }
         .highlight .value { color: var(--gold); }
+        .error-card { border-color: var(--red); }
+        .error-card .value { color: var(--red); }
+
         .graph-container { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 10px; grid-column: span 3; height: 350px; }
         .side-stats { grid-column: span 1; display: grid; gap: 10px; }
-        .comparison-bar { height: 12px; background: #222; border-radius: 6px; overflow: hidden; display: flex; margin-top: 10px; }
-        #bar-s1 { background: var(--s1); transition: width 0.5s; }
-        #bar-s2 { background: var(--s2); transition: width 0.5s; }
+        
+        .comparison-bar { height: 14px; background: #222; border-radius: 7px; overflow: hidden; display: flex; margin-top: 10px; width: 100%; }
+        #bar-s1 { height: 100%; background: var(--s1); transition: width 0.5s; }
+        #bar-s2 { height: 100%; background: var(--s2); transition: width 0.5s; }
+
+        /* Skjuling av elementer */
+        .hidden { display: none !important; }
+
+        .btn-reset { grid-column: span 4; background: #221111; color: var(--red); border: 1px solid #442222; padding: 10px; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
     <div class="header">
-        <h1 style="color:var(--gold); margin:0; font-size: 1.5rem;">🎙️ MATCH INSIGHT PRO</h1>
-        <div id="matchDuration" style="font-size: 1.2rem; font-family: monospace;">00:00:00</div>
+        <h1 id="matchTitle">🎙️ MATCH INSIGHT PRO</h1>
+        <div id="matchDuration" style="font-size: 1.3rem; font-family: monospace; color: #fff;">00:00:00</div>
     </div>
 
-    <div class="stat-card highlight"><div class="label">Mode</div><div id="modeText" class="value" style="font-size:1.2rem;">-</div></div>
+    <div class="stat-card highlight"><div class="label">Match Mode</div><div id="modeText" class="value" style="font-size:1.3rem;">-</div></div>
     <div class="stat-card highlight"><div class="label">Score (Wins)</div><div id="vsWinText" class="value">0 - 0</div></div>
-    <div class="stat-card"><div class="label">Avg Pace</div><div id="avgMatchTime" class="value">0s</div></div>
-    <div class="stat-card"><div class="label">Pressure</div><div id="pressureIndex" class="value" style="color:#ff4444;">0s</div></div>
+    <div class="stat-card"><div class="label">Avg Shot Time</div><div id="avgMatchTime" class="value">0s</div></div>
+    <div class="stat-card"><div class="label">Pressure Index</div><div id="pressureIndex" class="value" style="color:var(--red);">0s</div></div>
 
-    <div class="stat-card s1"><div class="label" id="nameLText">Player 1</div><div id="s1Pots" class="value">0</div><div class="label">Total Pots</div></div>
-    <div class="stat-card s1"><div class="label">Efficiency</div><div id="s1Eff" class="value">0.0</div><div class="label">Pots/Visit</div></div>
+    <div class="stat-card s1"><div class="label" id="nameLText">Player 1</div><div id="s1Pots" class="value">0</div><div class="label">Balls Potted</div></div>
+    <div class="stat-card s1"><div class="label">Pots Per Visit</div><div id="s1Eff" class="value">0.0</div></div>
     <div class="stat-card s1"><div class="label">Runouts</div><div id="s1Run" class="value">0</div></div>
-    <div class="stat-card s1"><div class="label">Early 8-Loss</div><div id="s1Err" class="value">0</div></div>
+    <div id="card-8ball-s1" class="stat-card s1 error-card hidden"><div class="label">Early 8-Loss</div><div id="s1Err" class="value">0</div></div>
 
-    <div class="stat-card s2"><div class="label" id="nameRText">Player 2</div><div id="s2Pots" class="value">0</div><div class="label">Total Pots</div></div>
-    <div class="stat-card s2"><div class="label">Efficiency</div><div id="s2Eff" class="value">0.0</div><div class="label">Pots/Visit</div></div>
+    <div class="stat-card s2"><div class="label" id="nameRText">Player 2</div><div id="s2Pots" class="value">0</div><div class="label">Balls Potted</div></div>
+    <div class="stat-card s2"><div class="label">Pots Per Visit</div><div id="s2Eff" class="value">0.0</div></div>
     <div class="stat-card s2"><div class="label">Runouts</div><div id="s2Run" class="value">0</div></div>
-    <div class="stat-card s2"><div class="label">Early 8-Loss</div><div id="s2Err" class="value">0</div></div>
+    <div id="card-8ball-s2" class="stat-card s2 error-card hidden"><div class="label">Early 8-Loss</div><div id="s2Err" class="value">0</div></div>
 
     <div class="graph-container"><canvas id="shotChart"></canvas></div>
     
     <div class="side-stats">
         <div class="stat-card"><div class="label">Total Shots</div><div id="totalShots" class="value">0</div></div>
-        <div class="stat-card"><div class="label">Dry Breaks</div><div id="vsDry" class="value" style="font-size:1.2rem;">0 - 0</div></div>
-        <div class="stat-card"><div class="label">Extensions</div><div id="vsExt" class="value" style="font-size:1.2rem;">0 - 0</div></div>
+        <div class="stat-card"><div class="label">Dry Breaks (S1-S2)</div><div id="vsDry" class="value" style="font-size:1.4rem;">0 - 0</div></div>
+        <div class="stat-card"><div class="label">Extensions Used</div><div id="vsExt" class="value" style="font-size:1.4rem;">0 - 0</div></div>
     </div>
 
     <div class="stat-card" style="grid-column: span 4;">
-        <div class="label">Table Control & Match Trend</div>
-        <div id="trendText" style="color:var(--gold); font-weight:bold; margin-bottom:5px;">Analyzing flow...</div>
-        <div class="comparison-bar"><div id="bar-s1" style="width: 50%;"></div><div id="bar-s2" style="width: 50%;"></div></div>
+        <div class="label">Match Trend & Table Control</div>
+        <div id="trendText" style="color:var(--gold); font-weight:bold; margin-bottom:5px; font-size: 1.1rem;">Analyzing match flow...</div>
+        <div class="comparison-bar">
+            <div id="bar-s1" style="width: 50%;"></div>
+            <div id="bar-s2" style="width: 50%;"></div>
+        </div>
     </div>
+
+    <button class="btn-reset" onclick="resetAllStats()">Reset All Match Data</button>
 </div>
 
 <script>
     const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let shotChart;
 
+    let shotChart;
+    let matchStartTimestamp = 0;
+    let isMatchActive = false;
+
+    // Timer-logikk
+    db.ref('stats/startTime').on('value', snap => { matchStartTimestamp = snap.val(); });
+    db.ref('shotclock/status').on('value', snap => { isMatchActive = (snap.val() !== 'hidden' && snap.val() !== null); });
+
+    setInterval(() => {
+        const display = document.getElementById('matchDuration');
+        if (isMatchActive && matchStartTimestamp > 0) {
+            const seconds = Math.floor((Date.now() - matchStartTimestamp) / 1000);
+            if (seconds >= 0) {
+                const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+                const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+                const s = (seconds % 60).toString().padStart(2, '0');
+                display.innerText = `${h}:${m}:${s}`;
+            }
+        }
+    }, 1000);
+
+    // Initialiser Graf
+    function initChart() {
+        const ctx = document.getElementById('shotChart').getContext('2d');
+        shotChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [
+                { label: 'S1', data: [], borderColor: '#00FF41', backgroundColor: 'rgba(0,255,65,0.05)', tension: 0.3, fill: true, spanGaps: true },
+                { label: 'S2', data: [], borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.05)', tension: 0.3, fill: true, spanGaps: true }
+            ]},
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, 
+            scales: { y: { beginAtZero: true, grid: { color: '#222' } }, x: { display: false } } }
+        });
+    }
+
+    // HOVEDLYTTER - Oppdaterer alt
     db.ref('stats').on('value', snap => {
         const d = snap.val() || {};
         const history = d.history ? Object.values(d.history) : [];
@@ -77,60 +135,105 @@
         const err = d.errors || {left:0, right:0};
         const dry = d.dryBreaks || {left:0, right:0};
         const ext = d.extensions || {left:0, right:0};
+        const names = d.names || {left: "Player 1", right: "Player 2"};
 
-        // Oppdater verdier
-        document.getElementById('vsWinText').innerText = `${wins.left||0} - ${wins.right||0}`;
-        document.getElementById('s1Pots').innerText = pots.left||0;
-        document.getElementById('s2Pots').innerText = pots.right||0;
-        document.getElementById('s1Run').innerText = run.left||0;
-        document.getElementById('s2Run').innerText = run.right||0;
-        document.getElementById('s1Err').innerText = err.left||0;
-        document.getElementById('s2Err').innerText = err.right||0;
-        document.getElementById('vsDry').innerText = `${dry.left||0} - ${dry.right||0}`;
-        document.getElementById('vsExt').innerText = `${ext.left||0} - ${ext.right||0}`;
+        // Navn
+        document.getElementById('nameLText').innerText = names.left;
+        document.getElementById('nameRText').innerText = names.right;
+
+        // Wins & Potter
+        document.getElementById('vsWinText').innerText = `${wins.left} - ${wins.right}`;
+        document.getElementById('s1Pots').innerText = pots.left || 0;
+        document.getElementById('s2Pots').innerText = pots.right || 0;
         
-        // Beregn Effektivitet
+        // Effektivitet
         document.getElementById('s1Eff').innerText = (pots.left / Math.max(1, visits.left)).toFixed(1);
         document.getElementById('s2Eff').innerText = (pots.right / Math.max(1, visits.right)).toFixed(1);
+
+        // Runouts & Errors
+        document.getElementById('s1Run').innerText = run.left || 0;
+        document.getElementById('s2Run').innerText = run.right || 0;
+        document.getElementById('s1Err').innerText = err.left || 0;
+        document.getElementById('s2Err').innerText = err.right || 0;
+
+        // VS-linjer
+        document.getElementById('vsDry').innerText = `${dry.left || 0} - ${dry.right || 0}`;
+        document.getElementById('vsExt').innerText = `${ext.left || 0} - ${ext.right || 0}`;
 
         updateVisuals(history);
     });
 
+    // Lytter på modus for dynamisk layout
+    db.ref('gameMode').on('value', snap => {
+        const mode = snap.val() || 9;
+        document.getElementById('modeText').innerText = mode + "-Ball";
+        
+        // Vis/skjul 8-ball kort
+        const err1 = document.getElementById('card-8ball-s1');
+        const err2 = document.getElementById('card-8ball-s2');
+        if (mode == 8) {
+            err1.classList.remove('hidden'); err2.classList.remove('hidden');
+        } else {
+            err1.classList.add('hidden'); err2.classList.add('hidden');
+        }
+    });
+
     function updateVisuals(entries) {
-        if (!entries.length) return;
-        let s1T=0, s1C=0, s2T=0, s2C=0;
-        let s1D=[], s2D=[], labels=[];
+        if (!entries || entries.length === 0) { resetDisplay(); return; }
+        let s1T = 0, s1C = 0, s2T = 0, s2C = 0;
+        let s1Data = [], s2Data = [], labels = [];
 
         entries.forEach((e, i) => {
-            labels.push(i+1);
-            if (e.player === 'left') { s1T+=e.time; s1C++; s1D.push(e.time); s2D.push(null); }
-            else { s2T+=e.time; s2C++; s2D.push(e.time); s1D.push(null); }
+            labels.push(i + 1);
+            if (e.player === 'left') { s1T += e.time; s1C++; s1Data.push(e.time); s2Data.push(null); }
+            else { s2T += e.time; s2C++; s2Data.push(e.time); s1Data.push(null); }
         });
 
         document.getElementById('totalShots').innerText = entries.length;
-        document.getElementById('avgMatchTime').innerText = ((s1T+s2T)/entries.length).toFixed(1)+"s";
+        document.getElementById('avgMatchTime').innerText = ((s1T + s2T) / entries.length).toFixed(1) + "s";
         
-        // Pressure Index (snitt av siste 3)
         const last3 = entries.slice(-3);
-        document.getElementById('pressureIndex').innerText = (last3.reduce((a,b)=>a+b.time,0)/Math.max(1, last3.length)).toFixed(1)+"s";
+        document.getElementById('pressureIndex').innerText = (last3.reduce((a,b)=>a+b.time,0)/Math.max(1, last3.length)).toFixed(1) + "s";
 
         // Trend
-        const diff = (s2T/Math.max(1,s2C)) - (s1T/Math.max(1,s1C));
-        document.getElementById('trendText').innerText = diff > 2 ? "🐢 Match Slowing Down" : "⚡ High Confidence Pace";
+        const firstH = entries.slice(0, Math.floor(entries.length/2));
+        const secondH = entries.slice(Math.floor(entries.length/2));
+        if (secondH.length >= 2) {
+            const fAvg = firstH.reduce((a,b)=>a+b.time,0)/Math.max(1, firstH.length);
+            const sAvg = secondH.reduce((a,b)=>a+b.time,0)/Math.max(1, secondH.length);
+            const diff = sAvg - fAvg;
+            document.getElementById('trendText').innerText = diff > 2 ? "🐢 Match Slowing Down (Pressure Rising)" : (diff < -2 ? "⚡ Speeding Up (High Confidence)" : "⚖️ Stable Match Pace");
+        }
 
-        const p1 = (s1C/entries.length*100);
-        document.getElementById('bar-s1').style.width = p1+"%";
-        document.getElementById('bar-s2').style.width = (100-p1)+"%";
+        const p1 = (s1C / entries.length * 100);
+        document.getElementById('bar-s1').style.width = p1 + "%";
+        document.getElementById('bar-s2').style.width = (100 - p1) + "%";
 
         if (shotChart) {
             shotChart.data.labels = labels;
-            shotChart.data.datasets[0].data = s1D;
-            shotChart.data.datasets[1].data = s2D;
+            shotChart.data.datasets[0].data = s1Data;
+            shotChart.data.datasets[1].data = s2Data;
             shotChart.update('none');
         }
     }
 
-    // (Legg til Chart init og Timer fra forrige script her...)
+    function resetDisplay() {
+        ["totalShots", "avgMatchTime", "s1Pots", "s2Pots", "s1Eff", "s2Eff", "s1Run", "s2Run", "pressureIndex"].forEach(id => {
+            if(document.getElementById(id)) document.getElementById(id).innerText = "0";
+        });
+        document.getElementById('trendText').innerText = "Waiting for data...";
+        if (shotChart) { shotChart.data.labels = []; shotChart.data.datasets.forEach(d => d.data = []); shotChart.update(); }
+    }
+
+    function resetAllStats() {
+        if(confirm("Slette all match-data og starte på nytt?")) {
+            db.ref('stats').remove();
+            matchStartTimestamp = 0;
+            document.getElementById('matchDuration').innerText = "00:00:00";
+        }
+    }
+
+    window.onload = initChart;
 </script>
 </body>
 </html>
