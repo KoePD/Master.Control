@@ -9,7 +9,7 @@
     <style>
         :root {
             --bg: #000; --card: #0d0d0d; --border: #222;
-            --accent: #ffcc00; --green: #00FF41; --blue: #0055ff;
+            --accent: #ffcc00; --green: #00FF41; --blue: #00E5FF;
             --red: #FF0000; --ext: #00E5FF;
         }
         html, body { height: 100%; overflow: hidden; margin: 0; padding: 0; }
@@ -17,39 +17,47 @@
         .container { width: 100%; max-width: 450px; height: 100%; display: flex; flex-direction: column; gap: 8px; }
         .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; }
         .pool-section { flex: 1; min-height: 0; } 
-        h2 { font-size: 0.7rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; opacity: 0.7; }
+        h2 { font-size: 0.65rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; opacity: 0.7; letter-spacing: 1px; }
+        
+        /* Navnefelt - Sentrert og smalere */
+        .name-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 5px; }
+        .name-input { 
+            background: #111; border: 1px solid #333; color: white; padding: 6px 4px; 
+            border-radius: 8px; text-align: center; font-size: 11px; width: 100%; 
+            box-sizing: border-box; outline: none; 
+        }
+        #nameL { border-left: 3px solid var(--green); }
+        #nameR { border-right: 3px solid var(--blue); }
+
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         button { padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px; border: 2px solid #333; background: #111; color: white; text-transform: uppercase; transition: all 0.2s ease; }
         .player-btn { padding: 14px 5px; font-size: 13px; border-width: 2px; }
-        .active-l, .active-r { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
+        
+        /* Aktive stiler */
+        .active-l { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
+        .active-r { border-color: var(--blue) !important; color: var(--blue) !important; background: rgba(0, 229, 255, 0.05) !important; }
+        .mode-btn.active-mode { border-color: var(--green) !important; color: var(--green) !important; box-shadow: 0 0 8px rgba(0, 255, 65, 0.3); }
+
         .ball-scroll-area { flex: 1; overflow-y: auto; margin-bottom: 8px; }
         .ball-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; justify-items: center; }
-        .ball-btn { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #000; position: relative; display: flex; justify-content: center; align-items: center; }
-        .num-label { background: white; color: black; width: 20px; height: 20px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: 900; border: 1px solid black; z-index: 10; }
+        .ball-btn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #000; position: relative; display: flex; justify-content: center; align-items: center; }
+        .num-label { background: white; color: black; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: 900; border: 1px solid black; z-index: 10; }
         .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
         .striped { background: black !important; }
-        .stripe-band { position: absolute; width: 100%; height: 26px; top: 14.5px; z-index: 1; }
+        .stripe-band { position: absolute; width: 100%; height: 24px; top: 12px; z-index: 1; }
         .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
         .f-3, .b11 { background-color: #cc0000; } .f-4, .b12 { background-color: #ff66aa; }
         .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
         .f-7, .b15 { background-color: #884422; } .f-8 { background-color: black; }
-        .name-input { background: #111; border: 1px solid #333; color: white; padding: 8px; border-radius: 8px; text-align: center; font-size: 12px; }
-
-        /* NY STIL FOR AKTIV GREN */
-        .mode-btn.active-mode {
-            border-color: var(--green) !important;
-            color: var(--green) !important;
-            box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
-        }
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="section" style="gap: 5px;">
-        <h2>Spillernavn</h2>
-        <div class="grid">
-            <input type="text" id="nameL" class="name-input" placeholder="Navn S1" onchange="updateNames()">
-            <input type="text" id="nameR" class="name-input" placeholder="Navn S2" onchange="updateNames()">
+    <div class="section" style="padding: 10px 5px;">
+        <h2>Spillernavn (S1 / S2)</h2>
+        <div class="name-grid">
+            <input type="text" id="nameL" class="name-input" placeholder="Navn S1" oninput="updateNames()">
+            <input type="text" id="nameR" class="name-input" placeholder="Navn S2" oninput="updateNames()">
         </div>
     </div>
 
@@ -107,10 +115,11 @@
         for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null;
         if (max === 8) for (let i = 1; i <= 15; i++) updates[i] = true;
         db.ref('balls').set(updates);
-        db.ref('gameMode').set(max); // Lagrer modus i Firebase
+        db.ref('gameMode').set(max);
         db.ref('breakStatus').set({ active: true, ballsSunk: 0 });
     }
 
+    // Ball-knapper
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
@@ -129,26 +138,21 @@
                         const d = mSnap.val();
                         const player = d.activePlayer;
                         if (!player) return;
-                        
                         currentVisitPots++;
                         db.ref(`stats/pots/${player}`).transaction(c => (c || 0) + 1);
                         if (d.breakStatus?.active) db.ref('breakStatus/ballsSunk').transaction(c => (c || 0) + 1);
-
+                        
                         const mode = d.gameMode || 9;
                         if (i == mode) {
                             let others = false;
                             const limit = (mode === 8) ? 15 : mode;
                             for (let n = 1; n <= limit; n++) { if (n !== i && d.balls[n] === true) others = true; }
-
                             if (mode == 9 || !others) {
                                 db.ref(`stats/matchWins/${player}`).transaction(c => (c || 0) + 1);
                                 if (currentVisitPots >= 5) db.ref(`stats/runouts/${player}`).transaction(c => (c || 0) + 1);
                             } else if (mode == 8) {
                                 db.ref(`stats/errors/${player}`).transaction(c => (c || 0) + 1);
                                 db.ref(`stats/matchWins/${player === 'left' ? 'right' : 'left'}`).transaction(c => (c || 0) + 1);
-                            } else if (mode == 10) {
-                                db.ref(`balls/${i}`).set(true);
-                                db.ref(`stats/pots/${player}`).transaction(c => (c > 0 ? c - 1 : 0));
                             }
                         }
                     });
@@ -167,7 +171,6 @@
             }
         });
         db.ref('activePlayer').once('value', s => { if (s.val() !== player) currentVisitPots = 0; });
-        
         const now = Date.now();
         const timeSpent = (now - lastResetTime) / 1000;
         if (timeSpent > 1.5 && timeSpent < 120) {
@@ -187,16 +190,19 @@
     function sendClock(cmd) { db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
     function avsluttMatch() { if(confirm("Avslutt?")) { db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/status').set('hidden'); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
     
-    // Synk UI
+    // UI-synkronisering
     db.ref('activePlayer').on('value', snap => {
         const p = snap.val();
         document.getElementById('btnL').classList.toggle('active-l', p === 'left');
         document.getElementById('btnR').classList.toggle('active-r', p === 'right');
     });
 
-    db.ref('shotclock/status').on('value', snap => {
-        const btn = document.getElementById('toggleBtn');
-        if(btn) btn.textContent = (snap.val() === 'running') ? "⏸ PAUSE" : "▶ RESUME";
+    db.ref('gameMode').on('value', snap => {
+        const activeMode = snap.val();
+        [8, 9, 10].forEach(m => {
+            const btn = document.getElementById(`mode-${m}`);
+            if (btn) btn.classList.toggle('active-mode', m === activeMode);
+        });
     });
 
     db.ref('balls').on('value', snap => {
@@ -209,16 +215,6 @@
                 btn.style.display = (data[i] === undefined) ? 'none' : 'flex';
             }
         }
-    });
-
-    // MARKER AKTIV GREN
-    db.ref('gameMode').on('value', snap => {
-        const activeMode = snap.val();
-        const modes = [8, 9, 10];
-        modes.forEach(mode => {
-            const btn = document.getElementById(`mode-${mode}`);
-            if (btn) btn.classList.toggle('active-mode', mode === activeMode);
-        });
     });
 
     function reputtActiveBalls() {
