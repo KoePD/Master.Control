@@ -172,9 +172,31 @@
         let num = document.createElement('div'); num.className = 'num-label'; num.innerText = i; b.appendChild(num);
         if (i > 8) { b.classList.add('striped'); let band = document.createElement('div'); band.className = `stripe-band f-${i-8}`; b.appendChild(band); } 
         else b.classList.add(`f-${i}`);
-        b.onclick = () => { const ref = db.ref(`balls/${i}`); ref.once('value').then(s => ref.set(s.val() === false)); };
-        grid.appendChild(b);
-    }
+        b.onclick = () => {
+    const ref = db.ref(`balls/${i}`);
+    ref.once('value').then(snap => {
+        const isCurrentlyActive = snap.val() !== false; // Hvis den er aktiv nå, skal den senkes
+        const newStatus = !isCurrentlyActive;
+        
+        // 1. Oppdater selve kulen i Firebase
+        ref.set(newStatus);
+        
+        // 2. Hvis kulen ble senket (newStatus === false), logg det på aktiv spiller
+        if (newStatus === false) {
+            db.ref('activePlayer').once('value', pSnap => {
+                const player = pSnap.val();
+                if (player) {
+                    // Lagre potting i stats/pots/left eller stats/pots/right
+                    db.ref(`stats/pots/${player}`).transaction(curr => (curr || 0) + 1);
+                    // Spesial-logg hvis det er 9-ball (valgfritt, men gøy for kommentatorer)
+                    if (i === 9) {
+                        db.ref(`stats/matchWins/${player}`).transaction(curr => (curr || 0) + 1);
+                    }
+                }
+            });
+        }
+    });
+};
 
     db.ref('balls').on('value', snap => {
         const data = snap.val() || {};
