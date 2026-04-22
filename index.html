@@ -38,13 +38,22 @@
         .active-r { border-color: var(--blue) !important; color: var(--blue) !important; background: rgba(0, 229, 255, 0.05) !important; }
         .mode-btn.active-mode { border-color: var(--green) !important; color: var(--green) !important; box-shadow: 0 0 8px rgba(0, 255, 65, 0.3); }
 
+        /* Ball-logikk */
         .ball-scroll-area { flex: 1; overflow-y: auto; margin-bottom: 8px; }
         .ball-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; justify-items: center; }
-        .ball-btn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #000; position: relative; display: flex; justify-content: center; align-items: center; }
+        .ball-btn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #000; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; background: white; }
         .num-label { background: white; color: black; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: 900; border: 1px solid black; z-index: 10; }
         .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
-        .striped { background: black !important; }
-        .stripe-band { position: absolute; width: 100%; height: 24px; top: 12px; z-index: 1; }
+        
+        /* Ball-sett farger */
+        .stripe-band { position: absolute; width: 100%; height: 24px; top: 14px; z-index: 1; }
+        
+        /* Dark Mode kuler (Svart bakgrunn på striper) */
+        .dark-set.striped { background: black !important; }
+        
+        /* Classic Mode kuler (Hvit bakgrunn på striper) */
+        .classic-set.striped { background: white !important; }
+
         .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
         .f-3, .b11 { background-color: #cc0000; } .f-4, .b12 { background-color: #ff66aa; }
         .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
@@ -66,11 +75,12 @@
         <div class="ball-scroll-area">
             <div class="ball-grid" id="ball-grid"></div>
         </div>
-        <div class="grid" style="gap: 5px;">
-            <button class="mini-btn" onclick="reputtActiveBalls()">♻️ Re-Rack</button>
-            <button id="mode-9" class="mode-btn" onclick="resetPool(9)">9-Ball</button>
-            <button id="mode-10" class="mode-btn" onclick="resetPool(10)">10-Ball</button>
-            <button id="mode-8" class="mode-btn" onclick="resetPool(8)">8-Ball</button>
+        <div class="grid" style="gap: 5px; grid-template-columns: 1fr 1fr 1fr 1fr 1fr;">
+            <button class="mini-btn" onclick="reputtActiveBalls()" title="Re-Rack">♻️</button>
+            <button id="ballSetBtn" class="mini-btn" onclick="toggleBallSet()" title="Endre kulesett">🎨</button>
+            <button id="mode-9" class="mode-btn" onclick="resetPool(9)">9</button>
+            <button id="mode-10" class="mode-btn" onclick="resetPool(10)">10</button>
+            <button id="mode-8" class="mode-btn" onclick="resetPool(8)">8</button>
         </div>
     </div>
 
@@ -92,8 +102,16 @@
     const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    
     let lastResetTime = Date.now();
     let currentVisitPots = 0;
+    let ballStyle = 'dark'; // 'dark' eller 'classic'
+
+    function toggleBallSet() {
+        ballStyle = (ballStyle === 'dark') ? 'classic' : 'dark';
+        db.ref('settings/ballStyle').set(ballStyle);
+        renderBalls();
+    }
 
     function updateNames() {
         db.ref('stats/names').set({
@@ -119,14 +137,17 @@
         db.ref('breakStatus').set({ active: true, ballsSunk: 0 });
     }
 
-    // Ball-knapper
+    // Lag ballene én gang
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
         b.id = `btn-${i}`; b.className = 'ball-btn';
         let num = document.createElement('div'); num.className = 'num-label'; num.innerText = i; b.appendChild(num);
-        if (i > 8) { b.classList.add('striped'); let band = document.createElement('div'); band.className = `stripe-band f-${i-8}`; b.appendChild(band); } 
-        else b.classList.add(`f-${i}`);
+        
+        let band = document.createElement('div'); 
+        band.id = `band-${i}`;
+        band.className = 'stripe-band';
+        b.appendChild(band);
 
         b.onclick = () => {
             const ref = db.ref(`balls/${i}`);
@@ -162,6 +183,32 @@
         grid.appendChild(b);
     }
 
+    function renderBalls() {
+        const data = window.currentActiveData || {};
+        for (let i = 1; i <= 15; i++) {
+            const b = document.getElementById(`btn-${i}`);
+            const band = document.getElementById(`band-${i}`);
+            if (!b) continue;
+
+            b.classList.toggle('sunk', data[i] === false);
+            b.style.display = (data[i] === undefined) ? 'none' : 'flex';
+
+            // Nullstill farger
+            b.className = 'ball-btn' + (data[i] === false ? ' sunk' : '');
+            band.className = 'stripe-band';
+
+            if (i <= 8) {
+                b.classList.add(`f-${i}`);
+                band.style.display = 'none';
+            } else {
+                band.style.display = 'block';
+                band.classList.add(`f-${i-8}`);
+                b.classList.add('striped');
+                b.classList.add(ballStyle === 'dark' ? 'dark-set' : 'classic-set');
+            }
+        }
+    }
+
     function shotReset(player) {
         db.ref('breakStatus').once('value', s => {
             const b = s.val();
@@ -190,7 +237,7 @@
     function sendClock(cmd) { db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
     function avsluttMatch() { if(confirm("Avslutt?")) { db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/status').set('hidden'); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
     
-    // UI-synkronisering
+    // Firebase listeners
     db.ref('activePlayer').on('value', snap => {
         const p = snap.val();
         document.getElementById('btnL').classList.toggle('active-l', p === 'left');
@@ -206,14 +253,14 @@
     });
 
     db.ref('balls').on('value', snap => {
-        const data = snap.val() || {};
-        window.currentActiveData = data;
-        for (let i = 1; i <= 15; i++) {
-            const btn = document.getElementById(`btn-${i}`);
-            if (btn) {
-                btn.classList.toggle('sunk', data[i] === false);
-                btn.style.display = (data[i] === undefined) ? 'none' : 'flex';
-            }
+        window.currentActiveData = snap.val() || {};
+        renderBalls();
+    });
+
+    db.ref('settings/ballStyle').on('value', snap => {
+        if (snap.val()) {
+            ballStyle = snap.val();
+            renderBalls();
         }
     });
 
