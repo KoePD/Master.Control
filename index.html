@@ -222,7 +222,21 @@
     function startBreak() { vibe(60); sendClock('reset60'); db.ref('breakStatus/active').set(true); }
     function useExtension() { vibe(80); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); sendClock('extension'); }
     function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
-    function avsluttMatch() { vibe(100); if(confirm("Avslutt?")) { db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/status').set('hidden'); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
+    function avsluttMatch() {
+    vibe(100); // Vibrering for bekreftelse
+    if(confirm("Vil du avslutte kampen og stoppe klokkene?")) {
+        // 1. Stopp kamp-klokka i stats ved å sette startTime til 0
+        db.ref('stats/startTime').set(0);
+        
+        // 2. Rydd opp i andre statuser
+        db.ref('activePlayer').set(null);
+        db.ref('balls').set(null);
+        db.ref('shotclock/status').set('hidden');
+        db.ref('shotclock/cmd').set({ action: 'stop' });
+        
+        console.log("Match avsluttet og klokker stoppet.");
+    }
+}
     
     db.ref('activePlayer').on('value', snap => {
         const p = snap.val();
