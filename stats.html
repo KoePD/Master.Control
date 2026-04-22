@@ -112,7 +112,7 @@
 
 <script>
     // --- KONFIGURASJON ---
-    const cueScoreMatchID = "79253032"; // Lim inn din Match ID her
+    const cueScoreMatchID = "79253032"; 
     const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
     
     firebase.initializeApp(firebaseConfig);
@@ -120,30 +120,51 @@
     let shotChart;
     let matchStartTimestamp = 0;
 
-    // --- CUESCORE SYNC ---
+    // --- CUESCORE SYNC (Forbedret versjon) ---
     function syncCueScore() {
-        // Merk: Dette er en simulering av API-kall. CueScore krever ofte API-nøkkel for full tilgang.
-        // Vi poller deres åpne JSON-endepunkt hvis tilgjengelig.
-        fetch(`https://cuescore.com/api/getMatch:${cueScoreMatchID}`)
-            .then(res => res.json())
-            .then(data => {
-                if(!data) return;
-                document.getElementById('winsL').innerText = data.scoreA || 0;
-                document.getElementById('winsR').innerText = data.scoreB || 0;
-                document.getElementById('nameLText').innerText = data.playerA?.name || "S1";
-                document.getElementById('nameRText').innerText = data.playerB?.name || "S2";
-                document.getElementById('hcL').innerText = "HC: " + (data.playerA?.handicap || 0);
-                document.getElementById('hcR').innerText = "HC: " + (data.playerB?.handicap || 0);
-                
-                // Brekk-indikator (Lyn)
-                const isBreaker = data.breaker; // 'A' eller 'B'
-                document.getElementById('breakL').style.visibility = (isBreaker === 'A' ? 'visible' : 'hidden');
-                document.getElementById('breakR').style.visibility = (isBreaker === 'B' ? 'visible' : 'hidden');
-            }).catch(e => console.log("CueScore sync waiting..."));
-    }
-    setInterval(syncCueScore, 5000);
+        // Vi bruker en proxy for å unngå CORS-blokkering i nettleseren
+        const proxyUrl = "https://api.allorigins.win/get?url=";
+        const targetUrl = encodeURIComponent(`https://cuescore.com/api/getMatch:${cueScoreMatchID}`);
 
-    // --- FIREBASE & STATS LOGIKK ---
+        fetch(proxyUrl + targetUrl)
+            .then(res => {
+                if (res.ok) return res.json();
+                throw new Error('Nettverksfeil');
+            })
+            .then(rawData => {
+                // AllOrigins pakker svaret inn i en "contents" string
+                const data = JSON.parse(rawData.contents);
+                console.log("CueScore Data mottatt:", data); // Sjekk i F12 console
+
+                if(data) {
+                    // Prøver å hente navn fra vanlige CueScore feltnavn
+                    const p1 = data.playerA || data.player1;
+                    const p2 = data.playerB || data.player2;
+
+                    if (p1) {
+                        document.getElementById('nameLText').innerText = p1.name || "Simen";
+                        document.getElementById('hcL').innerText = "HCP: " + (p1.handicap || 0);
+                        document.getElementById('winsL').innerText = data.scoreA || data.score1 || 0;
+                    }
+                    if (p2) {
+                        document.getElementById('nameRText').innerText = p2.name || "Ole Andreas";
+                        document.getElementById('hcR').innerText = "HCP: " + (p2.handicap || 0);
+                        document.getElementById('winsR').innerText = data.scoreB || data.score2 || 0;
+                    }
+
+                    // Brekk-indikator
+                    const isBreaker = data.breaker || data.isBreaker;
+                    document.getElementById('breakL').style.visibility = (isBreaker === 'A' || isBreaker === '1' ? 'visible' : 'hidden');
+                    document.getElementById('breakR').style.visibility = (isBreaker === 'B' || isBreaker === '2' ? 'visible' : 'hidden');
+                }
+            })
+            .catch(e => console.error("CueScore Sync feil:", e));
+    }
+    
+    // Kjør synkronisering hvert 10. sekund for å ikke bli bannet av CueScore
+    setInterval(syncCueScore, 10000);
+
+    // --- FIREBASE LOGIKK ---
     db.ref('stats/startTime').on('value', snap => {
         matchStartTimestamp = snap.val() || 0;
     });
@@ -193,7 +214,6 @@
         document.getElementById('vSuccL').innerText = Math.round((pots.left/Math.max(1,s1S))*100) + "%";
         document.getElementById('vSuccR').innerText = Math.round((pots.right/Math.max(1,s2S))*100) + "%";
 
-        // Bjelker
         const v1P = (s1S / entries.length * 100);
         document.getElementById('bar-visit-s1').style.width = v1P + "%";
         document.getElementById('bar-visit-s2').style.width = (100 - v1P) + "%";
@@ -219,7 +239,6 @@
         document.getElementById('card-8ball-s2').classList.toggle('card-disabled', !is8);
     });
 
-    // Chart Init
     window.onload = () => {
         const ctx = document.getElementById('shotChart').getContext('2d');
         shotChart = new Chart(ctx, {
@@ -230,7 +249,7 @@
             ]},
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } } }
         });
-        syncCueScore();
+        syncCueScore(); // Kjør første gang med en gang
     };
 </script>
 </body>
