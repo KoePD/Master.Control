@@ -121,12 +121,30 @@
     }
 
     function startMatch() {
-        db.ref('stats/startTime').set(Date.now());
-        resetPool(9); 
-        db.ref('activePlayer').set("");
-        db.ref('shotclock/cmd').set({ action: 'reset30' });
-        setTimeout(() => { db.ref('shotclock/status').set('paused'); db.ref('shotclock/cmd').set({ action: 'stop' }); }, 300);
-    }
+    console.log("Starter match og klargjør shotclock...");
+    
+    // 1. Sett starttidspunkt
+    db.ref('stats/startTime').set(Date.now());
+    
+    // 2. Resett baller (standard 9-ball)
+    resetPool(9); 
+    
+    // 3. Nullstill aktiv spiller (viktig for at klokka ikke skal tro noen "eier" den ennå)
+    db.ref('activePlayer').set("");
+    
+    // 4. TVING status til paused først, så send reset-kommando
+    db.ref('shotclock/status').set('paused').then(() => {
+        db.ref('shotclock/cmd').set({ 
+            action: 'reset30', 
+            ts: Date.now() 
+        });
+        
+        // En liten forsinkelse for å sikre at 'stop' kommandoen kommer ETTER reset
+        setTimeout(() => {
+            db.ref('shotclock/cmd').set({ action: 'stop' });
+        }, 500);
+    });
+}
 
     function resetPool(max) {
         let updates = {};
