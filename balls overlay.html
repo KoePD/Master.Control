@@ -38,6 +38,7 @@
             position: relative;
             overflow: hidden;
             background-color: #fff;
+            transition: background-color 0.3s ease; /* Myk overgang ved bytte */
         }
 
         .ball-overlay-3d {
@@ -74,8 +75,13 @@
             visibility: hidden; 
         }
 
-        .striped { 
+        /* DYNAMISKE STILER FOR STRIPER */
+        .ball.striped.dark-set { 
             background-color: #000000 !important; 
+        }
+
+        .ball.striped.classic-set { 
+            background-color: #ffffff !important; 
         }
 
         .stripe-band { 
@@ -105,11 +111,20 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        let currentBallStyle = 'dark'; // Standardverdi
+
+        // 1. Lytt på ball-stil (Classic eller Dark)
+        db.ref('settings/ballStyle').on('value', snap => {
+            currentBallStyle = snap.val() || 'dark';
+            // Vi trenger ikke trigge noe manuelt her, da 'balls' lytteren under 
+            // uansett vil kjøre og bygge alt på nytt med den nye stilen.
+        });
+
+        // 2. Lytt på ballene
         db.ref('balls').on('value', snap => {
             const data = snap.val();
             const display = document.getElementById('display');
             
-            // 1. Sjekk om det skal skjules
             if (!data || Object.keys(data).length === 0) {
                 display.style.display = 'none'; 
                 return;
@@ -117,21 +132,22 @@
                 display.style.display = 'flex';
             }
 
-            // 2. Tøm displayet før vi bygger det på nytt
             display.innerHTML = '';
 
-            // 3. Kjør loopen for å lage kulene
             for (let i = 1; i <= 15; i++) {
                 if (data[i] === undefined) continue;
 
                 const b = document.createElement('div');
+                // Legger til stil-klassen her (dark-set eller classic-set)
                 b.className = `ball ${data[i] ? '' : 'sunk'}`;
                 
                 let cIdx = i > 8 ? i - 8 : i;
                 
-                // Legg til stripe hvis det er ball 9-15
                 if (i > 8) {
                     b.classList.add('striped');
+                    // Her legges den dynamiske stilen på de stripete ballene
+                    b.classList.add(currentBallStyle === 'dark' ? 'dark-set' : 'classic-set');
+                    
                     let band = document.createElement('div');
                     band.className = `stripe-band f-${cIdx}`;
                     b.appendChild(band);
@@ -139,20 +155,18 @@
                     b.classList.add(`f-${cIdx}`);
                 }
 
-                // Legg til nummer
                 let num = document.createElement('div');
                 num.className = 'num-label';
                 num.innerText = i;
                 b.appendChild(num);
 
-                // Legg til 3D-effekt
                 let overlay = document.createElement('div');
                 overlay.className = 'ball-overlay-3d';
                 b.appendChild(overlay);
                 
                 display.appendChild(b);
             }
-        }); // Her lukkes Firebase-funksjonen korrekt
+        });
     </script>
 </body>
 </html>
