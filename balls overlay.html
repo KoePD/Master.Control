@@ -111,20 +111,12 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let currentBallStyle = 'dark'; // Standardverdi
+        let currentBallStyle = 'dark'; 
+        let lastBallData = null; // Lagrer siste data for å kunne tegne på nytt
 
-        // 1. Lytt på ball-stil (Classic eller Dark)
-        db.ref('settings/ballStyle').on('value', snap => {
-            currentBallStyle = snap.val() || 'dark';
-            // Vi trenger ikke trigge noe manuelt her, da 'balls' lytteren under 
-            // uansett vil kjøre og bygge alt på nytt med den nye stilen.
-        });
-
-        // 2. Lytt på ballene
-        db.ref('balls').on('value', snap => {
-            const data = snap.val();
+        // Funksjon som bygger hele overlayen
+        function renderOverlay(data) {
             const display = document.getElementById('display');
-            
             if (!data || Object.keys(data).length === 0) {
                 display.style.display = 'none'; 
                 return;
@@ -138,14 +130,13 @@
                 if (data[i] === undefined) continue;
 
                 const b = document.createElement('div');
-                // Legger til stil-klassen her (dark-set eller classic-set)
                 b.className = `ball ${data[i] ? '' : 'sunk'}`;
                 
                 let cIdx = i > 8 ? i - 8 : i;
                 
                 if (i > 8) {
                     b.classList.add('striped');
-                    // Her legges den dynamiske stilen på de stripete ballene
+                    // Legger til den aktive stilen (classic eller dark)
                     b.classList.add(currentBallStyle === 'dark' ? 'dark-set' : 'classic-set');
                     
                     let band = document.createElement('div');
@@ -166,6 +157,20 @@
                 
                 display.appendChild(b);
             }
+        }
+
+        // 1. Lytt på stil-endringer (UTLØSER NY TEGNING UMIDDELBART)
+        db.ref('settings/ballStyle').on('value', snap => {
+            currentBallStyle = snap.val() || 'dark';
+            if (lastBallData) {
+                renderOverlay(lastBallData); // Tegner på nytt med en gang stilen endres
+            }
+        });
+
+        // 2. Lytt på kule-endringer
+        db.ref('balls').on('value', snap => {
+            lastBallData = snap.val();
+            renderOverlay(lastBallData);
         });
     </script>
 </body>
