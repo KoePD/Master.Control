@@ -19,7 +19,6 @@
         .pool-section { flex: 1; min-height: 0; } 
         h2 { font-size: 0.65rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; opacity: 0.7; letter-spacing: 1px; }
         
-        /* Navnefelt - Sentrert og smalere */
         .name-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 5px; }
         .name-input { 
             background: #111; border: 1px solid #333; color: white; padding: 6px 4px; 
@@ -33,25 +32,18 @@
         button { padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px; border: 2px solid #333; background: #111; color: white; text-transform: uppercase; transition: all 0.2s ease; }
         .player-btn { padding: 14px 5px; font-size: 13px; border-width: 2px; }
         
-        /* Aktive stiler */
         .active-l { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
         .active-r { border-color: var(--blue) !important; color: var(--blue) !important; background: rgba(0, 229, 255, 0.05) !important; }
         .mode-btn.active-mode { border-color: var(--green) !important; color: var(--green) !important; box-shadow: 0 0 8px rgba(0, 255, 65, 0.3); }
 
-        /* Ball-logikk */
         .ball-scroll-area { flex: 1; overflow-y: auto; margin-bottom: 8px; }
         .ball-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; justify-items: center; }
         .ball-btn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #000; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; background: white; }
         .num-label { background: white; color: black; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: 900; border: 1px solid black; z-index: 10; }
         .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
         
-        /* Ball-sett farger */
         .stripe-band { position: absolute; width: 100%; height: 24px; top: 14px; z-index: 1; }
-        
-        /* Dark Mode kuler (Svart bakgrunn på striper) */
         .dark-set.striped { background: black !important; }
-        
-        /* Classic Mode kuler (Hvit bakgrunn på striper) */
         .classic-set.striped { background: white !important; }
 
         .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
@@ -105,9 +97,17 @@
     
     let lastResetTime = Date.now();
     let currentVisitPots = 0;
-    let ballStyle = 'dark'; // 'dark' eller 'classic'
+    let ballStyle = 'dark';
+
+    // Vibreringsfunksjon
+    function vibe(ms = 40) {
+        if (navigator.vibrate) {
+            navigator.vibrate(ms);
+        }
+    }
 
     function toggleBallSet() {
+        vibe(60);
         ballStyle = (ballStyle === 'dark') ? 'classic' : 'dark';
         db.ref('settings/ballStyle').set(ballStyle);
         renderBalls();
@@ -121,32 +121,17 @@
     }
 
     function startMatch() {
-    console.log("Starter match og klargjør shotclock...");
-    
-    // 1. Sett starttidspunkt
-    db.ref('stats/startTime').set(Date.now());
-    
-    // 2. Resett baller (standard 9-ball)
-    resetPool(9); 
-    
-    // 3. Nullstill aktiv spiller (viktig for at klokka ikke skal tro noen "eier" den ennå)
-    db.ref('activePlayer').set("");
-    
-    // 4. TVING status til paused først, så send reset-kommando
-    db.ref('shotclock/status').set('paused').then(() => {
-        db.ref('shotclock/cmd').set({ 
-            action: 'reset30', 
-            ts: Date.now() 
-        });
-        
-        // En liten forsinkelse for å sikre at 'stop' kommandoen kommer ETTER reset
-        setTimeout(() => {
-            db.ref('shotclock/cmd').set({ action: 'stop' });
-        }, 500);
-    });
-}
+        vibe(100);
+        db.ref('stats/startTime').set(Date.now());
+        db.ref('activePlayer').set("");
+        db.ref('shotclock/status').set('paused');
+        resetPool(9); 
+        db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
+        setTimeout(() => { db.ref('shotclock/cmd').set({ action: 'stop' }); }, 500);
+    }
 
     function resetPool(max) {
+        vibe(60);
         let updates = {};
         for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null;
         if (max === 8) for (let i = 1; i <= 15; i++) updates[i] = true;
@@ -155,19 +140,15 @@
         db.ref('breakStatus').set({ active: true, ballsSunk: 0 });
     }
 
-    // Lag ballene én gang
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
         b.id = `btn-${i}`; b.className = 'ball-btn';
         let num = document.createElement('div'); num.className = 'num-label'; num.innerText = i; b.appendChild(num);
-        
-        let band = document.createElement('div'); 
-        band.id = `band-${i}`;
-        band.className = 'stripe-band';
-        b.appendChild(band);
+        let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
 
         b.onclick = () => {
+            vibe(30);
             const ref = db.ref(`balls/${i}`);
             ref.once('value').then(snap => {
                 const isSinking = snap.val() !== false;
@@ -207,48 +188,24 @@
             const b = document.getElementById(`btn-${i}`);
             const band = document.getElementById(`band-${i}`);
             if (!b) continue;
-
             b.classList.toggle('sunk', data[i] === false);
             b.style.display = (data[i] === undefined) ? 'none' : 'flex';
-
-            // Nullstill farger
             b.className = 'ball-btn' + (data[i] === false ? ' sunk' : '');
             band.className = 'stripe-band';
-
-            if (i <= 8) {
-                b.classList.add(`f-${i}`);
-                band.style.display = 'none';
-            } else {
-                band.style.display = 'block';
-                band.classList.add(`f-${i-8}`);
-                b.classList.add('striped');
-                b.classList.add(ballStyle === 'dark' ? 'dark-set' : 'classic-set');
-            }
+            if (i <= 8) { b.classList.add(`f-${i}`); band.style.display = 'none'; }
+            else { band.style.display = 'block'; band.classList.add(`f-${i-8}`); b.classList.add('striped'); b.classList.add(ballStyle === 'dark' ? 'dark-set' : 'classic-set'); }
         }
     }
 
-    function startMatch() {
-    console.log("Klargjør match...");
-    
-    // 1. Sett starttid for kampen
-    db.ref('stats/startTime').set(Date.now());
-    
-    // 2. Tving aktiv spiller til tom - dette hindrer klokka i å vite hvem den skal starte for
-    db.ref('activePlayer').set("");
-    
-    // 3. Sett status til paused i databasen
-    db.ref('shotclock/status').set('paused');
-    
-    // 4. Resett baller
-    resetPool(9); 
-
-    // 5. Send reset-kommando og deretter stopp umiddelbart
-    db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
-    
-    setTimeout(() => {
-        db.ref('shotclock/cmd').set({ action: 'stop' });
-    }, 500);
-}
+    function shotReset(player) {
+        vibe(50);
+        db.ref('breakStatus').once('value', s => {
+            const b = s.val();
+            if (b?.active) {
+                if (b.ballsSunk === 0) db.ref(`stats/dryBreaks/${player}`).transaction(c => (c || 0) + 1);
+                db.ref('breakStatus/active').set(false);
+            }
+        });
         db.ref('activePlayer').once('value', s => { if (s.val() !== player) currentVisitPots = 0; });
         const now = Date.now();
         const timeSpent = (now - lastResetTime) / 1000;
@@ -261,15 +218,11 @@
         db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
     }
 
-    function startBreak() { sendClock('reset60'); db.ref('breakStatus/active').set(true); }
-    function useExtension() {
-        db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); });
-        sendClock('extension');
-    }
-    function sendClock(cmd) { db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
-    function avsluttMatch() { if(confirm("Avslutt?")) { db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/status').set('hidden'); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
+    function startBreak() { vibe(60); sendClock('reset60'); db.ref('breakStatus/active').set(true); }
+    function useExtension() { vibe(80); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); sendClock('extension'); }
+    function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
+    function avsluttMatch() { vibe(100); if(confirm("Avslutt?")) { db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/status').set('hidden'); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
     
-    // Firebase listeners
     db.ref('activePlayer').on('value', snap => {
         const p = snap.val();
         document.getElementById('btnL').classList.toggle('active-l', p === 'left');
@@ -290,18 +243,10 @@
     });
 
     db.ref('settings/ballStyle').on('value', snap => {
-        if (snap.val()) {
-            ballStyle = snap.val();
-            renderBalls();
-        }
+        if (snap.val()) { ballStyle = snap.val(); renderBalls(); }
     });
 
-    function reputtActiveBalls() {
-        if (!window.currentActiveData) return;
-        let updates = {};
-        for (let i = 1; i <= 15; i++) { if (window.currentActiveData[i] !== undefined) updates[i] = true; }
-        db.ref('balls').update(updates);
-    }
+    function reputtActiveBalls() { vibe(50); if (!window.currentActiveData) return; let updates = {}; for (let i = 1; i <= 15; i++) { if (window.currentActiveData[i] !== undefined) updates[i] = true; } db.ref('balls').update(updates); }
 </script>
 </body>
 </html>
