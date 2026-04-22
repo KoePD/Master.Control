@@ -227,14 +227,28 @@
         }
     }
 
-    function shotReset(player) {
-        db.ref('breakStatus').once('value', s => {
-            const b = s.val();
-            if (b?.active) {
-                if (b.ballsSunk === 0) db.ref(`stats/dryBreaks/${player}`).transaction(c => (c || 0) + 1);
-                db.ref('breakStatus/active').set(false);
-            }
-        });
+    function startMatch() {
+    console.log("Klargjør match...");
+    
+    // 1. Sett starttid for kampen
+    db.ref('stats/startTime').set(Date.now());
+    
+    // 2. Tving aktiv spiller til tom - dette hindrer klokka i å vite hvem den skal starte for
+    db.ref('activePlayer').set("");
+    
+    // 3. Sett status til paused i databasen
+    db.ref('shotclock/status').set('paused');
+    
+    // 4. Resett baller
+    resetPool(9); 
+
+    // 5. Send reset-kommando og deretter stopp umiddelbart
+    db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
+    
+    setTimeout(() => {
+        db.ref('shotclock/cmd').set({ action: 'stop' });
+    }, 500);
+}
         db.ref('activePlayer').once('value', s => { if (s.val() !== player) currentVisitPots = 0; });
         const now = Date.now();
         const timeSpent = (now - lastResetTime) / 1000;
