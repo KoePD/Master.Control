@@ -34,7 +34,6 @@
         #bar-s1 { height: 100%; background: var(--s1); transition: width 0.5s; }
         #bar-s2 { height: 100%; background: var(--s2); transition: width 0.5s; }
 
-        /* MASKING FOR LÅSTE BOKSER */
         .card-disabled .disabled-mask { display: flex !important; }
         .card-disabled .value, .card-disabled .label { opacity: 0.1; filter: blur(1px); }
 
@@ -92,7 +91,7 @@
 
     <div class="stat-card" style="grid-column: span 4;">
         <div class="label">Match Trend & Table Control</div>
-        <div id="trendText" style="color:var(--gold); font-weight:bold; margin-bottom:5px; font-size: 1.1rem;">Waiting for break...</div>
+        <div id="trendText" style="color:var(--gold); font-weight:bold; margin-bottom:5px; font-size: 1.1rem;">Analyzing match flow...</div>
         <div class="comparison-bar">
             <div id="bar-s1" style="width: 50%;"></div>
             <div id="bar-s2" style="width: 50%;"></div>
@@ -110,24 +109,30 @@
     let shotChart;
     let matchStartTimestamp = 0;
 
-    // 1. TIMER LOGIKK (Master Match Clock)
+    // 1. FORSTERKET TIMER LOGIKK
     db.ref('stats/startTime').on('value', snap => { 
-        matchStartTimestamp = snap.val(); 
+        const val = snap.val();
+        if (val && val > 0) {
+            matchStartTimestamp = Number(val);
+        } else {
+            matchStartTimestamp = 0;
+            document.getElementById('matchDuration').innerText = "00:00:00";
+        }
     });
 
     setInterval(() => {
         const display = document.getElementById('matchDuration');
-        if (matchStartTimestamp && matchStartTimestamp > 0) {
+        if (matchStartTimestamp > 0) {
             const diff = Date.now() - matchStartTimestamp;
-            const seconds = Math.floor(diff / 1000);
-            if (seconds >= 0) {
-                const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-                const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-                const s = (seconds % 60).toString().padStart(2, '0');
-                display.innerText = `${h}:${m}:${s}`;
+            if (diff < 0) {
+                display.innerText = "00:00:00";
+                return;
             }
-        } else {
-            display.innerText = "00:00:00";
+            const totSek = Math.floor(diff / 1000);
+            const h = Math.floor(totSek / 3600).toString().padStart(2, '0');
+            const m = Math.floor((totSek % 3600) / 60).toString().padStart(2, '0');
+            const s = (totSek % 60).toString().padStart(2, '0');
+            display.innerText = `${h}:${m}:${s}`;
         }
     }, 1000);
 
@@ -141,7 +146,7 @@
                 { label: 'S2', data: [], borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.05)', tension: 0.3, fill: true, spanGaps: true }
             ]},
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, 
-            scales: { y: { beginAtZero: true, grid: { color: '#222' }, ticks: { color: '#666' } }, x: { display: false } } }
+            scales: { y: { beginAtZero: true, grid: { color: '#222' } }, x: { display: false } } }
         });
     }
 
@@ -179,7 +184,6 @@
     db.ref('gameMode').on('value', snap => {
         const mode = snap.val() || 9;
         document.getElementById('modeText').innerText = mode + "-Ball";
-        
         const err1 = document.getElementById('card-8ball-s1');
         const err2 = document.getElementById('card-8ball-s2');
         if (mode == 8) {
@@ -189,7 +193,6 @@
         }
     });
 
-    // 5. TREND & GRAF OPPDATERING
     function updateVisuals(entries) {
         if (!entries || entries.length === 0) { resetDisplay(); return; }
         let s1T = 0, s1C = 0, s2T = 0, s2C = 0;
@@ -202,23 +205,13 @@
         });
 
         document.getElementById('totalShots').innerText = entries.length;
-        const avg = ((s1T + s2T) / entries.length);
-        document.getElementById('avgMatchTime').innerText = avg.toFixed(1) + "s";
-        
+        document.getElementById('avgMatchTime').innerText = ((s1T + s2T) / entries.length).toFixed(1) + "s";
         const last3 = entries.slice(-3);
-        const pIndex = (last3.reduce((a,b)=>a+b.time,0)/Math.max(1, last3.length));
-        document.getElementById('pressureIndex').innerText = pIndex.toFixed(1) + "s";
+        document.getElementById('pressureIndex').innerText = (last3.reduce((a,b)=>a+b.time,0)/Math.max(1, last3.length)).toFixed(1) + "s";
 
-        // Trend Logikk
-        if (entries.length > 4) {
-            const trend = pIndex > avg ? "🐢 Pace Slowing Down" : "⚡ Confidence Rising";
-            document.getElementById('trendText').innerText = trend;
-        }
-
-        // Table Control Bar
-        const p1Ratio = (s1C / entries.length * 100);
-        document.getElementById('bar-s1').style.width = p1Ratio + "%";
-        document.getElementById('bar-s2').style.width = (100 - p1Ratio) + "%";
+        const p1 = (s1C / entries.length * 100);
+        document.getElementById('bar-s1').style.width = p1 + "%";
+        document.getElementById('bar-s2').style.width = (100 - p1) + "%";
 
         if (shotChart) {
             shotChart.data.labels = labels;
@@ -232,13 +225,12 @@
         ["totalShots", "avgMatchTime", "s1Pots", "s2Pots", "s1Eff", "s2Eff", "s1Run", "s2Run", "pressureIndex"].forEach(id => {
             if(document.getElementById(id)) document.getElementById(id).innerText = "0";
         });
-        document.getElementById('trendText').innerText = "Analyzing match flow...";
         if (shotChart) { shotChart.data.labels = []; shotChart.data.datasets.forEach(d => d.data = []); shotChart.update(); }
     }
 
     function resetAllStats() {
-        if(confirm("Slette ALL match-statistikk og starte på nytt?")) {
-            db.ref('stats').set({ startTime: 0 }); // Beholder kun klokka (stoppet)
+        if(confirm("Slette all match-data?")) {
+            db.ref('stats').set({ startTime: 0 });
             location.reload();
         }
     }
