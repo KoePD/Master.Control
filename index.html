@@ -121,14 +121,15 @@
     }
 
     function startMatch() {
-        vibe(100);
-        db.ref('stats/startTime').set(Date.now());
-        db.ref('activePlayer').set("");
-        db.ref('shotclock/status').set('paused');
-        resetPool(9); 
-        db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
-        setTimeout(() => { db.ref('shotclock/cmd').set({ action: 'stop' }); }, 500);
-    }
+    vibe(100);
+    const nå = Date.now();
+    db.ref('stats/startTime').set(nå); // Setter tiden først
+    db.ref('activePlayer').set("");
+    db.ref('shotclock/status').set('paused');
+    resetPool(9); 
+    db.ref('shotclock/cmd').set({ action: 'reset30', ts: nå });
+    setTimeout(() => { db.ref('shotclock/cmd').set({ action: 'stop' }); }, 500);
+}
 
     function resetPool(max) {
         vibe(60);
