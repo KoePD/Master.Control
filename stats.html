@@ -40,10 +40,10 @@
 
         .disabled-mask {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 5, 5, 0.9);
-            color: rgba(255, 255, 255, 0.3);
+            background: rgba(5, 5, 5, 0.93);
+            color: rgba(255, 255, 255, 0.4);
             display: none; justify-content: center; align-items: center;
-            font-size: 0.6rem; text-transform: uppercase; font-weight: 900;
+            font-size: 0.65rem; text-transform: uppercase; font-weight: 900;
             letter-spacing: 1px; padding: 10px; box-sizing: border-box; text-align: center;
             line-height: 1.2; z-index: 5;
         }
@@ -56,7 +56,7 @@
 <div class="dashboard">
     <div class="header">
         <h1>🎙️ MATCH INSIGHT PRO</h1>
-        <div id="matchDuration" style="font-size: 1.3rem; font-family: monospace; color: #fff;">00:00:00</div>
+        <div id="matchDuration" style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: bold;">00:00:00</div>
     </div>
 
     <div class="stat-card highlight"><div class="label">Match Mode</div><div id="modeText" class="value" style="font-size:1.3rem;">-</div></div>
@@ -68,7 +68,7 @@
     <div class="stat-card s1"><div class="label">Pots Per Visit</div><div id="s1Eff" class="value">0.0</div></div>
     <div class="stat-card s1"><div class="label">Runouts</div><div id="s1Run" class="value">0</div></div>
     <div id="card-8ball-s1" class="stat-card s1 error-card card-disabled">
-        <div class="disabled-mask"><span>Locked: Only for 8-Ball</span></div>
+        <div class="disabled-mask"><span>Locked:<br>Only for 8-Ball</span></div>
         <div class="label">Early 8-Loss</div>
         <div id="s1Err" class="value">0</div>
     </div>
@@ -77,7 +77,7 @@
     <div class="stat-card s2"><div class="label">Pots Per Visit</div><div id="s2Eff" class="value">0.0</div></div>
     <div class="stat-card s2"><div class="label">Runouts</div><div id="s2Run" class="value">0</div></div>
     <div id="card-8ball-s2" class="stat-card s2 error-card card-disabled">
-        <div class="disabled-mask"><span>Locked: Only for 8-Ball</span></div>
+        <div class="disabled-mask"><span>Locked:<br>Only for 8-Ball</span></div>
         <div class="label">Early 8-Loss</div>
         <div id="s2Err" class="value">0</div>
     </div>
@@ -92,7 +92,7 @@
 
     <div class="stat-card" style="grid-column: span 4;">
         <div class="label">Match Trend & Table Control</div>
-        <div id="trendText" style="color:var(--gold); font-weight:bold; margin-bottom:5px; font-size: 1.1rem;">Analyzing match flow...</div>
+        <div id="trendText" style="color:var(--gold); font-weight:bold; margin-bottom:5px; font-size: 1.1rem;">Waiting for break...</div>
         <div class="comparison-bar">
             <div id="bar-s1" style="width: 50%;"></div>
             <div id="bar-s2" style="width: 50%;"></div>
@@ -109,24 +109,29 @@
 
     let shotChart;
     let matchStartTimestamp = 0;
-    let isMatchActive = false;
 
-    db.ref('stats/startTime').on('value', snap => { matchStartTimestamp = snap.val(); });
-    db.ref('shotclock/status').on('value', snap => { isMatchActive = (snap.val() !== 'hidden' && snap.val() !== null); });
+    // 1. TIMER LOGIKK (Master Match Clock)
+    db.ref('stats/startTime').on('value', snap => { 
+        matchStartTimestamp = snap.val(); 
+    });
 
     setInterval(() => {
         const display = document.getElementById('matchDuration');
-        if (isMatchActive && matchStartTimestamp > 0) {
-            const seconds = Math.floor((Date.now() - matchStartTimestamp) / 1000);
+        if (matchStartTimestamp && matchStartTimestamp > 0) {
+            const diff = Date.now() - matchStartTimestamp;
+            const seconds = Math.floor(diff / 1000);
             if (seconds >= 0) {
                 const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
                 const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
                 const s = (seconds % 60).toString().padStart(2, '0');
                 display.innerText = `${h}:${m}:${s}`;
             }
+        } else {
+            display.innerText = "00:00:00";
         }
     }, 1000);
 
+    // 2. INITIALISER GRAF
     function initChart() {
         const ctx = document.getElementById('shotChart').getContext('2d');
         shotChart = new Chart(ctx, {
@@ -136,10 +141,11 @@
                 { label: 'S2', data: [], borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.05)', tension: 0.3, fill: true, spanGaps: true }
             ]},
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, 
-            scales: { y: { beginAtZero: true, grid: { color: '#222' } }, x: { display: false } } }
+            scales: { y: { beginAtZero: true, grid: { color: '#222' }, ticks: { color: '#666' } }, x: { display: false } } }
         });
     }
 
+    // 3. HOVEDDATA-LYTTER
     db.ref('stats').on('value', snap => {
         const d = snap.val() || {};
         const history = d.history ? Object.values(d.history) : [];
@@ -169,11 +175,11 @@
         updateVisuals(history);
     });
 
+    // 4. GAME MODE DYNAMIKK
     db.ref('gameMode').on('value', snap => {
         const mode = snap.val() || 9;
         document.getElementById('modeText').innerText = mode + "-Ball";
         
-        // HÅNDTER LÅSING AV 8-BALL KORT
         const err1 = document.getElementById('card-8ball-s1');
         const err2 = document.getElementById('card-8ball-s2');
         if (mode == 8) {
@@ -183,6 +189,7 @@
         }
     });
 
+    // 5. TREND & GRAF OPPDATERING
     function updateVisuals(entries) {
         if (!entries || entries.length === 0) { resetDisplay(); return; }
         let s1T = 0, s1C = 0, s2T = 0, s2C = 0;
@@ -195,14 +202,23 @@
         });
 
         document.getElementById('totalShots').innerText = entries.length;
-        document.getElementById('avgMatchTime').innerText = ((s1T + s2T) / entries.length).toFixed(1) + "s";
+        const avg = ((s1T + s2T) / entries.length);
+        document.getElementById('avgMatchTime').innerText = avg.toFixed(1) + "s";
         
         const last3 = entries.slice(-3);
-        document.getElementById('pressureIndex').innerText = (last3.reduce((a,b)=>a+b.time,0)/Math.max(1, last3.length)).toFixed(1) + "s";
+        const pIndex = (last3.reduce((a,b)=>a+b.time,0)/Math.max(1, last3.length));
+        document.getElementById('pressureIndex').innerText = pIndex.toFixed(1) + "s";
 
-        const p1 = (s1C / entries.length * 100);
-        document.getElementById('bar-s1').style.width = p1 + "%";
-        document.getElementById('bar-s2').style.width = (100 - p1) + "%";
+        // Trend Logikk
+        if (entries.length > 4) {
+            const trend = pIndex > avg ? "🐢 Pace Slowing Down" : "⚡ Confidence Rising";
+            document.getElementById('trendText').innerText = trend;
+        }
+
+        // Table Control Bar
+        const p1Ratio = (s1C / entries.length * 100);
+        document.getElementById('bar-s1').style.width = p1Ratio + "%";
+        document.getElementById('bar-s2').style.width = (100 - p1Ratio) + "%";
 
         if (shotChart) {
             shotChart.data.labels = labels;
@@ -216,15 +232,14 @@
         ["totalShots", "avgMatchTime", "s1Pots", "s2Pots", "s1Eff", "s2Eff", "s1Run", "s2Run", "pressureIndex"].forEach(id => {
             if(document.getElementById(id)) document.getElementById(id).innerText = "0";
         });
-        document.getElementById('trendText').innerText = "Waiting for data...";
+        document.getElementById('trendText').innerText = "Analyzing match flow...";
         if (shotChart) { shotChart.data.labels = []; shotChart.data.datasets.forEach(d => d.data = []); shotChart.update(); }
     }
 
     function resetAllStats() {
-        if(confirm("Slette all match-data og starte på nytt?")) {
-            db.ref('stats').remove();
-            matchStartTimestamp = 0;
-            document.getElementById('matchDuration').innerText = "00:00:00";
+        if(confirm("Slette ALL match-statistikk og starte på nytt?")) {
+            db.ref('stats').set({ startTime: 0 }); // Beholder kun klokka (stoppet)
+            location.reload();
         }
     }
 
