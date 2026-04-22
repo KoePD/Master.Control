@@ -223,18 +223,27 @@
     function useExtension() { vibe(80); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); sendClock('extension'); }
     function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
     function avsluttMatch() {
-    vibe(100); // Vibrering for bekreftelse
-    if(confirm("Vil du avslutte kampen og stoppe klokkene?")) {
-        // 1. Stopp kamp-klokka i stats ved å sette startTime til 0
-        db.ref('stats/startTime').set(0);
+    vibe(100); 
+    if(confirm("Vil du avslutte kampen og nullstille all statistikk?")) {
+        // 1. Dette resetter ALT i stats-mappen i Firebase (klokke, poeng, historikk)
+        db.ref('stats').set({ 
+            startTime: 0,
+            matchWins: { left: 0, right: 0 },
+            pots: { left: 0, right: 0 },
+            visits: { left: 1, right: 1 },
+            names: { 
+                left: document.getElementById('nameL').value || "Player 1", 
+                right: document.getElementById('nameR').value || "Player 2" 
+            }
+        });
         
-        // 2. Rydd opp i andre statuser
-        db.ref('activePlayer').set(null);
+        // 2. Rydd opp i bordet og shotclock
+        db.ref('activePlayer').set("");
         db.ref('balls').set(null);
         db.ref('shotclock/status').set('hidden');
         db.ref('shotclock/cmd').set({ action: 'stop' });
         
-        console.log("Match avsluttet og klokker stoppet.");
+        console.log("Match avsluttet og statistikk nullstilt.");
     }
 }
     
