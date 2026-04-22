@@ -29,8 +29,8 @@
         .vs-val-s1 { color: var(--s1); } .vs-val-s2 { color: var(--s2); }
 
         /* Player Info */
-        .hc-badge { font-size: 0.8rem; background: #333; padding: 2px 8px; border-radius: 4px; color: var(--gold); margin-top: 4px; display: inline-block; }
-        .breaker-icon { color: var(--gold); font-size: 1.2rem; visibility: hidden; }
+        .hc-badge { font-size: 0.8rem; background: #333; padding: 4px 10px; border-radius: 4px; color: var(--gold); margin-top: 8px; display: inline-block; font-weight: bold; border: 1px solid #444; }
+        .breaker-icon { color: var(--gold); font-size: 1.2rem; visibility: hidden; position: absolute; top: 10px; right: 10px; }
 
         /* Graph & Side */
         .graph-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; grid-column: span 3; height: 480px; }
@@ -69,9 +69,9 @@
 
     <div class="stat-card s1">
         <span id="breakL" class="breaker-icon">⚡</span>
-        <div class="value" id="nameLText" style="font-size: 1.4rem;">Player 1</div>
-        <div id="hcL" class="hc-badge">HC: 0</div>
-        <div id="s1Pots" class="value" style="margin-top:10px;">0</div>
+        <div class="value" id="nameLText" style="font-size: 1.6rem; margin-bottom: 5px;">Player 1</div>
+        <div id="hcL" class="hc-badge">HCP: -</div>
+        <div id="s1Pots" class="value" style="margin-top:15px; border-top: 1px solid #222; padding-top: 10px;">0</div>
         <div class="label">Balls Potted</div>
     </div>
     <div class="stat-card s1"><div class="label">Efficiency</div><div id="s1Eff" class="value">0.0</div><div class="label">Pots / Visit</div></div>
@@ -80,9 +80,9 @@
 
     <div class="stat-card s2">
         <span id="breakR" class="breaker-icon">⚡</span>
-        <div class="value" id="nameRText" style="font-size: 1.4rem;">Player 2</div>
-        <div id="hcR" class="hc-badge">HC: 0</div>
-        <div id="s2Pots" class="value" style="margin-top:10px;">0</div>
+        <div class="value" id="nameRText" style="font-size: 1.6rem; margin-bottom: 5px;">Player 2</div>
+        <div id="hcR" class="hc-badge">HCP: -</div>
+        <div id="s2Pots" class="value" style="margin-top:15px; border-top: 1px solid #222; padding-top: 10px;">0</div>
         <div class="label">Balls Potted</div>
     </div>
     <div class="stat-card s2"><div class="label">Efficiency</div><div id="s2Eff" class="value">0.0</div><div class="label">Pots / Visit</div></div>
@@ -120,48 +120,37 @@
     let shotChart;
     let matchStartTimestamp = 0;
 
-    // --- CUESCORE SYNC (Forbedret versjon) ---
+    // --- CUESCORE SYNC ---
     function syncCueScore() {
-        // Vi bruker en proxy for å unngå CORS-blokkering i nettleseren
         const proxyUrl = "https://api.allorigins.win/get?url=";
         const targetUrl = encodeURIComponent(`https://cuescore.com/api/getMatch:${cueScoreMatchID}`);
 
         fetch(proxyUrl + targetUrl)
-            .then(res => {
-                if (res.ok) return res.json();
-                throw new Error('Nettverksfeil');
-            })
+            .then(res => res.json())
             .then(rawData => {
-                // AllOrigins pakker svaret inn i en "contents" string
                 const data = JSON.parse(rawData.contents);
-                console.log("CueScore Data mottatt:", data); // Sjekk i F12 console
-
                 if(data) {
-                    // Prøver å hente navn fra vanlige CueScore feltnavn
                     const p1 = data.playerA || data.player1;
                     const p2 = data.playerB || data.player2;
 
                     if (p1) {
-                        document.getElementById('nameLText').innerText = p1.name || "Simen";
-                        document.getElementById('hcL').innerText = "HCP: " + (p1.handicap || 0);
-                        document.getElementById('winsL').innerText = data.scoreA || data.score1 || 0;
+                        document.getElementById('nameLText').innerText = p1.name || "Player 1";
+                        document.getElementById('hcL').innerText = "HCP: " + (p1.handicap !== undefined ? p1.handicap : "-");
+                        document.getElementById('winsL').innerText = data.scoreA !== undefined ? data.scoreA : 0;
                     }
                     if (p2) {
-                        document.getElementById('nameRText').innerText = p2.name || "Ole Andreas";
-                        document.getElementById('hcR').innerText = "HCP: " + (p2.handicap || 0);
-                        document.getElementById('winsR').innerText = data.scoreB || data.score2 || 0;
+                        document.getElementById('nameRText').innerText = p2.name || "Player 2";
+                        document.getElementById('hcR').innerText = "HCP: " + (p2.handicap !== undefined ? p2.handicap : "-");
+                        document.getElementById('winsR').innerText = data.scoreB !== undefined ? data.scoreB : 0;
                     }
 
-                    // Brekk-indikator
                     const isBreaker = data.breaker || data.isBreaker;
-                    document.getElementById('breakL').style.visibility = (isBreaker === 'A' || isBreaker === '1' ? 'visible' : 'hidden');
-                    document.getElementById('breakR').style.visibility = (isBreaker === 'B' || isBreaker === '2' ? 'visible' : 'hidden');
+                    document.getElementById('breakL').style.visibility = (isBreaker == 'A' || isBreaker == '1' ? 'visible' : 'hidden');
+                    document.getElementById('breakR').style.visibility = (isBreaker == 'B' || isBreaker == '2' ? 'visible' : 'hidden');
                 }
-            })
-            .catch(e => console.error("CueScore Sync feil:", e));
+            }).catch(e => console.log("CueScore sync error, using default/firebase names."));
     }
     
-    // Kjør synkronisering hvert 10. sekund for å ikke bli bannet av CueScore
     setInterval(syncCueScore, 10000);
 
     // --- FIREBASE LOGIKK ---
@@ -184,6 +173,14 @@
         const history = d.history ? Object.values(d.history) : [];
         const pots = d.pots || {left:0, right:0};
         const visits = d.visits || {left:1, right:1};
+
+        // Fallback navn hvis CueScore er nede
+        if (d.names) {
+            if(!document.getElementById('nameLText').innerText.includes(" ")) {
+                document.getElementById('nameLText').innerText = d.names.left;
+                document.getElementById('nameRText').innerText = d.names.right;
+            }
+        }
         
         document.getElementById('s1Pots').innerText = pots.left;
         document.getElementById('s2Pots').innerText = pots.right;
@@ -213,6 +210,9 @@
         document.getElementById('vShotsR').innerText = s2S;
         document.getElementById('vSuccL').innerText = Math.round((pots.left/Math.max(1,s1S))*100) + "%";
         document.getElementById('vSuccR').innerText = Math.round((pots.right/Math.max(1,s2S))*100) + "%";
+
+        const last5 = entries.slice(-5);
+        document.getElementById('pressureIndex').innerText = (last5.reduce((a,b)=>a+b.time,0)/Math.max(1, last5.length)).toFixed(1) + "s";
 
         const v1P = (s1S / entries.length * 100);
         document.getElementById('bar-visit-s1').style.width = v1P + "%";
@@ -249,7 +249,7 @@
             ]},
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } } }
         });
-        syncCueScore(); // Kjør første gang med en gang
+        syncCueScore();
     };
 </script>
 </body>
