@@ -107,38 +107,32 @@
    // --- KORRIGERT CUESCORE DATA HENTING (MED V-PREFIKS) ---
 async function fetchCueScoreData() {
     let id = document.getElementById('matchIDInput').value;
-    // Hvis feltet er tomt, bruk hovedbordet
     if (!id || id.trim() === "") id = "9158140"; 
-
-    // Rens ID-en for eventuelle "v"-er brukeren har skrevet inn
     const cleanId = id.replace('v', '');
     
     const proxyUrl = "https://corsproxy.io/?";
-    // RIKTIG API-STI: getTableMatch uten v-prefiks inni selve kallet
+    // Vi fjerner encodeURIComponent her for corsproxy.io
     const apiUrl = `https://cuescore.com/api/getTableMatch:${cleanId}`;
     
-    console.log("Henter navn fra:", apiUrl);
-
     try {
-        const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+        const response = await fetch(proxyUrl + apiUrl);
         const match = await response.json();
 
         if (match && (match.playerA || match.player1)) {
             const p1 = match.playerA || match.player1;
             const p2 = match.playerB || match.player2;
-
             const n1 = (typeof p1 === 'object') ? p1.name : p1;
             const n2 = (typeof p2 === 'object') ? p2.name : p2;
             
             db.ref('stats/names').set({ left: n1, right: n2 });
             db.ref('stats/handicaps').set({ left: p1.handicap || "0", right: p2.handicap || "0" });
-            
-            console.log("SUKSESS: Navn oppdatert!");
+            console.log("CueScore Suksess:", n1, "vs", n2);
         }
     } catch (e) { 
-        console.error("Kunne ikke hente navn. Sjekk at kampen er LIVE på CueScore.");
+        console.error("CueScore feil:", e);
     }
 }
+    
     function updateMatchID() {
         const id = document.getElementById('matchIDInput').value;
         db.ref('settings/cueScoreMatchID').set(id);
@@ -194,15 +188,18 @@ async function fetchCueScoreData() {
         }
     }
 
-    function startMatch() {
-        vibe(100);
-        const startTime = Date.now();
-        db.ref('stats').update({ startTime: startTime });
-        db.ref('activePlayer').set("");
-        resetPool(currentGameMode);
-        db.ref('shotclock/cmd').set({ action: 'reset30', ts: startTime });
-        fetchCueScoreData(); 
-    }
+    // MATCH KONTROLL - Fikset slik at klokka ikke starter med en gang
+function startMatch() {
+    vibe(100);
+    const startTime = Date.now();
+    db.ref('stats').update({ startTime: startTime });
+    db.ref('activePlayer').set("");
+    resetPool(currentGameMode);
+    
+    // FJERNET: db.ref('shotclock/cmd').set(...) - Klokka venter nå
+    
+    fetchCueScoreData(); 
+}
 
     function avsluttMatch() {
         vibe(100);
