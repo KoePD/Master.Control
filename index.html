@@ -99,7 +99,7 @@
     
     let lastResetTime = Date.now();
     let currentVisitPots = 0;
-    let ballStyle = 'classic'; // Standard, toggle bytter til mørk
+    let ballStyle = 'classic'; 
     let currentGameMode = 9;
 
     function vibe(ms = 40) { if (navigator.vibrate) navigator.vibrate(ms); }
@@ -135,15 +135,11 @@
         b.id = `btn-${i}`; 
         b.className = 'ball-btn';
         
-        // Vi lager en indre container for tallet for å styre posisjon på striper
         let numLabel = document.createElement('div'); 
         numLabel.className = 'num-label'; 
         numLabel.innerText = i; 
         b.appendChild(numLabel);
         
-        // Stripe-elementene (vi trenger to for topp/bunn på moderne eller en over midten)
-        // Men for det klassiske utseendet du vil ha, er det enklest å bruke bakgrunnsfarger og border.
-        // Vi beholder stripe-band elementet for farge-stripen.
         let band = document.createElement('div'); 
         band.id = `band-${i}`; 
         band.className = 'stripe-band'; 
@@ -155,7 +151,6 @@
             ref.once('value').then(snap => {
                 const isSinking = snap.val() !== false;
                 ref.set(!isSinking);
-                // ... din eksisterende poeng logikk ...
             });
         };
         grid.appendChild(b);
@@ -163,8 +158,18 @@
 
     function renderBalls() {
         const data = window.currentActiveData || {};
-        // Farger: 1=gul, 2=blå, 3=rød, 4=rosa, 5=oransje, 6=grønn, 7=brun, 8=svart
-        const colors = ["", "#ffcc00", "#0055aa", "#cc0000", "#ff66aa", "#ff8800", "#007744", "#884422", "#000"];
+        // KORRIGERT FARGE-LISTE: 4/12 = Rosa, 5/13 = Lilla
+        const colors = [
+            "", 
+            "#ffcc00", // 1: Gul
+            "#0055aa", // 2: Blå
+            "#cc0000", // 3: Rød
+            "#ff66aa", // 4: Rosa
+            "#663399", // 5: Lilla (NÅ KORREKT)
+            "#007744", // 6: Grønn
+            "#884422", // 7: Brun
+            "#000"     // 8: Svart
+        ];
 
         for (let i = 1; i <= 15; i++) {
             const b = document.getElementById(`btn-${i}`);
@@ -180,7 +185,6 @@
             b.style.display = shouldShow ? 'flex' : 'none';
             b.classList.toggle('sunk', data[i] === false);
             
-            // Rens gamle stiler
             b.style.background = "";
             b.style.border = "2px solid #000";
             band.style.display = 'none';
@@ -188,11 +192,8 @@
             numLabel.style.color = "black";
 
             if (i <= 8) {
-                // Ensfargede
                 b.style.backgroundColor = colors[i];
             } else {
-                // Stripete (9-15) - Klassisk utseende
-                // Vi bruker en lineær gradient for å lage hvit-farge-hvit stripene
                 const stripeColor = colors[i - 8];
                 const baseColor = (ballStyle === 'dark') ? 'black' : 'white';
                 
@@ -204,15 +205,12 @@
                     ${baseColor} 75%, 
                     ${baseColor} 100%)`;
 
-                // Juster tallet
-                numLabel.style.backgroundColor = "white"; // Tallet er alltid hvit sirkel
-                numLabel.style.color = "black";
                 numLabel.style.border = "1px solid #000";
             }
         }
     }
 
-    // --- RESTEN AV DIN EKSISTERENDE KONTROLL-LOGIKK ---
+    // --- MATCH KONTROLL ---
     function startMatch() { vibe(100); db.ref('stats/startTime').set(Date.now()); db.ref('activePlayer').set(""); resetPool(currentGameMode); db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() }); }
     function resetPool(max) { vibe(60); let updates = {}; const limit = (max === 8) ? 15 : max; for (let i = 1; i <= 15; i++) updates[i] = (i <= limit) ? true : null; db.ref('balls').set(updates); db.ref('gameMode').set(max); db.ref('breakStatus').set({ active: true, ballsSunk: 0 }); }
     function shotReset(player) { vibe(50); const now = Date.now(); db.ref('activePlayer').once('value', s => { if (s.val() !== player) currentVisitPots = 0; }); db.ref('activePlayer').set(player); db.ref(`stats/visits/${player}`).transaction(c => (c || 0) + 1); db.ref('shotclock/cmd').set({ action: 'reset30', ts: now }); const timeSpent = (now - lastResetTime) / 1000; if (timeSpent > 1 && timeSpent < 150) { db.ref('stats/history').push({ time: timeSpent, player: player, ts: now }); } lastResetTime = now; }
