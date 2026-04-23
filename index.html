@@ -106,35 +106,39 @@
 
    // --- KORRIGERT CUESCORE DATA HENTING (MED V-PREFIKS) ---
 async function fetchCueScoreData() {
-    let id = document.getElementById('matchIDInput').value;
-    if (!id || id.trim() === "") id = "9158140"; 
-    const cleanId = id.replace('v', '');
+    let tournamentID = document.getElementById('matchIDInput').value;
+    if (!tournamentID || tournamentID.trim() === "") tournamentID = "79253032"; 
     
-    // Vi bruker corsproxy.io ved å bare legge URL-en rett etter spørsmålstegnet
-    const proxyUrl = "https://corsproxy.io/?https://cuescore.com/api/getTableMatch:" + cleanId;
+    // Vi bruker en ny proxy-metode for Tournament API
+    const proxyUrl = "https://api.allorigins.win/raw?url=";
+    const apiUrl = `https://cuescore.com/api/getTournamentMatches:${tournamentID}`;
     
-    console.log("Henter data for TableID:", cleanId);
+    console.log("Henter data for turnering:", tournamentID);
 
     try {
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Nettverksfeil eller 404');
+        const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+        const data = await response.json();
         
-        const match = await response.json();
+        // Vi leter etter bord 9158140 i listen over kamper
+        const tableID = "9158140";
+        const currentMatch = Object.values(data).find(m => m.tableID == tableID || m.table == tableID);
 
-        if (match && (match.playerA || match.player1)) {
-            const p1 = match.playerA || match.player1;
-            const p2 = match.playerB || match.player2;
-            
-            const n1 = (typeof p1 === 'object') ? p1.name : p1;
-            const n2 = (typeof p2 === 'object') ? p2.name : p2;
+        if (currentMatch) {
+            const n1 = currentMatch.player1data?.name || currentMatch.playerA || "Spiller 1";
+            const n2 = currentMatch.player2data?.name || currentMatch.playerB || "Spiller 2";
             
             db.ref('stats/names').set({ left: n1, right: n2 });
-            db.ref('stats/handicaps').set({ left: p1.handicap || "0", right: p2.handicap || "0" });
+            db.ref('stats/handicaps').set({ 
+                left: currentMatch.player1data?.handicap || "0", 
+                right: currentMatch.player2data?.handicap || "0" 
+            });
             
-            console.log("CueScore Suksess! Spillere funnet.");
+            console.log("Suksess! Fant kamp på bord " + tableID + ":", n1, "vs", n2);
+        } else {
+            console.log("Fant turneringen, men ingen aktiv kamp på bord " + tableID + " akkurat nå.");
         }
     } catch (e) { 
-        console.error("CueScore-feil: Sjekk om Table ID er riktig og kampen er live.");
+        console.error("Klarte ikke hente turneringsdata:", e);
     }
 }
     
