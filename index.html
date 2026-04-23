@@ -7,87 +7,39 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root { --s1: #00FF41; --s2: #00E5FF; --gold: #ffcc00; --red: #ff4444; --bg: #050505; --card: #111; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; user-select: none; }
-        
-        .container { max-width: 500px; margin: auto; display: flex; flex-direction: column; gap: 10px; }
-        .section { background: var(--card); border: 1px solid #222; border-radius: 15px; padding: 15px; }
-        .section-title { color: var(--gold); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
-
-        /* Navn og ID */
-        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        input { background: #1a1a1a; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; width: 100%; text-align: center; }
-
-        /* Baller */
-        .ball-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; justify-items: center; margin-bottom: 15px; }
-        .ball { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; font-size: 1.2rem; cursor: pointer; border: 3px solid transparent; }
-        .ball.off { opacity: 0.2; filter: grayscale(1); }
-        
-        .b1 { background: #ffea00; } .b2 { background: #0055ff; color: white; } .b3 { background: #ff0000; color: white; }
-        .b4 { background: #ff69b4; } .b5 { background: #8a2be2; color: white; } .b6 { background: #008000; color: white; }
-        .b7 { background: #8b4513; color: white; } .b8 { background: #000; color: white; } .b9 { background: #fff; border: 5px solid #ffea00; }
-        .b10 { background: #fff; border: 5px solid #0055ff; }
-
-        .mode-selector { display: flex; gap: 5px; justify-content: center; }
-        .mode-btn { background: #222; padding: 10px 15px; border-radius: 8px; border: 1px solid #444; color: white; font-weight: bold; }
-        .mode-btn.active { border-color: var(--s1); color: var(--s1); }
-
-        /* Knapper */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn { padding: 18px; border-radius: 10px; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; color: white; text-transform: uppercase; }
-        
-        .btn-start { background: #1b4d24; color: #44ff44; border: 1px solid #2d6b35; }
-        .btn-stop { background: #4d1b1b; color: #ff4444; border: 1px solid #6b2d2d; }
-        .btn-s1 { background: #111; border: 2px solid var(--s1); color: white; }
-        .btn-s1.active { background: var(--s1); color: black; }
-        .btn-s2 { background: #111; border: 2px solid var(--s2); color: white; }
-        .btn-s2.active { background: var(--s2); color: black; }
-        
-        .btn-foul { background: #220000; border: 1px solid #550000; color: var(--red); font-size: 0.8rem; padding: 12px; }
-        .btn-ext { background: #001a1a; border: 1px solid var(--s2); color: var(--s2); grid-column: span 2; }
-        .btn-break { background: #1a1a00; border: 1px solid var(--gold); color: var(--gold); }
+        body { background: #050505; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 500px; margin: auto; }
+        .btn { padding: 20px; border-radius: 10px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; color: white; }
+        .s1 { background: #00FF41; color: black; }
+        .s2 { background: #00E5FF; color: black; }
+        .foul-btn { background: #441111; color: #ff4444; border: 1px solid #662222; padding: 10px; margin-top: 5px; }
+        .foul-btn:active { background: #ff4444; color: white; }
+        .header { grid-column: span 2; padding: 10px; background: #111; border-radius: 10px; margin-bottom: 5px; }
+        input { background: #222; border: 1px solid #444; color: white; padding: 8px; width: 80%; margin: 5px 0; border-radius: 5px; text-align: center; }
+        .reset-section { grid-column: span 2; margin-top: 20px; border-top: 1px solid #222; padding-top: 15px; }
+        .btn-stop { background: #221111; color: #ff4444; width: 100%; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="section">
-        <div class="section-title">Match ID (CueScore)</div>
-        <input type="text" id="matchID" placeholder="Match ID" value="79253032" onchange="updateMatchID()">
-        <div class="section-title" style="margin-top:10px;">Spillernavn</div>
-        <div class="input-group">
-            <input type="text" id="nameL" placeholder="Navn S1" onchange="saveNames()">
-            <input type="text" id="nameR" placeholder="Navn S2" onchange="saveNames()">
-        </div>
+<div class="grid">
+    <div class="header">
+        <h3>🎙️ MATCH CONTROL</h3>
+        <input type="text" id="cueScoreID" placeholder="CueScore Match ID" value="79253032">
     </div>
 
-    <div class="section">
-        <div class="section-title">Pool Control</div>
-        <div class="ball-grid" id="ballGrid"></div>
-        <div class="mode-selector">
-            <button class="mode-btn" onclick="setMode(8)" id="m8">8</button>
-            <button class="mode-btn active" onclick="setMode(9)" id="m9">9</button>
-            <button class="mode-btn" onclick="setMode(10)" id="m10">10</button>
-        </div>
+    <div>
+        <button class="btn s1" style="width:100%" onclick="handlePlayer('left')">◀ SPILLER 1</button>
+        <button class="btn foul-btn" style="width:100%" onclick="addFoul('left')">⚠ FOUL S1</button>
     </div>
 
-    <div class="section">
-        <div class="section-title">Shotclock & Match</div>
-        <div class="grid-2">
-            <button class="btn btn-start" onclick="startMatch()">🟢 START</button>
-            <button class="btn btn-stop" onclick="avsluttMatch()">🔴 STOPP</button>
-            
-            <button class="btn btn-s1" id="btn-left" onclick="handlePlayer('left')">◀ S1</button>
-            <button class="btn btn-s2" id="btn-right" onclick="handlePlayer('right')">S2 ▶</button>
+    <div>
+        <button class="btn s2" style="width:100%" onclick="handlePlayer('right')">SPILLER 2 ▶</button>
+        <button class="btn foul-btn" style="width:100%" onclick="addFoul('right')">⚠ FOUL S2</button>
+    </div>
 
-            <button class="btn btn-foul" onclick="addStat('fouls', 'left')">⚠ FOUL S1</button>
-            <button class="btn btn-foul" onclick="addStat('fouls', 'right')">⚠ FOUL S2</button>
-            
-            <button class="btn" style="background:#222;" onclick="db.ref('shotclock/cmd').set({action:'toggle'})">▶ START / PAUSE</button>
-            <button class="btn btn-break" onclick="db.ref('shotclock/cmd').set({action:'break'})">⚡ 60S BREAK</button>
-            
-            <button class="btn btn-ext" onclick="addStat('extensions', 'active')">+ BRUK EXTENSION</button>
-        </div>
+    <div class="reset-section">
+        <button class="btn btn-stop" onclick="avsluttMatch()">AVSLUTT & NULLSTILL KAMP</button>
     </div>
 </div>
 
@@ -96,96 +48,32 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let currentMode = 9;
-    let activePlayer = "";
-    let balls = {};
-
-    // Generer baller
-    function renderBalls() {
-        const grid = document.getElementById('ballGrid');
-        grid.innerHTML = '';
-        for(let i=1; i<=currentMode; i++) {
-            const b = document.createElement('div');
-            b.className = `ball b${i} ${balls[i] ? '' : 'off'}`;
-            b.innerText = i;
-            b.onclick = () => toggleBall(i);
-            grid.appendChild(b);
-        }
-    }
-
-    function toggleBall(num) {
-        if(navigator.vibrate) navigator.vibrate(40);
-        balls[num] = !balls[num];
-        db.ref('balls').set(balls);
-        if(balls[num] && activePlayer) {
-            db.ref(`stats/pots/${activePlayer}`).transaction(c => (c || 0) + 1);
-        }
-        renderBalls();
-    }
-
-    function setMode(m) {
-        currentMode = m;
-        db.ref('gameMode').set(m);
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('m'+m).classList.add('active');
-        balls = {};
-        db.ref('balls').set(balls);
-        renderBalls();
-    }
+    function vibe(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
 
     function handlePlayer(side) {
-        if(navigator.vibrate) navigator.vibrate(60);
-        activePlayer = side;
-        db.ref('activePlayer').set(side);
-        db.ref(`stats/visits/${side}`).transaction(c => (c || 0) + 1);
-        db.ref('shotclock/cmd').set({action: 'reset30', ts: Date.now()});
-        
-        // Lagre skudd for statistikk
+        vibe(50);
+        const nå = Date.now();
+        // Logikk for skudd-historikk (brukes til graf og tid)
         db.ref('stats/history').push({
             player: side,
-            time: 30, // Forenklet, her kan du hente faktisk tid
-            timestamp: Date.now()
+            time: 20, // Her ville din shotclock-logikk hentet faktisk tid
+            timestamp: nå
         });
-
-        document.getElementById('btn-left').classList.toggle('active', side === 'left');
-        document.getElementById('btn-right').classList.toggle('active', side === 'right');
+        db.ref('activePlayer').set(side);
     }
 
-    function addStat(path, side) {
-        if(navigator.vibrate) navigator.vibrate(80);
-        let target = side;
-        if(side === 'active') target = activePlayer;
-        if(!target) return;
-        db.ref(`stats/${path}/${target}`).transaction(c => (c || 0) + 1);
-    }
-
-    function startMatch() {
-        const id = document.getElementById('matchID').value;
-        db.ref('stats/startTime').set(Date.now());
-        db.ref('matchID').set(id);
-        balls = {};
-        db.ref('balls').set(balls);
-        renderBalls();
+    function addFoul(side) {
+        vibe(100);
+        db.ref(`stats/fouls/${side}`).transaction(current => (current || 0) + 1);
     }
 
     function avsluttMatch() {
-        if(confirm("Avslutt og nullstill kamp?")) {
-            db.ref('stats').set({startTime: 0});
+        if(confirm("Vil du avslutte kampen og slette all statistikk?")) {
+            db.ref('stats').set({ startTime: 0 });
             db.ref('activePlayer').set("");
-            db.ref('balls').set(null);
-            location.reload();
+            alert("Match nullstilt!");
         }
     }
-
-    function saveNames() {
-        db.ref('stats/names').set({
-            left: document.getElementById('nameL').value,
-            right: document.getElementById('nameR').value
-        });
-    }
-
-    // Init
-    renderBalls();
 </script>
 </body>
 </html>
