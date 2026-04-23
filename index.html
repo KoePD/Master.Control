@@ -55,7 +55,11 @@
 <body>
 <div class="container">
     <div class="section" style="padding: 10px 5px;">
-        <h2>Spillernavn (S1 / S2)</h2>
+        <h2>CueScore Match ID</h2>
+        <div style="padding: 0 5px; margin-bottom: 8px;">
+            <input type="text" id="matchIDInput" class="name-input" placeholder="Lim inn ID (f.eks. 79253032)" oninput="updateMatchID()">
+        </div>
+        <h2>Manuelle Navn (Fallback)</h2>
         <div class="name-grid">
             <input type="text" id="nameL" class="name-input" placeholder="Navn S1" oninput="updateNames()">
             <input type="text" id="nameR" class="name-input" placeholder="Navn S2" oninput="updateNames()">
