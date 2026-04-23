@@ -110,15 +110,14 @@ async function fetchCueScoreData() {
     if (!id || id.trim() === "") id = "9158140"; 
     const cleanId = id.replace('v', '');
     
-    // Vi bruker en proxy som ikke krever koding av spesialtegn
-    const proxyUrl = "https://corsproxy.io/?";
-    const apiUrl = "https://cuescore.com/api/getTableMatch:" + cleanId;
+    // Vi bygger URL-en manuelt for å unngå tegn-problemer med proxyen
+    const targetUrl = "https://cuescore.com/api/getTableMatch:" + cleanId;
+    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
     
     console.log("Henter data for TableID:", cleanId);
 
     try {
-        // Legg merke til: Vi bruker ikke encodeURIComponent her
-        const response = await fetch(proxyUrl + apiUrl);
+        const response = await fetch(proxyUrl);
         const match = await response.json();
 
         if (match && (match.playerA || match.player1)) {
@@ -131,10 +130,10 @@ async function fetchCueScoreData() {
             db.ref('stats/names').set({ left: n1, right: n2 });
             db.ref('stats/handicaps').set({ left: p1.handicap || "0", right: p2.handicap || "0" });
             
-            console.log("Navn hentet!", n1, "vs", n2);
+            console.log("CueScore Suksess! Spillere funnet.");
         }
     } catch (e) { 
-        console.error("CueScore kunne ikke nås via proxy.");
+        console.error("CueScore kunne ikke hentes. Sjekk Table ID.");
     }
 }
     
