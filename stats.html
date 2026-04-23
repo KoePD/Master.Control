@@ -93,38 +93,35 @@ const tableID = "57017635"; // Din Table ID fra lenken
 const proxyUrl = "https://api.allorigins.win/get?url=";
 
 function syncCueScore() {
-    // Vi spør nå etter hva som skjer på et spesifikt BORD
-    const targetUrl = encodeURIComponent(`https://cuescore.com/api/getTableMatch:${tableID}`);
+    db.ref('settings/cueScoreMatchID').once('value', snap => {
+        const tableID = snap.val(); // Her henter vi 57017635 fra Firebase
+        if (!tableID) return;
 
-    fetch(proxyUrl + targetUrl)
-        .then(res => res.json())
-        .then(rawData => {
-            const data = JSON.parse(rawData.contents);
-            console.log("Data fra bordet:", data);
-
-            if (data && data.match) {
+        const apiUrl = `https://cuescore.com/api/getTableMatch:${tableID}`;
+        
+        fetch(proxyUrl + encodeURIComponent(apiUrl))
+            .then(res => res.json())
+            .then(rawData => {
+                const data = JSON.parse(rawData.contents);
                 const match = data.match;
-                const p1 = match.playerA;
-                const p2 = match.playerB;
 
-                // Oppdater Navn og HCP
-                document.getElementById('nameLText').innerText = p1.name;
-                document.getElementById('hcL').innerText = "HCP: " + (p1.handicap || "0");
-                
-                document.getElementById('nameRText').innerText = p2.name;
-                document.getElementById('hcR').innerText = "HCP: " + (p2.handicap || "0");
+                if (match) {
+                    // Oppdaterer alt på din Match Insight Pro-skjerm
+                    document.getElementById('nameLText').innerText = match.playerA.name;
+                    document.getElementById('hcL').innerText = "HCP: " + (match.playerA.handicap || "0");
+                    document.getElementById('winsL').innerText = match.scoreA || 0;
 
-                // Oppdater Score
-                document.getElementById('winsL').innerText = match.scoreA || 0;
-                document.getElementById('winsR').innerText = match.scoreB || 0;
+                    document.getElementById('nameRText').innerText = match.playerB.name;
+                    document.getElementById('hcR').innerText = "HCP: " + (match.playerB.handicap || "0");
+                    document.getElementById('winsR').innerText = match.scoreB || 0;
 
-                // Brekk-indikator
-                const isBreaker = match.breaker; 
-                document.getElementById('breakL').style.visibility = (isBreaker === 'A' ? 'visible' : 'hidden');
-                document.getElementById('breakR').style.visibility = (isBreaker === 'B' ? 'visible' : 'hidden');
-            }
-        })
-        .catch(e => console.error("CueScore Table Sync feil:", e));
+                    // Viser hvem som har brekken hvis CueScore har data på det
+                    const isBreaker = match.breaker; 
+                    document.getElementById('breakL').style.visibility = (isBreaker === 'A' ? 'visible' : 'hidden');
+                    document.getElementById('breakR').style.visibility = (isBreaker === 'B' ? 'visible' : 'hidden');
+                }
+            }).catch(e => console.log("Venter på aktiv kamp på bordet..."));
+    });
 }
 
 // Kjør hvert 10. sekund
