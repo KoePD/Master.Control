@@ -93,175 +93,157 @@
 </div>
 
 <script>
-    // --- KONFIGURASJON ---
     const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
-    let shotChart;
-    let matchStartTimestamp = 0;
-    const proxyUrl = "https://api.allorigins.win/get?url=";
+    let lastResetTime = Date.now();
+    let currentVisitPots = 0;
+    let ballStyle = 'classic'; 
+    let currentGameMode = 9;
 
-    // --- CUESCORE SYNC LOGIKK ---
-    function syncCueScore() {
-        db.ref('settings/cueScoreMatchID').once('value', snap => {
-            const inputID = snap.val();
-            const defaultTableID = "9158140"; 
-            const activeID = (inputID && inputID.trim() !== "") ? inputID : defaultTableID;
+    function vibe(ms = 40) { if (navigator.vibrate) navigator.vibrate(ms); }
 
-            const apiUrl = `https://cuescore.com/api/getTableMatch:${activeID}`;
-            
-            fetch(proxyUrl + encodeURIComponent(apiUrl))
-                .then(res => res.json())
-                .then(rawData => {
-                    const data = JSON.parse(rawData.contents);
-                    const match = data.match || data; 
+    async function fetchCueScoreData() {
+        let id = document.getElementById('matchIDInput').value;
+        if (!id || id.trim() === "") id = "9158140"; 
 
-                    if (match && (match.playerA || match.player1)) {
-                        const p1 = match.playerA || match.player1;
-                        const p2 = match.playerB || match.player2;
+        const proxyUrl = "https://api.allorigins.win/get?url=";
+        const apiUrl = `https://cuescore.com/api/getTableMatch:${id}`;
+        
+        try {
+            const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+            const raw = await response.json();
+            const data = JSON.parse(raw.contents);
+            const match = data.match || data;
 
-                        // Vi oppdaterer KUN poengsum og brekk her. 
-                        // Navn og HCP styres nå stabilt via Firebase-lytterne nederst.
-                        document.getElementById('winsL').innerText = match.scoreA || match.score1 || 0;
-                        document.getElementById('winsR').innerText = match.scoreB || match.score2 || 0;
+            if (match) {
+                const p1 = match.playerA || match.player1;
+                const p2 = match.playerB || match.player2;
 
-                        const isBreaker = match.breaker || match.isBreaker;
-                        document.getElementById('breakL').style.visibility = (isBreaker === 'A' || isBreaker === '1' ? 'visible' : 'hidden');
-                        document.getElementById('breakR').style.visibility = (isBreaker === 'B' || isBreaker === '2' ? 'visible' : 'hidden');
-                    }
-                }).catch(e => console.log("CueScore Sync: Venter på data..."));
-        });
+                if (p1 && p2) {
+                    const n1 = p1.name || "Player 1";
+                    const n2 = p2.name || "Player 2";
+                    const h1 = p1.handicap || "0";
+                    const h2 = p2.handicap || "0";
+
+                    db.ref('stats/names').set({ left: n1, right: n2 });
+                    db.ref('stats/handicaps').set({ left: h1, right: h2 });
+                    console.log("CueScore Match funnet: ", n1, "vs", n2);
+                }
+            }
+        } catch (e) { console.error("CueScore feil:", e); }
     }
 
-    // --- TIMER ---
-    db.ref('stats/startTime').on('value', snap => { 
-        matchStartTimestamp = snap.val() || 0;
-        if (matchStartTimestamp > 0) syncCueScore(); 
-    });
+    function updateMatchID() {
+        const id = document.getElementById('matchIDInput').value;
+        db.ref('settings/cueScoreMatchID').set(id);
+        fetchCueScoreData(); // Hent med en gang ID endres
+    }
 
-    setInterval(() => {
-        const display = document.getElementById('matchDuration');
-        if (matchStartTimestamp > 0) {
-            const now = Date.now();
-            const diff = now - matchStartTimestamp;
-            const totalSeconds = Math.max(0, Math.floor(diff / 1000));
-            const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
-            const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
-            const s = (totalSeconds % 60).toString().padStart(2, '0');
-            display.innerText = `${h}:${m}:${s}`;
-        } else {
-            display.innerText = "00:00:00";
-        }
-    }, 1000);
+    function toggleBallSet() {
+        vibe(60);
+        ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic';
+        db.ref('settings/ballStyle').set(ballStyle);
+        renderBalls();
+    }
 
-    // --- STATS DATA ---
-    db.ref('stats').on('value', snap => {
-        const d = snap.val() || {};
-        const history = d.history ? Object.values(d.history) : [];
-        const pots = d.pots || {left:0, right:0};
-        const visits = d.visits || {left:1, right:1};
-        const fouls = d.fouls || {left:0, right:0};
-        
-        document.getElementById('s1Pots').innerText = pots.left || 0;
-        document.getElementById('s2Pots').innerText = pots.right || 0;
-        document.getElementById('vFoulL').innerText = fouls.left || 0;
-        document.getElementById('vFoulR').innerText = fouls.right || 0;
-        
-        // Fikset NaN ved å sjekke om visits er 0
-        document.getElementById('s1Eff').innerText = visits.left > 0 ? (pots.left / visits.left).toFixed(1) : "0.0";
-        document.getElementById('s2Eff').innerText = visits.right > 0 ? (pots.right / visits.right).toFixed(1) : "0.0";
-        
-        document.getElementById('vExtL').innerText = (d.extensions?.left || 0);
-        document.getElementById('vExtR').innerText = (d.extensions?.right || 0);
-        document.getElementById('s1Run').innerText = (d.runouts?.left || 0);
-        document.getElementById('s2Run').innerText = (d.runouts?.right || 0);
+    const grid = document.getElementById('ball-grid');
+    for (let i = 1; i <= 15; i++) {
+        const b = document.createElement('div');
+        b.id = `btn-${i}`; b.className = 'ball-btn';
+        let numLabel = document.createElement('div'); numLabel.className = 'num-label'; numLabel.innerText = i; b.appendChild(numLabel);
+        let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
 
-        updateVisuals(history, pots);
-    });
+        b.onclick = () => {
+            vibe(30);
+            const ref = db.ref(`balls/${i}`);
+            ref.once('value').then(snap => {
+                const isSinking = snap.val() !== false;
+                ref.set(!isSinking);
+                if (isSinking) {
+                    db.ref('activePlayer').once('value', pSnap => {
+                        const p = pSnap.val();
+                        if (p) db.ref(`stats/pots/${p}`).transaction(c => (c || 0) + 1);
+                    });
+                }
+            });
+        };
+        grid.appendChild(b);
+    }
 
-    function updateVisuals(entries, pots) {
-        if (!entries || entries.length === 0) {
-            document.getElementById('totalShots').innerText = "0";
-            document.getElementById('vSuccL').innerText = "0%";
-            document.getElementById('vSuccR').innerText = "0%";
-            return;
-        }
-        let s1S=0, s2S=0, s1T=0, s2T=0, s1D=[], s2D=[];
-        
-        entries.forEach(e => {
-            if(e.player==='left'){ s1S++; s1T+=e.time; s1D.push(e.time); s2D.push(null); }
-            else { s2S++; s2T+=e.time; s2D.push(e.time); s1D.push(null); }
-        });
-
-        document.getElementById('totalShots').innerText = entries.length;
-        document.getElementById('vShotsL').innerText = s1S;
-        document.getElementById('vShotsR').innerText = s2S;
-        
-        const volP = entries.length > 0 ? (s1S / entries.length) * 100 : 50;
-        document.getElementById('bar-visit-s1').style.width = volP + "%";
-        document.getElementById('bar-visit-s2').style.width = (100 - volP) + "%";
-        document.getElementById('visitRatioText').innerText = Math.round(volP) + "/" + Math.round(100-volP);
-
-        document.getElementById('vSuccL').innerText = s1S > 0 ? Math.round((pots.left/s1S)*100) + "%" : "0%";
-        document.getElementById('vSuccR').innerText = s2S > 0 ? Math.round((pots.right/s2S)*100) + "%" : "0%";
-        
-        const totalT = s1T + s2T;
-        const t1P = totalT > 0 ? (s1T / totalT * 100) : 50;
-        document.getElementById('bar-time-s1').style.width = t1P + "%";
-        document.getElementById('bar-time-s2').style.width = (100 - t1P) + "%";
-        document.getElementById('timeRatioText').innerText = Math.round(t1P) + "/" + Math.round(100-t1P);
-
-        const last5 = entries.slice(-5);
-        const pIndex = last5.length > 0 ? (last5.reduce((a,b)=>a+b.time,0)/last5.length).toFixed(1) : "0.0";
-        document.getElementById('pressureIndex').innerText = pIndex + "s";
-
-        if(shotChart) {
-            shotChart.data.labels = entries.map((_,i)=>i+1);
-            shotChart.data.datasets[0].data = s1D;
-            shotChart.data.datasets[1].data = s2D;
-            shotChart.update('none');
+    function renderBalls() {
+        const data = window.currentActiveData || {};
+        const colors = ["", "#ffcc00", "#0055aa", "#cc0000", "#ff66aa", "#663399", "#007744", "#884422", "#000"];
+        for (let i = 1; i <= 15; i++) {
+            const b = document.getElementById(`btn-${i}`);
+            if (!b) continue;
+            let shouldShow = (currentGameMode == 8) || (currentGameMode == 9 && i <= 9) || (currentGameMode == 10 && i <= 10);
+            b.style.display = shouldShow ? 'flex' : 'none';
+            b.classList.toggle('sunk', data[i] === false);
+            if (i <= 8) { b.style.background = colors[i]; } 
+            else {
+                const stripeColor = colors[i - 8];
+                const baseColor = (ballStyle === 'dark') ? 'black' : 'white';
+                b.style.background = `linear-gradient(to bottom, ${baseColor} 0%, ${baseColor} 25%, ${stripeColor} 25%, ${stripeColor} 75%, ${baseColor} 75%, ${baseColor} 100%)`;
+            }
         }
     }
 
-    db.ref('gameMode').on('value', snap => {
-        const mode = snap.val() || 9;
-        document.getElementById('modeText').innerText = mode + "-Ball";
-        const is8 = (mode == 8);
-        document.getElementById('card-8ball-s1').classList.toggle('card-disabled', !is8);
-        document.getElementById('card-8ball-s2').classList.toggle('card-disabled', !is8);
-    });
+    function startMatch() {
+        vibe(100);
+        const startTime = Date.now();
+        db.ref('stats').update({ startTime: startTime });
+        db.ref('activePlayer').set("");
+        resetPool(currentGameMode);
+        db.ref('shotclock/cmd').set({ action: 'reset30', ts: startTime });
+        fetchCueScoreData(); 
+    }
 
-    window.onload = () => {
-        const ctx = document.getElementById('shotChart').getContext('2d');
-        shotChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: [], datasets: [
-                { label: 'S1', data: [], borderColor: '#00FF41', tension: 0.4, fill: false, pointRadius: 2 },
-                { label: 'S2', data: [], borderColor: '#00E5FF', tension: 0.4, fill: false, pointRadius: 2 }
-            ]},
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } } }
-        });
-        setInterval(syncCueScore, 10000);
-        syncCueScore();
-    };
-
-    // --- STABILE NAVN FRA FIREBASE ---
-    db.ref('stats/names').on('value', snap => {
-        const names = snap.val();
-        if (names) {
-            document.getElementById('nameLText').innerText = names.left || "Player 1";
-            document.getElementById('nameRText').innerText = names.right || "Player 2";
+    function avsluttMatch() {
+        vibe(100);
+        if(confirm("⚠ ADVARSEL: Slette all statistikk for denne kampen?")) {
+            db.ref('stats').set({ startTime: 0 });
+            db.ref('activePlayer').set(null);
+            db.ref('balls').set(null);
+            db.ref('shotclock/cmd').set({ action: 'stop' });
+            setTimeout(() => { location.reload(); }, 500);
         }
-    });
+    }
 
-    db.ref('stats/handicaps').on('value', snap => {
-        const hc = snap.val();
-        if (hc) {
-            document.getElementById('hcL').innerText = "HCP: " + (hc.left || "0");
-            document.getElementById('hcR').innerText = "HCP: " + (hc.right || "0");
+    function shotReset(player) {
+        vibe(50);
+        const now = Date.now();
+        db.ref('activePlayer').set(player);
+        db.ref(`stats/visits/${player}`).transaction(c => (c || 0) + 1);
+        db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
+        const timeSpent = (now - lastResetTime) / 1000;
+        if (timeSpent > 1.5 && timeSpent < 150) {
+            db.ref('stats/history').push({ time: timeSpent, player: player, ts: now });
         }
+        lastResetTime = now;
+    }
+
+    function resetPool(max) {
+        let updates = {};
+        const limit = (max === 8) ? 15 : max;
+        for (let i = 1; i <= 15; i++) updates[i] = (i <= limit) ? true : null;
+        db.ref('balls').set(updates);
+        db.ref('gameMode').set(max);
+    }
+
+    function startBreak() { vibe(60); db.ref('shotclock/cmd').set({action:'reset60', ts:Date.now()}); }
+    function useExtension() { vibe(80); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
+    function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
+
+    db.ref('activePlayer').on('value', snap => {
+        const p = snap.val();
+        document.getElementById('btnL').classList.toggle('active-l', p === 'left');
+        document.getElementById('btnR').classList.toggle('active-r', p === 'right');
     });
+    db.ref('gameMode').on('value', snap => { currentGameMode = snap.val() || 9; renderBalls(); });
+    db.ref('balls').on('value', snap => { window.currentActiveData = snap.val() || {}; renderBalls(); });
+    db.ref('settings/ballStyle').on('value', snap => { if(snap.val()){ ballStyle=snap.val(); renderBalls(); }});
 </script>
 </body>
 </html>
