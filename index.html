@@ -240,6 +240,19 @@
         db.ref('gameMode').set(max);
     }
 
+    function avsluttMatch() {
+        vibe(100);
+        // Dette er den viktige bekreftelsen
+        if(confirm("Er du HELT sikker? Dette sletter all statistikk og stopper klokka for denne kampen.")) {
+        db.ref('stats').set({ startTime: 0 });
+        db.ref('activePlayer').set(null);
+        db.ref('balls').set(null);
+        db.ref('shotclock/cmd').set({ action: 'stop' });
+        // Valgfritt: Last inn på nytt for å tømme lokale variabler
+        location.reload();
+    }
+}
+
     // --- LYTTERE ---
     db.ref('activePlayer').on('value', snap => {
         const p = snap.val();
