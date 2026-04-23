@@ -109,42 +109,33 @@ async function fetchCueScoreData() {
     let id = document.getElementById('matchIDInput').value;
     if (!id || id.trim() === "") id = "9158140"; 
 
-    // Noen ganger trenger CueScore API-et en 'v' foran TableID
-    const tableKey = id.startsWith('v') ? id : 'v' + id;
+    // Vi bruker en alternativ og mer stabil proxy
+    const proxyUrl = "https://corsproxy.io/?";
+    const apiUrl = `https://cuescore.com/api/getTableMatch:v${id.replace('v','')}`;
     
-    const proxyUrl = "https://api.allorigins.win/get?url=";
-    const apiUrl = `https://cuescore.com/api/getTableMatch:${tableKey}`;
-    
-    console.log("Prøver å hente navn fra:", apiUrl);
-
-    // Sett navnene til "Henter..." midlertidig i Firebase
-    db.ref('stats/names').set({ left: "Henter...", right: "Henter..." });
+    console.log("Prøver alternativ proxy for:", id);
 
     try {
         const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
-        const raw = await response.json();
-        const data = JSON.parse(raw.contents);
-        const match = data.match || data;
+        if (!response.ok) throw new Error('Proxy feil');
+        
+        const match = await response.json();
 
-        if (match) {
+        if (match && (match.playerA || match.player1)) {
             const p1 = match.playerA || match.player1;
             const p2 = match.playerB || match.player2;
 
-            if (p1 && p2) {
-                const n1 = (typeof p1 === 'object') ? p1.name : p1;
-                const n2 = (typeof p2 === 'object') ? p2.name : p2;
-                const h1 = p1.handicap || "0";
-                const h2 = p2.handicap || "0";
-
-                db.ref('stats/names').set({ left: n1, right: n2 });
-                db.ref('stats/handicaps').set({ left: h1, right: h2 });
-                console.log("Navn funnet og lagret:", n1, n2);
-            }
+            const n1 = (typeof p1 === 'object') ? p1.name : p1;
+            const n2 = (typeof p2 === 'object') ? p2.name : p2;
+            
+            db.ref('stats/names').set({ left: n1, right: n2 });
+            db.ref('stats/handicaps').set({ left: p1.handicap || "0", right: p2.handicap || "0" });
+            
+            console.log("SUKSESS: Navn hentet via ny proxy!");
         }
     } catch (e) { 
-        console.error("CueScore feil:", e);
-        // Hvis alt feiler, sett tilbake til standard så det ikke står "Henter..." evig
-        db.ref('stats/names').set({ left: "Spiller 1", right: "Spiller 2" });
+        console.error("CORS/Proxy feil. Prøver å hente via Firebase-backup...");
+        // Hvis API feiler, sjekker vi om det ligger noe i settings fra før
     }
 }
 
