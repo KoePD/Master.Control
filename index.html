@@ -124,6 +124,11 @@
         });
     }
 
+    function updateMatchID() {
+        const id = document.getElementById('matchIDInput').value;
+        db.ref('settings/cueScoreMatchID').set(id);
+    }
+    
     function startMatch() {
         vibe(100);
         db.ref('stats/startTime').set(Date.now());
