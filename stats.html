@@ -93,10 +93,13 @@
 
     // --- CUESCORE SYNC LOGIKK ---
     function syncCueScore() {
-    db.ref('settings/cueScoreMatchID').once('value', snap => {
-        const id = snap.val() || "9158140";
+        db.ref('settings/cueScoreMatchID').once('value', snap => {
+        let id = snap.val();
+        if (!id || id.trim() === "") id = "9158140";
+        
+        const cleanId = id.replace('v', '');
         const proxyUrl = "https://corsproxy.io/?";
-        const apiUrl = `https://cuescore.com/api/getTableMatch:v${id.replace('v','')}`;
+        const apiUrl = `https://cuescore.com/api/getTableMatch:${cleanId}`;
         
         fetch(proxyUrl + encodeURIComponent(apiUrl))
             .then(res => res.json())
@@ -108,7 +111,7 @@
                     document.getElementById('breakL').style.visibility = (isBreaker === 'A' || isBreaker === '1' ? 'visible' : 'hidden');
                     document.getElementById('breakR').style.visibility = (isBreaker === 'B' || isBreaker === '2' ? 'visible' : 'hidden');
                 }
-            }).catch(e => console.log("CueScore Sync: Proxy blokkert eller treg..."));
+            }).catch(e => console.log("CueScore Sync: Venter på kampdata..."));
     });
 }
 
