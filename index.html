@@ -109,36 +109,37 @@ async function fetchCueScoreData() {
     let tournamentID = document.getElementById('matchIDInput').value;
     if (!tournamentID || tournamentID.trim() === "") tournamentID = "79253032"; 
     
-    // Vi bruker en ny proxy-metode for Tournament API
-    const proxyUrl = "https://api.allorigins.win/raw?url=";
+    // Vi bytter til en mer stabil proxy og henter kun ved start/endring
+    const proxyUrl = "https://corsproxy.io/?";
     const apiUrl = `https://cuescore.com/api/getTournamentMatches:${tournamentID}`;
     
-    console.log("Henter data for turnering:", tournamentID);
+    console.log("Henter turneringsdata for ID:", tournamentID);
 
     try {
         const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
         const data = await response.json();
         
-        // Vi leter etter bord 9158140 i listen over kamper
         const tableID = "9158140";
-        const currentMatch = Object.values(data).find(m => m.tableID == tableID || m.table == tableID);
+        // Leter i listen over kamper
+        const match = Object.values(data).find(m => m.tableID == tableID || m.table == tableID);
 
-        if (currentMatch) {
-            const n1 = currentMatch.player1data?.name || currentMatch.playerA || "Spiller 1";
-            const n2 = currentMatch.player2data?.name || currentMatch.playerB || "Spiller 2";
-            
+        if (match) {
+            const n1 = match.player1data?.name || match.playerA || "Spiller 1";
+            const n2 = match.player2data?.name || match.playerB || "Spiller 2";
+            const h1 = match.player1data?.handicap || "0";
+            const h2 = match.player2data?.handicap || "0";
+
+            // Lagre til Firebase - dette vil stats.html plukke opp umiddelbart
             db.ref('stats/names').set({ left: n1, right: n2 });
-            db.ref('stats/handicaps').set({ 
-                left: currentMatch.player1data?.handicap || "0", 
-                right: currentMatch.player2data?.handicap || "0" 
-            });
+            db.ref('stats/handicaps').set({ left: h1, right: h2 });
             
-            console.log("Suksess! Fant kamp på bord " + tableID + ":", n1, "vs", n2);
-        } else {
-            console.log("Fant turneringen, men ingen aktiv kamp på bord " + tableID + " akkurat nå.");
+            // Lagre også TournamentID så stats.html vet hvilken turnering den skal følge for score
+            db.ref('settings/cueScoreMatchID').set(tournamentID);
+            
+            console.log("Navn og HCP lagret i Firebase:", n1, "vs", n2);
         }
     } catch (e) { 
-        console.error("Klarte ikke hente turneringsdata:", e);
+        console.error("CueScore API feil (429 eller CORS). Prøv igjen om et minutt.");
     }
 }
     
