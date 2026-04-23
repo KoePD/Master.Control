@@ -107,39 +107,44 @@
    // --- KORRIGERT CUESCORE DATA HENTING (MED V-PREFIKS) ---
 async function fetchCueScoreData() {
     let tID = document.getElementById('matchIDInput').value;
+    // Standard Tournament ID hvis feltet er tomt
     if (!tID || tID.trim() === "") tID = "79253032"; 
     
-    // Vi bruker allorigins med /raw for å unngå 404-problemer med spesialtegn
-    const proxyUrl = "https://api.allorigins.win/raw?url=";
-    const apiUrl = "https://cuescore.com/api/getTournamentMatches:" + tID;
+    const proxyUrl = "https://corsproxy.io/?";
+    const apiUrl = `https://api.cuescore.com/tournament/?id=${tID}`;
     
-    console.log("Henter turneringsdata for ID:", tID);
+    console.log("Henter turneringsdata fra API:", tID);
 
     try {
-        const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+        const response = await fetch(proxyUrl + apiUrl);
         const data = await response.json();
         
+        // I dette API-et ligger kampene i data.matches
+        const matches = data.matches || [];
         const tableID = "9158140";
-        // Leter etter kampen på riktig bord
-        const match = Object.values(data).find(m => m.tableID == tableID || m.table == tableID);
+        
+        // Vi leter etter kampen der table_id eller table_name matcher bordet ditt
+        const currentMatch = matches.find(m => m.table_id == tableID || m.table_name == tableID);
 
-        if (match) {
-            const n1 = match.player1data?.name || match.playerA || "Spiller 1";
-            const n2 = match.player2data?.name || match.playerB || "Spiller 2";
-            const h1 = match.player1data?.handicap || "0";
-            const h2 = match.player2data?.handicap || "0";
+        if (currentMatch) {
+            const n1 = currentMatch.player1_name || "Spiller 1";
+            const n2 = currentMatch.player2_name || "Spiller 2";
+            const h1 = currentMatch.player1_handicap || "0";
+            const h2 = currentMatch.player2_handicap || "0";
 
-            // Lagre til Firebase - Dette gjør at stats.html oppdaterer navnene automatisk
+            // Lagre til Firebase slik at stats.html oppdaterer seg
             db.ref('stats/names').set({ left: n1, right: n2 });
             db.ref('stats/handicaps').set({ left: h1, right: h2 });
             
-            // Lagre tID i settings slik at stats.html kan finne riktig turnering for poeng
+            // Lagre ID i settings slik at stats.html vet hvilken turnering den skal følge for poeng
             db.ref('settings/cueScoreMatchID').set(tID);
             
             console.log("Suksess! Spillere funnet:", n1, "vs", n2);
+        } else {
+            console.warn("Ingen aktiv kamp funnet på bord " + tableID);
         }
     } catch (e) { 
-        console.error("CueScore-henting feilet. Sjekk ID eller proxy-tilgang.");
+        console.error("Feil ved henting fra api.cuescore.com:", e);
     }
 }
     
