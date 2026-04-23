@@ -2,344 +2,251 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Match Insight Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KØ-PÅDD Kontrollpanel Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { 
-            --gold: #ffcc00; --s1: #00FF41; --s2: #00E5FF; 
-            --bg: #050505; --card: #111; --border: #222; --red: #ff4444;
-            --text-main: #eee; --text-dim: #888;
+        :root {
+            --bg: #000; --card: #0d0d0d; --border: #222;
+            --accent: #ffcc00; --green: #00FF41; --blue: #00E5FF;
+            --red: #FF0000; --ext: #00E5FF;
         }
+        html, body { height: 100%; overflow: hidden; margin: 0; padding: 0; }
+        body { background: var(--bg); color: white; font-family: sans-serif; padding: 8px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 450px; height: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; }
+        .pool-section { flex: 1; min-height: 0; } 
+        h2 { font-size: 0.65rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; opacity: 0.7; letter-spacing: 1px; }
         
-        body { 
-            background: var(--bg); 
-            color: var(--text-main); 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            overflow-x: hidden;
+        .name-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 5px; }
+        .name-input { 
+            background: #111; border: 1px solid #333; color: white; padding: 6px 4px; 
+            border-radius: 8px; text-align: center; font-size: 11px; width: 100%; 
+            box-sizing: border-box; outline: none; 
         }
+        #nameL { border-left: 3px solid var(--green); }
+        #nameR { border-right: 3px solid var(--blue); }
 
-        .dashboard { 
-            max-width: 1600px; 
-            margin: auto; 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 15px; 
-        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        button { padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px; border: 2px solid #333; background: #111; color: white; text-transform: uppercase; transition: all 0.2s ease; }
+        .player-btn { padding: 14px 5px; font-size: 13px; border-width: 2px; }
         
-        .header { 
-            grid-column: span 4; 
-            text-align: center; 
-            border-bottom: 2px solid var(--border); 
-            padding: 15px; 
-            margin-bottom: 10px; 
-            background: linear-gradient(to bottom, #111, #050505);
-            border-radius: 15px 15px 0 0;
-        }
-        .header h1 { 
-            color: var(--gold); 
-            text-transform: uppercase; 
-            margin: 0; 
-            font-size: 2.2rem; 
-            letter-spacing: 4px; 
-            text-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
-        }
-        #matchDuration { font-size: 1.8rem; font-family: 'Courier New', monospace; font-weight: bold; margin-top: 5px; }
+        .active-l { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
+        .active-r { border-color: var(--blue) !important; color: var(--blue) !important; background: rgba(0, 229, 255, 0.05) !important; }
+        .mode-btn.active-mode { border-color: var(--green) !important; color: var(--green) !important; box-shadow: 0 0 8px rgba(0, 255, 65, 0.3); }
 
-        .stat-card { 
-            background: var(--card); 
-            border: 1px solid var(--border); 
-            padding: 15px; 
-            border-radius: 12px; 
-            text-align: center; 
-            position: relative; 
-            overflow: hidden; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; letter-spacing: 1px; }
-        .value { font-size: 2.2rem; font-weight: 800; color: #fff; }
+        .ball-scroll-area { flex: 1; overflow-y: auto; margin-bottom: 8px; }
+        .ball-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; justify-items: center; }
+        .ball-btn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #000; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; background: white; }
+        .num-label { background: white; color: black; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: 900; border: 1px solid black; z-index: 10; }
+        .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
         
-        .highlight .value { color: var(--gold); }
-        .s1 .value { color: var(--s1); } 
-        .s2 .value { color: var(--s2); }
-        
-        /* VS Styling for tallpar */
-        .vs-display { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 1.8rem; font-weight: 900; }
-        .vs-sep { color: var(--text-dim); font-size: 1.2rem; }
-        .vs-val-s1 { color: var(--s1); }
-        .vs-val-s2 { color: var(--s2); }
+        .stripe-band { position: absolute; width: 100%; height: 24px; top: 14px; z-index: 1; }
+        .dark-set.striped { background: black !important; }
+        .classic-set.striped { background: white !important; }
 
-        .graph-container { 
-            background: var(--card); 
-            border: 1px solid var(--border); 
-            padding: 20px; 
-            border-radius: 12px; 
-            grid-column: span 3; 
-            height: 480px; 
-        }
-        .side-stats { grid-column: span 1; display: grid; gap: 15px; }
-
-        .bar-container { grid-column: span 4; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-        .bar-label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
-        .comparison-bar { height: 20px; background: #222; border-radius: 10px; overflow: hidden; display: flex; margin-bottom: 15px; }
-        .bar-fill-s1 { height: 100%; background: var(--s1); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        .bar-fill-s2 { height: 100%; background: var(--s2); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        .card-disabled .disabled-mask { display: flex !important; }
-        .card-disabled .value, .card-disabled .label { opacity: 0.05; filter: blur(3px); }
-        .disabled-mask {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 5, 5, 0.95);
-            display: none; justify-content: center; align-items: center;
-            color: var(--text-dim); font-size: 0.7rem; font-weight: 900; text-transform: uppercase;
-            z-index: 10; text-align: center;
-        }
-
-        .btn-reset { 
-            grid-column: span 4; background: #1a0505; color: var(--red); border: 1px solid #331111; 
-            padding: 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; 
-            font-size: 0.8rem; font-weight: bold; margin-top: 20px;
-        }
+        .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
+        .f-3, .b11 { background-color: #cc0000; } .f-4, .b12 { background-color: #ff66aa; }
+        .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
+        .f-7, .b15 { background-color: #884422; } .f-8 { background-color: black; }
     </style>
 </head>
 <body>
-
-<div class="dashboard">
-    <div class="header">
-        <h1>🎙️ MATCH INSIGHT PRO</h1>
-        <div id="matchDuration">00:00:00</div>
-    </div>
-
-    <div class="stat-card highlight"><div class="label">Match Mode</div><div id="modeText" class="value" style="font-size:1.5rem;">-</div></div>
-    <div class="stat-card highlight">
-        <div class="label">Score (Wins)</div>
-        <div class="vs-display">
-            <span id="winsL" class="vs-val-s1">0</span>
-            <span class="vs-sep">-</span>
-            <span id="winsR" class="vs-val-s2">0</span>
-        </div>
-    </div>
-    <div class="stat-card"><div class="label">Total Shots Combined</div><div id="totalShots" class="value">0</div></div>
-    <div class="stat-card"><div class="label">Pressure Index (Avg last 5)</div><div id="pressureIndex" class="value" style="color:var(--red);">0s</div></div>
-
-    <div class="stat-card s1"><div class="label" id="nameLText">Player 1</div><div id="s1Pots" class="value">0</div><div class="label">Balls Potted</div></div>
-    <div class="stat-card s1"><div class="label">Pot Efficiency</div><div id="s1Eff" class="value">0.0</div><div class="label">Pots / Visit</div></div>
-    <div class="stat-card s1"><div class="label">Runouts</div><div id="s1Run" class="value">0</div></div>
-    <div id="card-8ball-s1" class="stat-card s1 card-disabled">
-        <div class="disabled-mask">8-Ball Only</div>
-        <div class="label">Early 8-Loss</div><div id="s1Err" class="value">0</div>
-    </div>
-
-    <div class="stat-card s2"><div class="label" id="nameRText">Player 2</div><div id="s2Pots" class="value">0</div><div class="label">Balls Potted</div></div>
-    <div class="stat-card s2"><div class="label">Pot Efficiency</div><div id="s2Eff" class="value">0.0</div><div class="label">Pots / Visit</div></div>
-    <div class="stat-card s2"><div class="label">Runouts</div><div id="s2Run" class="value">0</div></div>
-    <div id="card-8ball-s2" class="stat-card s2 card-disabled">
-        <div class="disabled-mask">8-Ball Only</div>
-        <div class="label">Early 8-Loss</div><div id="s2Err" class="value">0</div>
-    </div>
-
-    <div class="graph-container">
-        <div class="label" style="margin-bottom:10px;">Shot Time History (Performance Trend)</div>
-        <canvas id="shotChart"></canvas>
-    </div>
-    
-    <div class="side-stats">
-        <div class="stat-card">
-            <div class="label">VS Shots Taken</div>
-            <div class="vs-display">
-                <span id="vShotsL" class="vs-val-s1">0</span>
-                <span class="vs-sep">-</span>
-                <span id="vShotsR" class="vs-val-s2">0</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="label">VS Pot Success %</div>
-            <div class="vs-display">
-                <span id="vSuccL" class="vs-val-s1">0%</span>
-                <span class="vs-sep">-</span>
-                <span id="vSuccR" class="vs-val-s2">0%</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="label">VS Extensions Used</div>
-            <div class="vs-display">
-                <span id="vExtL" class="vs-val-s1">0</span>
-                <span class="vs-sep">-</span>
-                <span id="vExtR" class="vs-val-s2">0</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="label">VS Dry Breaks</div>
-            <div class="vs-display">
-                <span id="vDryL" class="vs-val-s1">0</span>
-                <span class="vs-sep">-</span>
-                <span id="vDryR" class="vs-val-s2">0</span>
-            </div>
+<div class="container">
+    <div class="section" style="padding: 10px 5px;">
+        <h2>Spillernavn (S1 / S2)</h2>
+        <div class="name-grid">
+            <input type="text" id="nameL" class="name-input" placeholder="Navn S1" oninput="updateNames()">
+            <input type="text" id="nameR" class="name-input" placeholder="Navn S2" oninput="updateNames()">
         </div>
     </div>
 
-    <div class="bar-container">
-        <div class="bar-label"><span>Visit Frequency (Shot Volume)</span><span id="visitRatioText">50% / 50%</span></div>
-        <div class="comparison-bar">
-            <div id="bar-visit-s1" class="bar-fill-s1" style="width: 50%;"></div>
-            <div id="bar-visit-s2" class="bar-fill-s2" style="width: 50%;"></div>
+    <div class="section pool-section">
+        <h2>Pool Control</h2>
+        <div class="ball-scroll-area">
+            <div class="ball-grid" id="ball-grid"></div>
         </div>
-        <div class="bar-label"><span>Time Dominance (Table Possession)</span><span id="timeRatioText">50% / 50%</span></div>
-        <div class="comparison-bar">
-            <div id="bar-time-s1" class="bar-fill-s1" style="width: 50%;"></div>
-            <div id="bar-time-s2" class="bar-fill-s2" style="width: 50%;"></div>
+        <div class="grid" style="gap: 5px; grid-template-columns: 1fr 1fr 1fr 1fr 1fr;">
+            <button class="mini-btn" onclick="reputtActiveBalls()" title="Re-Rack">♻️</button>
+            <button id="ballSetBtn" class="mini-btn" onclick="toggleBallSet()" title="Endre kulesett">🎨</button>
+            <button id="mode-9" class="mode-btn" onclick="resetPool(9)">9</button>
+            <button id="mode-10" class="mode-btn" onclick="resetPool(10)">10</button>
+            <button id="mode-8" class="mode-btn" onclick="resetPool(8)">8</button>
         </div>
-        <div id="trendText" style="text-align:center; color:var(--gold); font-weight:bold; text-transform:uppercase;">Analyzing Flow...</div>
     </div>
 
-    <button class="btn-reset" onclick="resetAllStats()">Reset All Match Data</button>
+    <div class="section">
+        <h2>Shotclock & Match</h2>
+        <div class="grid">
+            <button style="background:#1b5e20; grid-column: span 1;" onclick="startMatch()">🟢 START</button>
+            <button style="background:#b71c1c; grid-column: span 1;" onclick="avsluttMatch()">🔴 STOPP</button>
+            <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ S1</button>
+            <button id="btnR" class="player-btn" onclick="shotReset('right')">S2 ▶</button>
+            <button id="toggleBtn" onclick="sendClock('toggle')">▶ START / PAUSE</button>
+            <button style="border-color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
+            <button style="grid-column: span 2; color: var(--ext); border-color: var(--ext);" onclick="useExtension()">+ BRUK EXTENSION</button>
+        </div>
+    </div>
 </div>
 
 <script>
     const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    
+    let lastResetTime = Date.now();
+    let currentVisitPots = 0;
+    let ballStyle = 'dark';
 
-    let shotChart;
-    let matchStartTimestamp = 0;
-    let timerInterval = null;
-
-    db.ref('stats/startTime').on('value', snap => { 
-        const val = snap.val();
-        if (val && val > 0) {
-            matchStartTimestamp = Number(val);
-            if (!timerInterval) timerInterval = setInterval(updateTimerDisplay, 100);
-        } else {
-            matchStartTimestamp = 0;
-            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-            document.getElementById('matchDuration').innerText = "00:00:00";
-        }
-    });
-
-    function updateTimerDisplay() {
-        const display = document.getElementById('matchDuration');
-        if (matchStartTimestamp > 0) {
-            const diff = Date.now() - matchStartTimestamp;
-            const tot = Math.floor(diff / 1000);
-            const h = Math.floor(tot / 3600).toString().padStart(2, '0');
-            const m = Math.floor((tot % 3600) / 60).toString().padStart(2, '0');
-            const s = (tot % 60).toString().padStart(2, '0');
-            display.innerText = `${h}:${m}:${s}`;
+    // Vibreringsfunksjon
+    function vibe(ms = 40) {
+        if (navigator.vibrate) {
+            navigator.vibrate(ms);
         }
     }
 
-    function initChart() {
-        const ctx = document.getElementById('shotChart').getContext('2d');
-        shotChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: [], datasets: [
-                { label: 'S1', data: [], borderColor: '#00FF41', backgroundColor: 'rgba(0,255,65,0.1)', tension: 0.4, fill: true },
-                { label: 'S2', data: [], borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.1)', tension: 0.4, fill: true }
-            ]},
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, grid: { color: '#222' } }, x: { display: false } } }
+    function toggleBallSet() {
+        vibe(60);
+        ballStyle = (ballStyle === 'dark') ? 'classic' : 'dark';
+        db.ref('settings/ballStyle').set(ballStyle);
+        renderBalls();
+    }
+
+    function updateNames() {
+        db.ref('stats/names').set({
+            left: document.getElementById('nameL').value || "Spiller 1",
+            right: document.getElementById('nameR').value || "Spiller 2"
         });
     }
 
-    db.ref('stats').on('value', snap => {
-        const d = snap.val() || {};
-        const history = d.history ? Object.values(d.history) : [];
-        const wins = d.matchWins || {left:0, right:0};
-        const pots = d.pots || {left:0, right:0};
-        const visits = d.visits || {left:1, right:1};
-        const ext = d.extensions || {left:0, right:0};
-        const dry = d.dryBreaks || {left:0, right:0};
-        const names = d.names || {left: "Player 1", right: "Player 2"};
+    function startMatch() {
+        vibe(100);
+        db.ref('stats/startTime').set(Date.now());
+        db.ref('activePlayer').set("");
+        db.ref('shotclock/status').set('paused');
+        resetPool(9); 
+        db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
+        setTimeout(() => { db.ref('shotclock/cmd').set({ action: 'stop' }); }, 500);
+    }
 
-        document.getElementById('nameLText').innerText = names.left;
-        document.getElementById('nameRText').innerText = names.right;
-        
-        // Wins VS
-        document.getElementById('winsL').innerText = wins.left;
-        document.getElementById('winsR').innerText = wins.right;
+    function resetPool(max) {
+        vibe(60);
+        let updates = {};
+        for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null;
+        if (max === 8) for (let i = 1; i <= 15; i++) updates[i] = true;
+        db.ref('balls').set(updates);
+        db.ref('gameMode').set(max);
+        db.ref('breakStatus').set({ active: true, ballsSunk: 0 });
+    }
 
-        // Player Cards
-        document.getElementById('s1Pots').innerText = pots.left || 0;
-        document.getElementById('s2Pots').innerText = pots.right || 0;
-        document.getElementById('s1Eff').innerText = (pots.left / Math.max(1, visits.left)).toFixed(1);
-        document.getElementById('s2Eff').innerText = (pots.right / Math.max(1, visits.right)).toFixed(1);
-        document.getElementById('s1Run').innerText = d.runouts?.left || 0;
-        document.getElementById('s2Run').innerText = d.runouts?.right || 0;
-        document.getElementById('s1Err').innerText = d.errors?.left || 0;
-        document.getElementById('s2Err').innerText = d.errors?.right || 0;
+    const grid = document.getElementById('ball-grid');
+    for (let i = 1; i <= 15; i++) {
+        const b = document.createElement('div');
+        b.id = `btn-${i}`; b.className = 'ball-btn';
+        let num = document.createElement('div'); num.className = 'num-label'; num.innerText = i; b.appendChild(num);
+        let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
 
-        // Side VS Listings
-        document.getElementById('vExtL').innerText = ext.left || 0;
-        document.getElementById('vExtR').innerText = ext.right || 0;
-        document.getElementById('vDryL').innerText = dry.left || 0;
-        document.getElementById('vDryR').innerText = dry.right || 0;
+        b.onclick = () => {
+            vibe(30);
+            const ref = db.ref(`balls/${i}`);
+            ref.once('value').then(snap => {
+                const isSinking = snap.val() !== false;
+                ref.set(!isSinking);
+                if (isSinking) {
+                    db.ref().once('value', mSnap => {
+                        const d = mSnap.val();
+                        const player = d.activePlayer;
+                        if (!player) return;
+                        currentVisitPots++;
+                        db.ref(`stats/pots/${player}`).transaction(c => (c || 0) + 1);
+                        if (d.breakStatus?.active) db.ref('breakStatus/ballsSunk').transaction(c => (c || 0) + 1);
+                        
+                        const mode = d.gameMode || 9;
+                        if (i == mode) {
+                            let others = false;
+                            const limit = (mode === 8) ? 15 : mode;
+                            for (let n = 1; n <= limit; n++) { if (n !== i && d.balls[n] === true) others = true; }
+                            if (mode == 9 || !others) {
+                                db.ref(`stats/matchWins/${player}`).transaction(c => (c || 0) + 1);
+                                if (currentVisitPots >= 5) db.ref(`stats/runouts/${player}`).transaction(c => (c || 0) + 1);
+                            } else if (mode == 8) {
+                                db.ref(`stats/errors/${player}`).transaction(c => (c || 0) + 1);
+                                db.ref(`stats/matchWins/${player === 'left' ? 'right' : 'left'}`).transaction(c => (c || 0) + 1);
+                            }
+                        }
+                    });
+                }
+            });
+        };
+        grid.appendChild(b);
+    }
 
-        processHistory(history, pots);
-    });
-
-    function processHistory(entries, pots) {
-        if (!entries || entries.length === 0) { resetDisplay(); return; }
-        let s1Shots = 0, s1Time = 0, s1Data = [], s2Shots = 0, s2Time = 0, s2Data = [];
-        let labels = [];
-
-        entries.forEach((e, i) => {
-            labels.push(i + 1);
-            if (e.player === 'left') { s1Shots++; s1Time += e.time; s1Data.push(e.time); s2Data.push(null); }
-            else { s2Shots++; s2Time += e.time; s2Data.push(e.time); s1Data.push(null); }
-        });
-
-        document.getElementById('totalShots').innerText = entries.length;
-        document.getElementById('vShotsL').innerText = s1Shots;
-        document.getElementById('vShotsR').innerText = s2Shots;
-
-        const s1S = s1Shots > 0 ? Math.round((pots.left / s1Shots) * 100) : 0;
-        const s2S = s2Shots > 0 ? Math.round((pots.right / s2Shots) * 100) : 0;
-        document.getElementById('vSuccL').innerText = s1S + "%";
-        document.getElementById('vSuccR').innerText = s2S + "%";
-
-        // Bjelker & Trend
-        const v1P = (s1Shots / entries.length * 100);
-        document.getElementById('bar-visit-s1').style.width = v1P + "%";
-        document.getElementById('bar-visit-s2').style.width = (100 - v1P) + "%";
-        document.getElementById('visitRatioText').innerText = `${Math.round(v1P)}% / ${Math.round(100-v1P)}%`;
-
-        const totalT = s1Time + s2Time;
-        const t1P = totalT > 0 ? (s1Time / totalT * 100) : 50;
-        document.getElementById('bar-time-s1').style.width = t1P + "%";
-        document.getElementById('bar-time-s2').style.width = (100 - t1P) + "%";
-        document.getElementById('timeRatioText').innerText = `${Math.round(t1P)}% / ${Math.round(100-t1P)}%`;
-
-        if (shotChart) {
-            shotChart.data.labels = labels;
-            shotChart.data.datasets[0].data = s1Data;
-            shotChart.data.datasets[1].data = s2Data;
-            shotChart.update('none');
+    function renderBalls() {
+        const data = window.currentActiveData || {};
+        for (let i = 1; i <= 15; i++) {
+            const b = document.getElementById(`btn-${i}`);
+            const band = document.getElementById(`band-${i}`);
+            if (!b) continue;
+            b.classList.toggle('sunk', data[i] === false);
+            b.style.display = (data[i] === undefined) ? 'none' : 'flex';
+            b.className = 'ball-btn' + (data[i] === false ? ' sunk' : '');
+            band.className = 'stripe-band';
+            if (i <= 8) { b.classList.add(`f-${i}`); band.style.display = 'none'; }
+            else { band.style.display = 'block'; band.classList.add(`f-${i-8}`); b.classList.add('striped'); b.classList.add(ballStyle === 'dark' ? 'dark-set' : 'classic-set'); }
         }
     }
+
+    function shotReset(player) {
+        vibe(50);
+        db.ref('breakStatus').once('value', s => {
+            const b = s.val();
+            if (b?.active) {
+                if (b.ballsSunk === 0) db.ref(`stats/dryBreaks/${player}`).transaction(c => (c || 0) + 1);
+                db.ref('breakStatus/active').set(false);
+            }
+        });
+        db.ref('activePlayer').once('value', s => { if (s.val() !== player) currentVisitPots = 0; });
+        const now = Date.now();
+        const timeSpent = (now - lastResetTime) / 1000;
+        if (timeSpent > 1.5 && timeSpent < 120) {
+            db.ref('stats/history').push({ time: timeSpent, player: player });
+            db.ref(`stats/visits/${player}`).transaction(c => (c || 0) + 1);
+        }
+        lastResetTime = now;
+        db.ref('activePlayer').set(player);
+        db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
+    }
+
+    function startBreak() { vibe(60); sendClock('reset60'); db.ref('breakStatus/active').set(true); }
+    function useExtension() { vibe(80); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); sendClock('extension'); }
+    function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
+    function avsluttMatch() { vibe(100); if(confirm("Avslutt?")) { db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/status').set('hidden'); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
+    
+    db.ref('activePlayer').on('value', snap => {
+        const p = snap.val();
+        document.getElementById('btnL').classList.toggle('active-l', p === 'left');
+        document.getElementById('btnR').classList.toggle('active-r', p === 'right');
+    });
 
     db.ref('gameMode').on('value', snap => {
-        const mode = snap.val() || 9;
-        document.getElementById('modeText').innerText = mode + "-Ball";
-        const e1 = document.getElementById('card-8ball-s1'), e2 = document.getElementById('card-8ball-s2');
-        if (mode == 8) { e1.classList.remove('card-disabled'); e2.classList.remove('card-disabled'); }
-        else { e1.classList.add('card-disabled'); e2.classList.add('card-disabled'); }
+        const activeMode = snap.val();
+        [8, 9, 10].forEach(m => {
+            const btn = document.getElementById(`mode-${m}`);
+            if (btn) btn.classList.toggle('active-mode', m === activeMode);
+        });
     });
 
-    function resetDisplay() {
-        ["vShotsL","vShotsR","vSuccL","vSuccR","vExtL","vExtR","vDryL","vDryR","winsL","winsR","s1Pots","s2Pots","totalShots"].forEach(id => {
-            const el = document.getElementById(id); if(el) el.innerText = "0";
-        });
-        if (shotChart) { shotChart.data.labels = []; shotChart.data.datasets.forEach(d => d.data = []); shotChart.update(); }
-    }
+    db.ref('balls').on('value', snap => {
+        window.currentActiveData = snap.val() || {};
+        renderBalls();
+    });
 
-    function resetAllStats() {
-        if(confirm("Slette all match-data?")) { db.ref('stats').set({ startTime: 0 }); location.reload(); }
-    }
+    db.ref('settings/ballStyle').on('value', snap => {
+        if (snap.val()) { ballStyle = snap.val(); renderBalls(); }
+    });
 
-    window.onload = initChart;
+    function reputtActiveBalls() { vibe(50); if (!window.currentActiveData) return; let updates = {}; for (let i = 1; i <= 15; i++) { if (window.currentActiveData[i] !== undefined) updates[i] = true; } db.ref('balls').update(updates); }
 </script>
 </body>
 </html>
