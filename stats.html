@@ -93,13 +93,10 @@
 
     // --- CUESCORE SYNC LOGIKK ---
     function syncCueScore() {
-        // Henter aktiv ID fra Firebase (limt inn eller default i master.control)
         db.ref('settings/cueScoreMatchID').once('value', snap => {
             const inputID = snap.val();
-            const defaultTableID = "9158140"; // Hovedbordet ditt
+            const defaultTableID = "9158140"; 
             const activeID = (inputID && inputID.trim() !== "") ? inputID : defaultTableID;
-
-            console.log("Synkroniserer med CueScore ID:", activeID);
 
             const apiUrl = `https://cuescore.com/api/getTableMatch:${activeID}`;
             
@@ -113,7 +110,6 @@
                         const p1 = match.playerA || match.player1;
                         const p2 = match.playerB || match.player2;
 
-                        // Oppdaterer navn, HCP og Score
                         document.getElementById('nameLText').innerText = p1.name;
                         document.getElementById('hcL').innerText = "HCP: " + (p1.handicap || "0");
                         document.getElementById('winsL').innerText = match.scoreA || match.score1 || 0;
@@ -122,41 +118,39 @@
                         document.getElementById('hcR').innerText = "HCP: " + (p2.handicap || "0");
                         document.getElementById('winsR').innerText = match.scoreB || match.score2 || 0;
 
-                        // Brekk-indikator
                         const isBreaker = match.breaker || match.isBreaker;
                         document.getElementById('breakL').style.visibility = (isBreaker === 'A' || isBreaker === '1' ? 'visible' : 'hidden');
                         document.getElementById('breakR').style.visibility = (isBreaker === 'B' || isBreaker === '2' ? 'visible' : 'hidden');
                     }
-                }).catch(e => {
-                    console.log("CueScore: Kunne ikke hente data for ID " + activeID);
-                });
+                }).catch(e => console.log("CueScore: Venter på gyldig ID..."));
         });
     }
 
-    // --- TRIGGER SYNC VED START-KNAPP ---
-    // Når startTime endres i master.control, trigger vi en umiddelbar sync
+    // --- TIMER FIX ---
     db.ref('stats/startTime').on('value', snap => { 
         matchStartTimestamp = snap.val() || 0;
-        if (matchStartTimestamp > 0) {
-            console.log("Kamp startet! Henter informasjon fra CueScore...");
-            syncCueScore(); 
-        }
+        if (matchStartTimestamp > 0) syncCueScore(); 
     });
 
-    // --- MATCH TIMER ---
     setInterval(() => {
+        const display = document.getElementById('matchDuration');
         if (matchStartTimestamp > 0) {
-            const diff = Date.now() - matchStartTimestamp;
-            const h = Math.floor(diff/3600000).toString().padStart(2,'0');
-            const m = Math.floor((diff%3600000)/60000).toString().padStart(2,'0');
-            const s = Math.floor((diff%60000)/1000).toString().padStart(2,'0');
-            document.getElementById('matchDuration').innerText = `${h}:${m}:${s}`;
+            const now = Date.now();
+            const diff = now - matchStartTimestamp;
+            
+            // Sikre at vi ikke viser negative tall
+            const totalSeconds = Math.max(0, Math.floor(diff / 1000));
+            const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (totalSeconds % 60).toString().padStart(2, '0');
+            
+            display.innerText = `${h}:${m}:${s}`;
         } else {
-            document.getElementById('matchDuration').innerText = "00:00:00";
+            display.innerText = "00:00:00";
         }
     }, 1000);
 
-    // --- STATISTIKK OPPDATERING ---
+    // --- STATS DATA ---
     db.ref('stats').on('value', snap => {
         const d = snap.val() || {};
         const history = d.history ? Object.values(d.history) : [];
@@ -170,10 +164,10 @@
         document.getElementById('vFoulR').innerText = fouls.right || 0;
         document.getElementById('s1Eff').innerText = (pots.left / Math.max(1, visits.left)).toFixed(1);
         document.getElementById('s2Eff').innerText = (pots.right / Math.max(1, visits.right)).toFixed(1);
-        document.getElementById('vExtL').innerText = d.extensions?.left || 0;
-        document.getElementById('vExtR').innerText = d.extensions?.right || 0;
-        document.getElementById('s1Run').innerText = d.runouts?.left || 0;
-        document.getElementById('s2Run').innerText = d.runouts?.right || 0;
+        document.getElementById('vExtL').innerText = (d.extensions?.left || 0);
+        document.getElementById('vExtR').innerText = (d.extensions?.right || 0);
+        document.getElementById('s1Run').innerText = (d.runouts?.left || 0);
+        document.getElementById('s2Run').innerText = (d.runouts?.right || 0);
 
         updateVisuals(history, pots);
     });
@@ -234,10 +228,7 @@
             ]},
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } } }
         });
-        
-        // Start vanlig sync-intervall
         setInterval(syncCueScore, 10000);
-        // Første kjøring
         syncCueScore();
     };
 </script>
