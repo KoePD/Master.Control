@@ -94,11 +94,11 @@
     // --- CUESCORE SYNC LOGIKK ---
    function syncCueScore() {
     db.ref('settings/cueScoreMatchID').once('value', snap => {
-        let tID = snap.val();
-        if (!tID) return; // Ikke gjør noe hvis vi ikke har en ID
-
-        const proxyUrl = "https://corsproxy.io/?";
-        const apiUrl = `https://cuescore.com/api/getTournamentMatches:${tID}`;
+        let tID = snap.val() || "79253032";
+        
+        // Samme sikre proxy-metode
+        const proxyUrl = "https://api.allorigins.win/raw?url=";
+        const apiUrl = "https://cuescore.com/api/getTournamentMatches:" + tID;
         
         fetch(proxyUrl + encodeURIComponent(apiUrl))
             .then(res => res.json())
@@ -107,22 +107,17 @@
                 const match = Object.values(data).find(m => m.tableID == tableID || m.table == tableID);
                 
                 if (match) {
-                    // Oppdater kun score og brekk (Navn styres stabilt via Firebase-lytteren)
+                    // Oppdaterer kun poeng og brekk (Navn styres via Firebase)
                     document.getElementById('winsL').innerText = match.score1 || match.scoreA || 0;
                     document.getElementById('winsR').innerText = match.score2 || match.scoreB || 0;
                     
                     const isBreaker = match.breaker;
-                    if(document.getElementById('breakL')) {
-                        document.getElementById('breakL').style.visibility = (isBreaker == '1' ? 'visible' : 'hidden');
-                    }
-                    if(document.getElementById('breakR')) {
-                        document.getElementById('breakR').style.visibility = (isBreaker == '2' ? 'visible' : 'hidden');
-                    }
+                    if(document.getElementById('breakL')) document.getElementById('breakL').style.visibility = (isBreaker == '1' ? 'visible' : 'hidden');
+                    if(document.getElementById('breakR')) document.getElementById('breakR').style.visibility = (isBreaker == '2' ? 'visible' : 'hidden');
                 }
             }).catch(e => console.log("CueScore Score-sync venter..."));
     });
 }
-
     // --- TIMER ---
     db.ref('stats/startTime').on('value', snap => { 
         matchStartTimestamp = snap.val() || 0;
