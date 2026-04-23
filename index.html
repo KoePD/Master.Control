@@ -104,65 +104,58 @@
 
     function vibe(ms = 40) { if (navigator.vibrate) navigator.vibrate(ms); }
 
-    // --- CUESCORE INTEGRASJON ---
-    async function fetchCueScoreData(matchID) {
-        if (!matchID || matchID.length < 5) return;
+    // --- CUESCORE DATA HENTING ---
+    async function fetchCueScoreData() {
+        const id = document.getElementById('matchIDInput').value;
+        if (!id || id.length < 5) return;
+
+        const proxyUrl = "https://api.allorigins.win/get?url=";
+        const apiUrl = `https://cuescore.com/api/getTableMatch:${id}`;
         
         try {
-            // Bruker en CORS-proxy hvis direkte fetch blir blokkert, 
-            // men prøver direkte først:
-            const response = await fetch(`https://cuescore.com/api/getMatch.php?id=${matchID}`);
-            const data = await response.json();
-            
-            if (data && data.match) {
-                const match = data.match;
-                
-                // Lagre alt til Firebase så stats.html kan lese det
-                db.ref('stats/names').set({
-                    left: match.player1.name,
-                    right: match.player2.name
-                });
-                
-                db.ref('stats/handicaps').set({
-                    left: match.player1.handicap || "-",
-                    right: match.player2.handicap || "-"
-                });
+            const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+            const raw = await response.json();
+            const data = JSON.parse(raw.contents);
+            const match = data.match || data;
 
-                db.ref('stats/score').set({
-                    left: parseInt(match.player1.score) || 0,
-                    right: parseInt(match.player2.score) || 0
-                });
-                
-                console.log("CueScore synkronisert:", match.player1.name, "vs", match.player2.name);
+            if (match && (match.playerA || match.player1)) {
+                console.log("CueScore data synkronisert ved start.");
+                // Vi trenger ikke lagre navn manuelt her da stats.html henter dem direkte fra ID-en
             }
-        } catch (error) {
-            console.error("CueScore feil:", error);
-        }
+        } catch (e) { console.log("Kunne ikke forhåndshente CueScore data."); }
     }
 
     function updateMatchID() {
         const id = document.getElementById('matchIDInput').value;
         db.ref('settings/cueScoreMatchID').set(id);
-        fetchCueScoreData(id);
     }
 
-    // Lytt på endringer i ID (hvis du endrer den fra en annen enhet)
-    db.ref('settings/cueScoreMatchID').on('value', snap => {
-        const id = snap.val();
-        if (id && id !== document.getElementById('matchIDInput').value) {
-            document.getElementById('matchIDInput').value = id;
-            fetchCueScoreData(id);
-        }
-    });
+    function toggleBallSet() {
+        vibe(60);
+        ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic';
+        db.ref('settings/ballStyle').set(ballStyle);
+        renderBalls();
+    }
 
-    // --- BALL LOGIKK ---
+    function addStat(path, side) {
+        vibe(80);
+        db.ref(`stats/${path}/${side}`).transaction(c => (c || 0) + 1);
+    }
+
+    // --- KULE LOGIKK ---
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
         b.id = `btn-${i}`; 
         b.className = 'ball-btn';
-        let num = document.createElement('div'); num.className = 'num-label'; num.innerText = i; b.appendChild(num);
-        let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
+        let numLabel = document.createElement('div'); 
+        numLabel.className = 'num-label'; 
+        numLabel.innerText = i; 
+        b.appendChild(numLabel);
+        let band = document.createElement('div'); 
+        band.id = `band-${i}`; 
+        band.className = 'stripe-band'; 
+        b.appendChild(band);
 
         b.onclick = () => {
             vibe(30);
@@ -172,8 +165,8 @@
                 ref.set(!isSinking);
                 if (isSinking) {
                     db.ref('activePlayer').once('value', pSnap => {
-                        const player = pSnap.val();
-                        if (player) db.ref(`stats/pots/${player}`).transaction(c => (c || 0) + 1);
+                        const p = pSnap.val();
+                        if (p) db.ref(`stats/pots/${p}`).transaction(c => (c || 0) + 1);
                     });
                 }
             });
@@ -194,13 +187,20 @@
             b.style.display = shouldShow ? 'flex' : 'none';
             b.classList.toggle('sunk', data[i] === false);
             
+            numLabel.style.backgroundColor = "white";
+            numLabel.style.color = "black";
+            b.style.border = "2px solid #000";
+
             if (i <= 8) {
+                // Ensfargede: 1-8
+                b.style.background = colors[i];
                 b.style.backgroundColor = colors[i];
-                b.style.background = "";
             } else {
+                // Stripete: 9-15
                 const stripeColor = colors[i - 8];
                 const baseColor = (ballStyle === 'dark') ? 'black' : 'white';
                 b.style.background = `linear-gradient(to bottom, ${baseColor} 0%, ${baseColor} 25%, ${stripeColor} 25%, ${stripeColor} 75%, ${baseColor} 75%, ${baseColor} 100%)`;
+                numLabel.style.border = "1px solid #000";
             }
         }
     }
@@ -208,19 +208,23 @@
     // --- MATCH KONTROLL ---
     function startMatch() {
         vibe(100);
-        const id = document.getElementById('matchIDInput').value;
-        if (id) fetchCueScoreData(id);
-        
-        db.ref('stats/startTime').set(Date.now());
+        const startTime = Date.now();
+        db.ref('stats').update({ startTime: startTime });
         db.ref('activePlayer').set("");
         resetPool(currentGameMode);
-        db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
+        db.ref('shotclock/cmd').set({ action: 'reset30', ts: startTime });
+        fetchCueScoreData(); 
     }
 
-    function toggleBallSet() {
-        ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic';
-        db.ref('settings/ballStyle').set(ballStyle);
-        renderBalls();
+    function avsluttMatch() {
+        vibe(100);
+        if(confirm("⚠ ADVARSEL: Er du sikker på at du vil avslutte? Dette sletter all statistikk for denne kampen!")) {
+            db.ref('stats').set({ startTime: 0 });
+            db.ref('activePlayer').set(null);
+            db.ref('balls').set(null);
+            db.ref('shotclock/cmd').set({ action: 'stop' });
+            setTimeout(() => { location.reload(); }, 500);
+        }
     }
 
     function shotReset(player) {
@@ -229,6 +233,11 @@
         db.ref('activePlayer').set(player);
         db.ref(`stats/visits/${player}`).transaction(c => (c || 0) + 1);
         db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
+        
+        const timeSpent = (now - lastResetTime) / 1000;
+        if (timeSpent > 1.5 && timeSpent < 150) {
+            db.ref('stats/history').push({ time: timeSpent, player: player, ts: now });
+        }
         lastResetTime = now;
     }
 
@@ -240,18 +249,9 @@
         db.ref('gameMode').set(max);
     }
 
-    function avsluttMatch() {
-        vibe(100);
-        // Dette er den viktige bekreftelsen
-        if(confirm("Er du HELT sikker? Dette sletter all statistikk og stopper klokka for denne kampen.")) {
-        db.ref('stats').set({ startTime: 0 });
-        db.ref('activePlayer').set(null);
-        db.ref('balls').set(null);
-        db.ref('shotclock/cmd').set({ action: 'stop' });
-        // Valgfritt: Last inn på nytt for å tømme lokale variabler
-        location.reload();
-    }
-}
+    function startBreak() { vibe(60); db.ref('shotclock/cmd').set({action:'reset60', ts:Date.now()}); }
+    function useExtension() { vibe(80); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
+    function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
 
     // --- LYTTERE ---
     db.ref('activePlayer').on('value', snap => {
