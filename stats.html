@@ -94,27 +94,26 @@
     // --- CUESCORE SYNC LOGIKK ---
    function syncCueScore() {
     db.ref('settings/cueScoreMatchID').once('value', snap => {
-        let id = snap.val() || "9158140";
-        const cleanId = id.replace('v', '');
+        let tID = snap.val() || "79253032";
+        const proxyUrl = "https://api.allorigins.win/raw?url=";
+        const apiUrl = `https://cuescore.com/api/getTournamentMatches:${tID}`;
         
-        // Samme rå-URL format som i master control
-        const proxyUrl = "https://corsproxy.io/?https://cuescore.com/api/getTableMatch:" + cleanId;
-        
-        fetch(proxyUrl)
-            .then(res => {
-                if (!res.ok) throw new Error("404");
-                return res.json();
-            })
-            .then(match => {
-                if (match && (match.playerA || match.player1)) {
-                    document.getElementById('winsL').innerText = match.scoreA || match.score1 || 0;
-                    document.getElementById('winsR').innerText = match.scoreB || match.score2 || 0;
+        fetch(proxyUrl + encodeURIComponent(apiUrl))
+            .then(res => res.json())
+            .then(data => {
+                const tableID = "9158140";
+                const match = Object.values(data).find(m => m.tableID == tableID || m.table == tableID);
+                
+                if (match) {
+                    document.getElementById('winsL').innerText = match.score1 || match.scoreA || 0;
+                    document.getElementById('winsR').innerText = match.score2 || match.scoreB || 0;
                     
-                    const isBreaker = match.breaker || match.isBreaker;
-                    document.getElementById('breakL').style.visibility = (isBreaker === 'A' || isBreaker === '1' ? 'visible' : 'hidden');
-                    document.getElementById('breakR').style.visibility = (isBreaker === 'B' || isBreaker === '2' ? 'visible' : 'hidden');
+                    // Brekk-indikator
+                    const isBreaker = match.breaker;
+                    document.getElementById('breakL').style.visibility = (isBreaker == '1' ? 'visible' : 'hidden');
+                    document.getElementById('breakR').style.visibility = (isBreaker == '2' ? 'visible' : 'hidden');
                 }
-            }).catch(e => console.log("CueScore Sync venter på data..."));
+            }).catch(e => console.log("CueScore: Venter på turnerings-oppdatering..."));
     });
 }
 
