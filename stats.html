@@ -93,35 +93,24 @@
 
     // --- CUESCORE SYNC LOGIKK ---
     function syncCueScore() {
-        db.ref('settings/cueScoreMatchID').once('value', snap => {
-            const inputID = snap.val();
-            const defaultTableID = "9158140"; 
-            const activeID = (inputID && inputID.trim() !== "") ? inputID : defaultTableID;
-
-            const apiUrl = `https://cuescore.com/api/getTableMatch:${activeID}`;
-            
-            fetch(proxyUrl + encodeURIComponent(apiUrl))
-                .then(res => res.json())
-                .then(rawData => {
-                    const data = JSON.parse(rawData.contents);
-                    const match = data.match || data; 
-
-                    if (match && (match.playerA || match.player1)) {
-                        const p1 = match.playerA || match.player1;
-                        const p2 = match.playerB || match.player2;
-
-                        // Vi oppdaterer KUN poengsum og brekk her. 
-                        // Navn og HCP styres nå stabilt via Firebase-lytterne nederst.
-                        document.getElementById('winsL').innerText = match.scoreA || match.score1 || 0;
-                        document.getElementById('winsR').innerText = match.scoreB || match.score2 || 0;
-
-                        const isBreaker = match.breaker || match.isBreaker;
-                        document.getElementById('breakL').style.visibility = (isBreaker === 'A' || isBreaker === '1' ? 'visible' : 'hidden');
-                        document.getElementById('breakR').style.visibility = (isBreaker === 'B' || isBreaker === '2' ? 'visible' : 'hidden');
-                    }
-                }).catch(e => console.log("CueScore Sync: Venter på data..."));
-        });
-    }
+    db.ref('settings/cueScoreMatchID').once('value', snap => {
+        const id = snap.val() || "9158140";
+        const proxyUrl = "https://corsproxy.io/?";
+        const apiUrl = `https://cuescore.com/api/getTableMatch:v${id.replace('v','')}`;
+        
+        fetch(proxyUrl + encodeURIComponent(apiUrl))
+            .then(res => res.json())
+            .then(match => {
+                if (match && (match.playerA || match.player1)) {
+                    document.getElementById('winsL').innerText = match.scoreA || match.score1 || 0;
+                    document.getElementById('winsR').innerText = match.scoreB || match.score2 || 0;
+                    const isBreaker = match.breaker || match.isBreaker;
+                    document.getElementById('breakL').style.visibility = (isBreaker === 'A' || isBreaker === '1' ? 'visible' : 'hidden');
+                    document.getElementById('breakR').style.visibility = (isBreaker === 'B' || isBreaker === '2' ? 'visible' : 'hidden');
+                }
+            }).catch(e => console.log("CueScore Sync: Proxy blokkert eller treg..."));
+    });
+}
 
     // --- TIMER ---
     db.ref('stats/startTime').on('value', snap => { 
