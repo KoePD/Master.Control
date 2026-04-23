@@ -89,35 +89,43 @@
     
     let shotChart;
     let matchStartTimestamp = 0;
-    const proxyUrl = "https://api.allorigins.win/get?url=";
 
-    // --- CUESCORE SYNC LOGIKK ---
-   function syncCueScore() {
-    db.ref('settings/cueScoreMatchID').once('value', snap => {
-        let tID = snap.val() || "79253032";
-        
-        // Samme sikre proxy-metode
-        const proxyUrl = "https://api.allorigins.win/raw?url=";
-        const apiUrl = "https://cuescore.com/api/getTournamentMatches:" + tID;
-        
-        fetch(proxyUrl + encodeURIComponent(apiUrl))
-            .then(res => res.json())
-            .then(data => {
-                const tableID = "9158140";
-                const match = Object.values(data).find(m => m.tableID == tableID || m.table == tableID);
-                
-                if (match) {
-                    // Oppdaterer kun poeng og brekk (Navn styres via Firebase)
-                    document.getElementById('winsL').innerText = match.score1 || match.scoreA || 0;
-                    document.getElementById('winsR').innerText = match.score2 || match.scoreB || 0;
+    // --- CUESCORE SYNC LOGIKK (Tilpasset api.cuescore.com) ---
+    function syncCueScore() {
+        db.ref('settings/cueScoreMatchID').once('value', snap => {
+            let tID = snap.val() || "79253032";
+            
+            // Bruker corsproxy for å nå API-et
+            const proxyUrl = "https://corsproxy.io/?";
+            const apiUrl = `https://api.cuescore.com/tournament/?id=${tID}`;
+            
+            fetch(proxyUrl + apiUrl)
+                .then(res => res.json())
+                .then(data => {
+                    const matches = data.matches || [];
+                    const tableID = "9158140";
                     
-                    const isBreaker = match.breaker;
-                    if(document.getElementById('breakL')) document.getElementById('breakL').style.visibility = (isBreaker == '1' ? 'visible' : 'hidden');
-                    if(document.getElementById('breakR')) document.getElementById('breakR').style.visibility = (isBreaker == '2' ? 'visible' : 'hidden');
-                }
-            }).catch(e => console.log("CueScore Score-sync venter..."));
-    });
-}
+                    // Leter etter kampen på ditt bord i listen
+                    const match = matches.find(m => m.table_id == tableID || m.table_name == tableID);
+                    
+                    if (match) {
+                        // Oppdaterer poengsum fra turneringen
+                        document.getElementById('winsL').innerText = match.player1_score || 0;
+                        document.getElementById('winsR').innerText = match.player2_score || 0;
+                        
+                        // Oppdaterer hvem som har brekk (1 = venstre, 2 = høyre)
+                        const isBreaker = match.breaker; 
+                        if(document.getElementById('breakL')) {
+                            document.getElementById('breakL').style.visibility = (isBreaker == '1' ? 'visible' : 'hidden');
+                        }
+                        if(document.getElementById('breakR')) {
+                            document.getElementById('breakR').style.visibility = (isBreaker == '2' ? 'visible' : 'hidden');
+                        }
+                    }
+                }).catch(e => console.log("CueScore Score-sync venter på data..."));
+        });
+    }
+
     // --- TIMER ---
     db.ref('stats/startTime').on('value', snap => { 
         matchStartTimestamp = snap.val() || 0;
@@ -152,7 +160,6 @@
         document.getElementById('vFoulL').innerText = fouls.left || 0;
         document.getElementById('vFoulR').innerText = fouls.right || 0;
         
-        // Fikset NaN ved å sjekke om visits er 0
         document.getElementById('s1Eff').innerText = visits.left > 0 ? (pots.left / visits.left).toFixed(1) : "0.0";
         document.getElementById('s2Eff').innerText = visits.right > 0 ? (pots.right / visits.right).toFixed(1) : "0.0";
         
@@ -182,7 +189,7 @@
         document.getElementById('vShotsL').innerText = s1S;
         document.getElementById('vShotsR').innerText = s2S;
         
-        const volP = entries.length > 0 ? (s1S / entries.length) * 100 : 50;
+        const volP = (s1S / entries.length) * 100;
         document.getElementById('bar-visit-s1').style.width = volP + "%";
         document.getElementById('bar-visit-s2').style.width = (100 - volP) + "%";
         document.getElementById('visitRatioText').innerText = Math.round(volP) + "/" + Math.round(100-volP);
@@ -227,11 +234,12 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } } }
         });
         
-        // Vi fjerner syncCueScore herfra for å unngå 404/429 feil.
-        // All data kommer nå fra Master Control via Firebase-lytterne nedenfor.
+        // Kjører sync hvert 15. sekund for å holde scoren oppdatert
+        setInterval(syncCueScore, 15000);
+        syncCueScore();
     };
 
-    // --- STABILE LYTTERE ---
+    // --- STABILE LYTTERE (Henter navn fra Master Control) ---
     db.ref('stats/names').on('value', snap => {
         const n = snap.val();
         if (n) {
