@@ -226,29 +226,30 @@
         shotChart = new Chart(ctx, {
             type: 'line',
             data: { labels: [], datasets: [
-                { label: 'S1', data: [], borderColor: '#00FF41', tension: 0.4, fill: false, pointRadius: 2 },
-                { label: 'S2', data: [], borderColor: '#00E5FF', tension: 0.4, fill: false, pointRadius: 2 }
+                { label: 'S1', data: [], borderColor: '#00FF41', tension: 0.4, fill: false },
+                { label: 'S2', data: [], borderColor: '#00E5FF', tension: 0.4, fill: false }
             ]},
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } } }
         });
-        setInterval(syncCueScore, 10000);
-        syncCueScore();
+        
+        // Vi fjerner syncCueScore herfra for å unngå 404/429 feil.
+        // All data kommer nå fra Master Control via Firebase-lytterne nedenfor.
     };
 
-    // --- STABILE NAVN FRA FIREBASE ---
+    // --- STABILE LYTTERE ---
     db.ref('stats/names').on('value', snap => {
-        const names = snap.val();
-        if (names) {
-            document.getElementById('nameLText').innerText = names.left || "Player 1";
-            document.getElementById('nameRText').innerText = names.right || "Player 2";
+        const n = snap.val();
+        if (n) {
+            document.getElementById('nameLText').innerText = n.left || "Player 1";
+            document.getElementById('nameRText').innerText = n.right || "Player 2";
         }
     });
 
     db.ref('stats/handicaps').on('value', snap => {
-        const hc = snap.val();
-        if (hc) {
-            document.getElementById('hcL').innerText = "HCP: " + (hc.left || "0");
-            document.getElementById('hcR').innerText = "HCP: " + (hc.right || "0");
+        const h = snap.val();
+        if (h) {
+            document.getElementById('hcL').innerText = "HCP: " + (h.left || "0");
+            document.getElementById('hcR').innerText = "HCP: " + (h.right || "0");
         }
     });
 </script>
