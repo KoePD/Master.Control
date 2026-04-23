@@ -92,16 +92,17 @@
     const proxyUrl = "https://api.allorigins.win/get?url=";
 
     // --- CUESCORE SYNC LOGIKK ---
-    function syncCueScore() {
-        db.ref('settings/cueScoreMatchID').once('value', snap => {
+   function syncCueScore() {
+    db.ref('settings/cueScoreMatchID').once('value', snap => {
         let id = snap.val();
         if (!id || id.trim() === "") id = "9158140";
-        
         const cleanId = id.replace('v', '');
+        
         const proxyUrl = "https://corsproxy.io/?";
         const apiUrl = `https://cuescore.com/api/getTableMatch:${cleanId}`;
         
-        fetch(proxyUrl + encodeURIComponent(apiUrl))
+        // Bruker direkte URL uten encoding for denne proxyen
+        fetch(proxyUrl + apiUrl)
             .then(res => res.json())
             .then(match => {
                 if (match && (match.playerA || match.player1)) {
