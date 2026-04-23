@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>KØ-PÅDD Match Insight Pro + CueScore Sync</title>
+    <title>KØ-PÅDD Match Insight Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,220 +13,309 @@
             --text-main: #eee; --text-dim: #888;
         }
         
-        body { background: var(--bg); color: var(--text-main); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; overflow-x: hidden; }
-        .dashboard { max-width: 1600px; margin: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        body { 
+            background: var(--bg); 
+            color: var(--text-main); 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            overflow-x: hidden;
+        }
+
+        .dashboard { 
+            max-width: 1600px; 
+            margin: auto; 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 15px; 
+        }
         
-        /* Header */
-        .header { grid-column: span 4; text-align: center; border-bottom: 2px solid var(--border); padding: 15px; background: linear-gradient(to bottom, #111, #050505); border-radius: 15px 15px 0 0; }
-        .header h1 { color: var(--gold); text-transform: uppercase; margin: 0; font-size: 2.2rem; letter-spacing: 4px; }
-        #matchDuration { font-size: 1.8rem; font-family: monospace; font-weight: bold; margin-top: 5px; }
+        .header { 
+            grid-column: span 4; 
+            text-align: center; 
+            border-bottom: 2px solid var(--border); 
+            padding: 15px; 
+            margin-bottom: 10px; 
+            background: linear-gradient(to bottom, #111, #050505);
+            border-radius: 15px 15px 0 0;
+        }
+        .header h1 { 
+            color: var(--gold); 
+            text-transform: uppercase; 
+            margin: 0; 
+            font-size: 2.2rem; 
+            letter-spacing: 4px; 
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
+        }
+        #matchDuration { font-size: 1.8rem; font-family: 'Courier New', monospace; font-weight: bold; margin-top: 5px; }
 
-        /* Stat Cards */
-        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; text-align: center; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+        .stat-card { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            padding: 15px; 
+            border-radius: 12px; 
+            text-align: center; 
+            position: relative; 
+            overflow: hidden; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; letter-spacing: 1px; }
         .value { font-size: 2.2rem; font-weight: 800; color: #fff; }
+        
+        .highlight .value { color: var(--gold); }
+        .s1 .value { color: var(--s1); } 
+        .s2 .value { color: var(--s2); }
+        
+        /* VS Styling for tallpar */
         .vs-display { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 1.8rem; font-weight: 900; }
-        .vs-val-s1 { color: var(--s1); } .vs-val-s2 { color: var(--s2); }
+        .vs-sep { color: var(--text-dim); font-size: 1.2rem; }
+        .vs-val-s1 { color: var(--s1); }
+        .vs-val-s2 { color: var(--s2); }
 
-        /* Player Info */
-        .hc-badge { font-size: 0.8rem; background: #333; padding: 4px 10px; border-radius: 4px; color: var(--gold); margin-top: 8px; display: inline-block; font-weight: bold; border: 1px solid #444; }
-        .breaker-icon { color: var(--gold); font-size: 1.2rem; visibility: hidden; position: absolute; top: 10px; right: 10px; }
-
-        /* Graph & Side */
-        .graph-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; grid-column: span 3; height: 480px; }
+        .graph-container { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            padding: 20px; 
+            border-radius: 12px; 
+            grid-column: span 3; 
+            height: 480px; 
+        }
         .side-stats { grid-column: span 1; display: grid; gap: 15px; }
 
-        /* Bars */
         .bar-container { grid-column: span 4; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-        .comparison-bar { height: 18px; background: #222; border-radius: 9px; overflow: hidden; display: flex; margin: 10px 0; }
-        .bar-fill-s1 { height: 100%; background: var(--s1); transition: width 0.8s ease; }
-        .bar-fill-s2 { height: 100%; background: var(--s2); transition: width 0.8s ease; }
+        .bar-label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
+        .comparison-bar { height: 20px; background: #222; border-radius: 10px; overflow: hidden; display: flex; margin-bottom: 15px; }
+        .bar-fill-s1 { height: 100%; background: var(--s1); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bar-fill-s2 { height: 100%; background: var(--s2); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* Helpers */
         .card-disabled .disabled-mask { display: flex !important; }
-        .disabled-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 5; font-size: 0.7rem; color: #555; }
+        .card-disabled .value, .card-disabled .label { opacity: 0.05; filter: blur(3px); }
+        .disabled-mask {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 5, 5, 0.95);
+            display: none; justify-content: center; align-items: center;
+            color: var(--text-dim); font-size: 0.7rem; font-weight: 900; text-transform: uppercase;
+            z-index: 10; text-align: center;
+        }
+
+        .btn-reset { 
+            grid-column: span 4; background: #1a0505; color: var(--red); border: 1px solid #331111; 
+            padding: 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; 
+            font-size: 0.8rem; font-weight: bold; margin-top: 20px;
+        }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
     <div class="header">
-        <h1 id="tournamentName">🎙️ MATCH INSIGHT PRO</h1>
+        <h1>🎙️ MATCH INSIGHT PRO</h1>
         <div id="matchDuration">00:00:00</div>
     </div>
 
     <div class="stat-card highlight"><div class="label">Match Mode</div><div id="modeText" class="value" style="font-size:1.5rem;">-</div></div>
     <div class="stat-card highlight">
-        <div class="label">CueScore Live Score</div>
+        <div class="label">Score (Wins)</div>
         <div class="vs-display">
             <span id="winsL" class="vs-val-s1">0</span>
-            <span style="color:#444">-</span>
+            <span class="vs-sep">-</span>
             <span id="winsR" class="vs-val-s2">0</span>
         </div>
     </div>
-    <div class="stat-card"><div class="label">Combined Shots</div><div id="totalShots" class="value">0</div></div>
-    <div class="stat-card"><div class="label">Pressure Index</div><div id="pressureIndex" class="value" style="color:var(--red);">0s</div></div>
+    <div class="stat-card"><div class="label">Total Shots Combined</div><div id="totalShots" class="value">0</div></div>
+    <div class="stat-card"><div class="label">Pressure Index (Avg last 5)</div><div id="pressureIndex" class="value" style="color:var(--red);">0s</div></div>
 
-    <div class="stat-card s1">
-        <span id="breakL" class="breaker-icon">⚡</span>
-        <div class="value" id="nameLText" style="font-size: 1.6rem; margin-bottom: 5px;">Player 1</div>
-        <div id="hcL" class="hc-badge">HCP: -</div>
-        <div id="s1Pots" class="value" style="margin-top:15px; border-top: 1px solid #222; padding-top: 10px;">0</div>
-        <div class="label">Balls Potted</div>
-    </div>
-    <div class="stat-card s1"><div class="label">Efficiency</div><div id="s1Eff" class="value">0.0</div><div class="label">Pots / Visit</div></div>
+    <div class="stat-card s1"><div class="label" id="nameLText">Player 1</div><div id="s1Pots" class="value">0</div><div class="label">Balls Potted</div></div>
+    <div class="stat-card s1"><div class="label">Pot Efficiency</div><div id="s1Eff" class="value">0.0</div><div class="label">Pots / Visit</div></div>
     <div class="stat-card s1"><div class="label">Runouts</div><div id="s1Run" class="value">0</div></div>
-    <div id="card-8ball-s1" class="stat-card s1 card-disabled"><div class="disabled-mask">8-Ball Only</div><div class="label">Early 8-Loss</div><div id="s1Err" class="value">0</div></div>
-
-    <div class="stat-card s2">
-        <span id="breakR" class="breaker-icon">⚡</span>
-        <div class="value" id="nameRText" style="font-size: 1.6rem; margin-bottom: 5px;">Player 2</div>
-        <div id="hcR" class="hc-badge">HCP: -</div>
-        <div id="s2Pots" class="value" style="margin-top:15px; border-top: 1px solid #222; padding-top: 10px;">0</div>
-        <div class="label">Balls Potted</div>
+    <div id="card-8ball-s1" class="stat-card s1 card-disabled">
+        <div class="disabled-mask">8-Ball Only</div>
+        <div class="label">Early 8-Loss</div><div id="s1Err" class="value">0</div>
     </div>
-    <div class="stat-card s2"><div class="label">Efficiency</div><div id="s2Eff" class="value">0.0</div><div class="label">Pots / Visit</div></div>
+
+    <div class="stat-card s2"><div class="label" id="nameRText">Player 2</div><div id="s2Pots" class="value">0</div><div class="label">Balls Potted</div></div>
+    <div class="stat-card s2"><div class="label">Pot Efficiency</div><div id="s2Eff" class="value">0.0</div><div class="label">Pots / Visit</div></div>
     <div class="stat-card s2"><div class="label">Runouts</div><div id="s2Run" class="value">0</div></div>
-    <div id="card-8ball-s2" class="stat-card s2 card-disabled"><div class="disabled-mask">8-Ball Only</div><div class="label">Early 8-Loss</div><div id="s2Err" class="value">0</div></div>
+    <div id="card-8ball-s2" class="stat-card s2 card-disabled">
+        <div class="disabled-mask">8-Ball Only</div>
+        <div class="label">Early 8-Loss</div><div id="s2Err" class="value">0</div>
+    </div>
 
     <div class="graph-container">
-        <div class="label">Shot Time History (Performance Trend)</div>
+        <div class="label" style="margin-bottom:10px;">Shot Time History (Performance Trend)</div>
         <canvas id="shotChart"></canvas>
     </div>
     
     <div class="side-stats">
-        <div class="stat-card"><div class="label">VS Shots Taken</div><div class="vs-display"><span id="vShotsL" class="vs-val-s1">0</span><span style="color:#444">-</span><span id="vShotsR" class="vs-val-s2">0</span></div></div>
-        <div class="stat-card"><div class="label">VS Success %</div><div class="vs-display"><span id="vSuccL" class="vs-val-s1">0%</span><span style="color:#444">-</span><span id="vSuccR" class="vs-val-s2">0%</span></div></div>
-        <div class="stat-card"><div class="label">VS Extensions</div><div class="vs-display"><span id="vExtL" class="vs-val-s1">0</span><span style="color:#444">-</span><span id="vExtR" class="vs-val-s2">0</span></div></div>
-        <div class="stat-card"><div class="label">VS Dry Breaks</div><div class="vs-display"><span id="vDryL" class="vs-val-s1">0</span><span style="color:#444">-</span><span id="vDryR" class="vs-val-s2">0</span></div></div>
+        <div class="stat-card">
+            <div class="label">VS Shots Taken</div>
+            <div class="vs-display">
+                <span id="vShotsL" class="vs-val-s1">0</span>
+                <span class="vs-sep">-</span>
+                <span id="vShotsR" class="vs-val-s2">0</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="label">VS Pot Success %</div>
+            <div class="vs-display">
+                <span id="vSuccL" class="vs-val-s1">0%</span>
+                <span class="vs-sep">-</span>
+                <span id="vSuccR" class="vs-val-s2">0%</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="label">VS Extensions Used</div>
+            <div class="vs-display">
+                <span id="vExtL" class="vs-val-s1">0</span>
+                <span class="vs-sep">-</span>
+                <span id="vExtR" class="vs-val-s2">0</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="label">VS Dry Breaks</div>
+            <div class="vs-display">
+                <span id="vDryL" class="vs-val-s1">0</span>
+                <span class="vs-sep">-</span>
+                <span id="vDryR" class="vs-val-s2">0</span>
+            </div>
+        </div>
     </div>
 
     <div class="bar-container">
-        <div style="display:flex; justify-content:space-between; font-size:0.7rem; font-weight:bold;"><span>SHOT VOLUME</span><span id="visitRatioText">50/50</span></div>
-        <div class="comparison-bar"><div id="bar-visit-s1" class="bar-fill-s1" style="width:50%"></div><div id="bar-visit-s2" class="bar-fill-s2" style="width:50%"></div></div>
-        
-        <div style="display:flex; justify-content:space-between; font-size:0.7rem; font-weight:bold;"><span>TABLE POSSESSION (TIME)</span><span id="timeRatioText">50/50</span></div>
-        <div class="comparison-bar"><div id="bar-time-s1" class="bar-fill-s1" style="width:50%"></div><div id="bar-time-s2" class="bar-fill-s2" style="width:50%"></div></div>
+        <div class="bar-label"><span>Visit Frequency (Shot Volume)</span><span id="visitRatioText">50% / 50%</span></div>
+        <div class="comparison-bar">
+            <div id="bar-visit-s1" class="bar-fill-s1" style="width: 50%;"></div>
+            <div id="bar-visit-s2" class="bar-fill-s2" style="width: 50%;"></div>
+        </div>
+        <div class="bar-label"><span>Time Dominance (Table Possession)</span><span id="timeRatioText">50% / 50%</span></div>
+        <div class="comparison-bar">
+            <div id="bar-time-s1" class="bar-fill-s1" style="width: 50%;"></div>
+            <div id="bar-time-s2" class="bar-fill-s2" style="width: 50%;"></div>
+        </div>
+        <div id="trendText" style="text-align:center; color:var(--gold); font-weight:bold; text-transform:uppercase;">Analyzing Flow...</div>
     </div>
+
+    <button class="btn-reset" onclick="resetAllStats()">Reset All Match Data</button>
 </div>
 
 <script>
-    // --- KONFIGURASJON ---
-    const cueScoreMatchID = "79253032"; 
     const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
-    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
     let shotChart;
     let matchStartTimestamp = 0;
+    let timerInterval = null;
 
-    // --- CUESCORE SYNC ---
-    function syncCueScore() {
-        const proxyUrl = "https://api.allorigins.win/get?url=";
-        const targetUrl = encodeURIComponent(`https://cuescore.com/api/getMatch:${cueScoreMatchID}`);
-
-        fetch(proxyUrl + targetUrl)
-            .then(res => res.json())
-            .then(rawData => {
-                const data = JSON.parse(rawData.contents);
-                if(data) {
-                    const p1 = data.playerA || data.player1;
-                    const p2 = data.playerB || data.player2;
-
-                    if (p1) {
-                        document.getElementById('nameLText').innerText = p1.name || "Player 1";
-                        document.getElementById('hcL').innerText = "HCP: " + (p1.handicap !== undefined ? p1.handicap : "-");
-                        document.getElementById('winsL').innerText = data.scoreA !== undefined ? data.scoreA : 0;
-                    }
-                    if (p2) {
-                        document.getElementById('nameRText').innerText = p2.name || "Player 2";
-                        document.getElementById('hcR').innerText = "HCP: " + (p2.handicap !== undefined ? p2.handicap : "-");
-                        document.getElementById('winsR').innerText = data.scoreB !== undefined ? data.scoreB : 0;
-                    }
-
-                    const isBreaker = data.breaker || data.isBreaker;
-                    document.getElementById('breakL').style.visibility = (isBreaker == 'A' || isBreaker == '1' ? 'visible' : 'hidden');
-                    document.getElementById('breakR').style.visibility = (isBreaker == 'B' || isBreaker == '2' ? 'visible' : 'hidden');
-                }
-            }).catch(e => console.log("CueScore sync error, using default/firebase names."));
-    }
-    
-    setInterval(syncCueScore, 10000);
-
-    // --- FIREBASE LOGIKK ---
-    db.ref('stats/startTime').on('value', snap => {
-        matchStartTimestamp = snap.val() || 0;
+    db.ref('stats/startTime').on('value', snap => { 
+        const val = snap.val();
+        if (val && val > 0) {
+            matchStartTimestamp = Number(val);
+            if (!timerInterval) timerInterval = setInterval(updateTimerDisplay, 100);
+        } else {
+            matchStartTimestamp = 0;
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            document.getElementById('matchDuration').innerText = "00:00:00";
+        }
     });
 
-    setInterval(() => {
+    function updateTimerDisplay() {
+        const display = document.getElementById('matchDuration');
         if (matchStartTimestamp > 0) {
             const diff = Date.now() - matchStartTimestamp;
-            const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-            const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-            const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-            document.getElementById('matchDuration').innerText = `${h}:${m}:${s}`;
+            const tot = Math.floor(diff / 1000);
+            const h = Math.floor(tot / 3600).toString().padStart(2, '0');
+            const m = Math.floor((tot % 3600) / 60).toString().padStart(2, '0');
+            const s = (tot % 60).toString().padStart(2, '0');
+            display.innerText = `${h}:${m}:${s}`;
         }
-    }, 1000);
+    }
+
+    function initChart() {
+        const ctx = document.getElementById('shotChart').getContext('2d');
+        shotChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [
+                { label: 'S1', data: [], borderColor: '#00FF41', backgroundColor: 'rgba(0,255,65,0.1)', tension: 0.4, fill: true },
+                { label: 'S2', data: [], borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.1)', tension: 0.4, fill: true }
+            ]},
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#222' } }, x: { display: false } } }
+        });
+    }
 
     db.ref('stats').on('value', snap => {
         const d = snap.val() || {};
         const history = d.history ? Object.values(d.history) : [];
+        const wins = d.matchWins || {left:0, right:0};
         const pots = d.pots || {left:0, right:0};
         const visits = d.visits || {left:1, right:1};
+        const ext = d.extensions || {left:0, right:0};
+        const dry = d.dryBreaks || {left:0, right:0};
+        const names = d.names || {left: "Player 1", right: "Player 2"};
 
-        // Fallback navn hvis CueScore er nede
-        if (d.names) {
-            if(!document.getElementById('nameLText').innerText.includes(" ")) {
-                document.getElementById('nameLText').innerText = d.names.left;
-                document.getElementById('nameRText').innerText = d.names.right;
-            }
-        }
+        document.getElementById('nameLText').innerText = names.left;
+        document.getElementById('nameRText').innerText = names.right;
         
-        document.getElementById('s1Pots').innerText = pots.left;
-        document.getElementById('s2Pots').innerText = pots.right;
+        // Wins VS
+        document.getElementById('winsL').innerText = wins.left;
+        document.getElementById('winsR').innerText = wins.right;
+
+        // Player Cards
+        document.getElementById('s1Pots').innerText = pots.left || 0;
+        document.getElementById('s2Pots').innerText = pots.right || 0;
         document.getElementById('s1Eff').innerText = (pots.left / Math.max(1, visits.left)).toFixed(1);
         document.getElementById('s2Eff').innerText = (pots.right / Math.max(1, visits.right)).toFixed(1);
-        
-        document.getElementById('vExtL').innerText = d.extensions?.left || 0;
-        document.getElementById('vExtR').innerText = d.extensions?.right || 0;
-        document.getElementById('vDryL').innerText = d.dryBreaks?.left || 0;
-        document.getElementById('vDryR').innerText = d.dryBreaks?.right || 0;
         document.getElementById('s1Run').innerText = d.runouts?.left || 0;
         document.getElementById('s2Run').innerText = d.runouts?.right || 0;
+        document.getElementById('s1Err').innerText = d.errors?.left || 0;
+        document.getElementById('s2Err').innerText = d.errors?.right || 0;
 
-        updateVisuals(history, pots);
+        // Side VS Listings
+        document.getElementById('vExtL').innerText = ext.left || 0;
+        document.getElementById('vExtR').innerText = ext.right || 0;
+        document.getElementById('vDryL').innerText = dry.left || 0;
+        document.getElementById('vDryR').innerText = dry.right || 0;
+
+        processHistory(history, pots);
     });
 
-    function updateVisuals(entries, pots) {
-        if (!entries.length) return;
-        let s1T = 0, s2T = 0, s1S = 0, s2S = 0, s1D = [], s2D = [];
+    function processHistory(entries, pots) {
+        if (!entries || entries.length === 0) { resetDisplay(); return; }
+        let s1Shots = 0, s1Time = 0, s1Data = [], s2Shots = 0, s2Time = 0, s2Data = [];
+        let labels = [];
+
         entries.forEach((e, i) => {
-            if (e.player === 'left') { s1S++; s1T += e.time; s1D.push(e.time); s2D.push(null); }
-            else { s2S++; s2T += e.time; s2D.push(e.time); s1D.push(null); }
+            labels.push(i + 1);
+            if (e.player === 'left') { s1Shots++; s1Time += e.time; s1Data.push(e.time); s2Data.push(null); }
+            else { s2Shots++; s2Time += e.time; s2Data.push(e.time); s1Data.push(null); }
         });
 
         document.getElementById('totalShots').innerText = entries.length;
-        document.getElementById('vShotsL').innerText = s1S;
-        document.getElementById('vShotsR').innerText = s2S;
-        document.getElementById('vSuccL').innerText = Math.round((pots.left/Math.max(1,s1S))*100) + "%";
-        document.getElementById('vSuccR').innerText = Math.round((pots.right/Math.max(1,s2S))*100) + "%";
+        document.getElementById('vShotsL').innerText = s1Shots;
+        document.getElementById('vShotsR').innerText = s2Shots;
 
-        const last5 = entries.slice(-5);
-        document.getElementById('pressureIndex').innerText = (last5.reduce((a,b)=>a+b.time,0)/Math.max(1, last5.length)).toFixed(1) + "s";
+        const s1S = s1Shots > 0 ? Math.round((pots.left / s1Shots) * 100) : 0;
+        const s2S = s2Shots > 0 ? Math.round((pots.right / s2Shots) * 100) : 0;
+        document.getElementById('vSuccL').innerText = s1S + "%";
+        document.getElementById('vSuccR').innerText = s2S + "%";
 
-        const v1P = (s1S / entries.length * 100);
+        // Bjelker & Trend
+        const v1P = (s1Shots / entries.length * 100);
         document.getElementById('bar-visit-s1').style.width = v1P + "%";
         document.getElementById('bar-visit-s2').style.width = (100 - v1P) + "%";
-        
-        const totalTime = s1T + s2T;
-        const t1P = totalTime > 0 ? (s1T / totalTime * 100) : 50;
+        document.getElementById('visitRatioText').innerText = `${Math.round(v1P)}% / ${Math.round(100-v1P)}%`;
+
+        const totalT = s1Time + s2Time;
+        const t1P = totalT > 0 ? (s1Time / totalT * 100) : 50;
         document.getElementById('bar-time-s1').style.width = t1P + "%";
         document.getElementById('bar-time-s2').style.width = (100 - t1P) + "%";
+        document.getElementById('timeRatioText').innerText = `${Math.round(t1P)}% / ${Math.round(100-t1P)}%`;
 
         if (shotChart) {
-            shotChart.data.labels = entries.map((_, i) => i + 1);
-            shotChart.data.datasets[0].data = s1D;
-            shotChart.data.datasets[1].data = s2D;
+            shotChart.data.labels = labels;
+            shotChart.data.datasets[0].data = s1Data;
+            shotChart.data.datasets[1].data = s2Data;
             shotChart.update('none');
         }
     }
@@ -234,23 +323,23 @@
     db.ref('gameMode').on('value', snap => {
         const mode = snap.val() || 9;
         document.getElementById('modeText').innerText = mode + "-Ball";
-        const is8 = mode == 8;
-        document.getElementById('card-8ball-s1').classList.toggle('card-disabled', !is8);
-        document.getElementById('card-8ball-s2').classList.toggle('card-disabled', !is8);
+        const e1 = document.getElementById('card-8ball-s1'), e2 = document.getElementById('card-8ball-s2');
+        if (mode == 8) { e1.classList.remove('card-disabled'); e2.classList.remove('card-disabled'); }
+        else { e1.classList.add('card-disabled'); e2.classList.add('card-disabled'); }
     });
 
-    window.onload = () => {
-        const ctx = document.getElementById('shotChart').getContext('2d');
-        shotChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: [], datasets: [
-                { label: 'S1', data: [], borderColor: '#00FF41', tension: 0.4, fill: false },
-                { label: 'S2', data: [], borderColor: '#00E5FF', tension: 0.4, fill: false }
-            ]},
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } } }
+    function resetDisplay() {
+        ["vShotsL","vShotsR","vSuccL","vSuccR","vExtL","vExtR","vDryL","vDryR","winsL","winsR","s1Pots","s2Pots","totalShots"].forEach(id => {
+            const el = document.getElementById(id); if(el) el.innerText = "0";
         });
-        syncCueScore();
-    };
+        if (shotChart) { shotChart.data.labels = []; shotChart.data.datasets.forEach(d => d.data = []); shotChart.update(); }
+    }
+
+    function resetAllStats() {
+        if(confirm("Slette all match-data?")) { db.ref('stats').set({ startTime: 0 }); location.reload(); }
+    }
+
+    window.onload = initChart;
 </script>
 </body>
 </html>
