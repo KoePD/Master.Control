@@ -231,6 +231,30 @@
         setInterval(syncCueScore, 10000);
         syncCueScore();
     };
+
+    // --- LYTT PÅ NAVN FRA KONTROLLPANELET ---
+db.ref('stats/names').on('value', snap => {
+    const names = snap.val();
+    if (names) {
+        // Oppdaterer navnene i de to boksene på stream-overlayet
+        if(document.getElementById('nameLText')) {
+            document.getElementById('nameLText').innerText = names.left;
+        }
+        if(document.getElementById('nameRText')) {
+            document.getElementById('nameRText').innerText = names.right;
+        }
+        console.log("Navn oppdatert fra Firebase:", names.left, "vs", names.right);
+    }
+});
+
+// --- LYTT PÅ HCP FRA KONTROLLPANELET ---
+db.ref('stats/handicaps').on('value', snap => {
+    const hc = snap.val();
+    if (hc) {
+        if(document.getElementById('hcL')) document.getElementById('hcL').innerText = "HCP: " + hc.left;
+        if(document.getElementById('hcR')) document.getElementById('hcR').innerText = "HCP: " + hc.right;
+    }
+});
 </script>
 </body>
 </html>
