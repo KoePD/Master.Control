@@ -110,14 +110,15 @@ async function fetchCueScoreData() {
     if (!id || id.trim() === "") id = "9158140"; 
     const cleanId = id.replace('v', '');
     
-    // Vi bygger URL-en manuelt for å unngå tegn-problemer med proxyen
-    const targetUrl = "https://cuescore.com/api/getTableMatch:" + cleanId;
-    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+    // Vi bruker corsproxy.io ved å bare legge URL-en rett etter spørsmålstegnet
+    const proxyUrl = "https://corsproxy.io/?https://cuescore.com/api/getTableMatch:" + cleanId;
     
     console.log("Henter data for TableID:", cleanId);
 
     try {
         const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('Nettverksfeil eller 404');
+        
         const match = await response.json();
 
         if (match && (match.playerA || match.player1)) {
@@ -133,7 +134,7 @@ async function fetchCueScoreData() {
             console.log("CueScore Suksess! Spillere funnet.");
         }
     } catch (e) { 
-        console.error("CueScore kunne ikke hentes. Sjekk Table ID.");
+        console.error("CueScore-feil: Sjekk om Table ID er riktig og kampen er live.");
     }
 }
     
