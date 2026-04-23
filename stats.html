@@ -88,29 +88,47 @@
     const db = firebase.database();
     let shotChart;
     let matchStartTimestamp = 0;
+// --- KONFIGURASJON ---
+const tableID = "57017635"; // Din Table ID fra lenken
+const proxyUrl = "https://api.allorigins.win/get?url=";
 
-    function syncCueScore() {
-        const proxy = "https://api.allorigins.win/get?url=";
-        const target = encodeURIComponent(`https://cuescore.com/api/getMatch:${cueScoreMatchID}`);
-        fetch(proxy + target).then(r => r.json()).then(raw => {
-            const data = JSON.parse(raw.contents);
-            if(data) {
-                const p1 = data.playerA || data.player1;
-                const p2 = data.playerB || data.player2;
-                if(p1) {
-                    document.getElementById('nameLText').innerText = p1.name;
-                    document.getElementById('hcL').innerText = "HCP: " + (p1.handicap || "0");
-                    document.getElementById('winsL').innerText = data.scoreA || 0;
-                }
-                if(p2) {
-                    document.getElementById('nameRText').innerText = p2.name;
-                    document.getElementById('hcR').innerText = "HCP: " + (p2.handicap || "0");
-                    document.getElementById('winsR').innerText = data.scoreB || 0;
-                }
+function syncCueScore() {
+    // Vi spør nå etter hva som skjer på et spesifikt BORD
+    const targetUrl = encodeURIComponent(`https://cuescore.com/api/getTableMatch:${tableID}`);
+
+    fetch(proxyUrl + targetUrl)
+        .then(res => res.json())
+        .then(rawData => {
+            const data = JSON.parse(rawData.contents);
+            console.log("Data fra bordet:", data);
+
+            if (data && data.match) {
+                const match = data.match;
+                const p1 = match.playerA;
+                const p2 = match.playerB;
+
+                // Oppdater Navn og HCP
+                document.getElementById('nameLText').innerText = p1.name;
+                document.getElementById('hcL').innerText = "HCP: " + (p1.handicap || "0");
+                
+                document.getElementById('nameRText').innerText = p2.name;
+                document.getElementById('hcR').innerText = "HCP: " + (p2.handicap || "0");
+
+                // Oppdater Score
+                document.getElementById('winsL').innerText = match.scoreA || 0;
+                document.getElementById('winsR').innerText = match.scoreB || 0;
+
+                // Brekk-indikator
+                const isBreaker = match.breaker; 
+                document.getElementById('breakL').style.visibility = (isBreaker === 'A' ? 'visible' : 'hidden');
+                document.getElementById('breakR').style.visibility = (isBreaker === 'B' ? 'visible' : 'hidden');
             }
-        }).catch(e => console.log("CueScore sync failed, waiting..."));
-    }
-    setInterval(syncCueScore, 10000);
+        })
+        .catch(e => console.error("CueScore Table Sync feil:", e));
+}
+
+// Kjør hvert 10. sekund
+setInterval(syncCueScore, 10000);
 
     db.ref('stats/startTime').on('value', snap => { matchStartTimestamp = snap.val() || 0; });
     setInterval(() => {
