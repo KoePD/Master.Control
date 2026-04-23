@@ -106,21 +106,21 @@
 
    // --- KORRIGERT CUESCORE DATA HENTING (MED V-PREFIKS) ---
 async function fetchCueScoreData() {
-    let tournamentID = document.getElementById('matchIDInput').value;
-    if (!tournamentID || tournamentID.trim() === "") tournamentID = "79253032"; 
+    let tID = document.getElementById('matchIDInput').value;
+    if (!tID || tID.trim() === "") tID = "79253032"; 
     
-    // Vi bruker en stabil proxy som sjelden gir 404/429
+    // Vi bruker allorigins med /raw for å unngå 404-problemer med spesialtegn
     const proxyUrl = "https://api.allorigins.win/raw?url=";
-    const apiUrl = `https://cuescore.com/api/getTournamentMatches:${tournamentID}`;
+    const apiUrl = "https://cuescore.com/api/getTournamentMatches:" + tID;
     
-    console.log("Henter turneringsdata for ID:", tournamentID);
+    console.log("Henter turneringsdata for ID:", tID);
 
     try {
         const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
         const data = await response.json();
         
         const tableID = "9158140";
-        // Leter i listen over kamper etter riktig bord
+        // Leter etter kampen på riktig bord
         const match = Object.values(data).find(m => m.tableID == tableID || m.table == tableID);
 
         if (match) {
@@ -129,14 +129,17 @@ async function fetchCueScoreData() {
             const h1 = match.player1data?.handicap || "0";
             const h2 = match.player2data?.handicap || "0";
 
-            // Lagre til Firebase - stats.html vil da oppdatere seg umiddelbart uten å spørre CueScore selv
+            // Lagre til Firebase - Dette gjør at stats.html oppdaterer navnene automatisk
             db.ref('stats/names').set({ left: n1, right: n2 });
             db.ref('stats/handicaps').set({ left: h1, right: h2 });
             
-            console.log("Suksess! Navn hentet:", n1, "vs", n2);
+            // Lagre tID i settings slik at stats.html kan finne riktig turnering for poeng
+            db.ref('settings/cueScoreMatchID').set(tID);
+            
+            console.log("Suksess! Spillere funnet:", n1, "vs", n2);
         }
     } catch (e) { 
-        console.error("CueScore kunne ikke hentes nå. Sjekk ID eller prøv igjen om litt.");
+        console.error("CueScore-henting feilet. Sjekk ID eller proxy-tilgang.");
     }
 }
     
