@@ -99,11 +99,18 @@
     
     let lastResetTime = Date.now();
     let currentVisitPots = 0;
-    let ballStyle = 'dark';
+    let ballStyle = 'dark'; // Standard
     let currentGameMode = 9;
 
-    // --- HJELPEFUNKSJONER ---
     function vibe(ms = 40) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+    // --- NY TOGGLE FUNKSJON ---
+    function toggleBallSet() {
+        vibe(60);
+        ballStyle = (ballStyle === 'dark') ? 'classic' : 'dark';
+        db.ref('settings/ballStyle').set(ballStyle);
+        renderBalls(); // Oppdaterer visningen umiddelbart
+    }
 
     function updateMatchID() {
         const id = document.getElementById('matchIDInput').value;
@@ -145,32 +152,13 @@
             ref.once('value').then(snap => {
                 const isSinking = snap.val() !== false;
                 ref.set(!isSinking);
-
                 if (isSinking) {
                     db.ref().once('value', mSnap => {
                         const d = mSnap.val();
                         const player = d.activePlayer;
                         if (!player) return;
-                        
                         currentVisitPots++;
                         db.ref(`stats/pots/${player}`).transaction(c => (c || 0) + 1);
-                        
-                        // Sjekk for Match Win / 8-ball loss
-                        if (i == currentGameMode) {
-                            let othersRemaining = false;
-                            const limit = (currentGameMode === 8) ? 15 : currentGameMode;
-                            for (let n = 1; n <= limit; n++) { 
-                                if (n !== i && d.balls && d.balls[n] === true) othersRemaining = true; 
-                            }
-
-                            if (currentGameMode == 9 || !othersRemaining) {
-                                // Lovlig senking av siste ball
-                                if (currentVisitPots >= 5) db.ref(`stats/runouts/${player}`).transaction(c => (c || 0) + 1);
-                            } else if (currentGameMode == 8 && othersRemaining) {
-                                // Tidlig 8-ball senking = Tap i 8-ball
-                                db.ref(`stats/errors/${player}`).transaction(c => (c || 0) + 1);
-                            }
-                        }
                     });
                 }
             });
@@ -200,10 +188,17 @@
                 b.style.backgroundColor = colors[i];
                 b.style.border = "2px solid #000";
             } else {
-                b.style.backgroundColor = "white";
+                // Her fikser vi toggle-logikken
+                b.style.backgroundColor = (ballStyle === 'dark') ? 'black' : 'white';
                 band.style.display = 'block';
                 band.style.backgroundColor = colors[i - 8];
-                b.classList.add('striped');
+                
+                // Juster farge på nummeret for mørkt sett
+                const numLabel = b.querySelector('.num-label');
+                if (numLabel) {
+                    numLabel.style.backgroundColor = (ballStyle === 'dark') ? '#222' : 'white';
+                    numLabel.style.color = (ballStyle === 'dark') ? 'white' : 'black';
+                }
             }
         }
     }
@@ -231,12 +226,10 @@
         vibe(50);
         const now = Date.now();
         db.ref('activePlayer').once('value', s => { if (s.val() !== player) currentVisitPots = 0; });
-        
         db.ref('activePlayer').set(player);
         db.ref(`stats/visits/${player}`).transaction(c => (c || 0) + 1);
         db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
         
-        // Lagre skudd-tid for grafen i stats.html
         const timeSpent = (now - lastResetTime) / 1000;
         if (timeSpent > 1 && timeSpent < 150) {
             db.ref('stats/history').push({ time: timeSpent, player: player, ts: now });
@@ -277,6 +270,13 @@
     db.ref('balls').on('value', snap => {
         window.currentActiveData = snap.val() || {};
         renderBalls();
+    });
+
+    db.ref('settings/ballStyle').on('value', snap => {
+        if (snap.val()) {
+            ballStyle = snap.val();
+            renderBalls();
+        }
     });
 
     function reputtActiveBalls() { vibe(50); if (!window.currentActiveData) return; let updates = {}; for (let i = 1; i <= 15; i++) { if (window.currentActiveData[i] !== undefined) updates[i] = true; } db.ref('balls').update(updates); }
