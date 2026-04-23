@@ -3,90 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KØ-PÅDD Kontrollpanel Pro</title>
+    <title>KØ-PÅDD Controller Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        :root {
-            --bg: #000; --card: #0d0d0d; --border: #222;
-            --accent: #ffcc00; --green: #00FF41; --blue: #00E5FF;
-            --red: #FF0000; --ext: #00E5FF;
-        }
-        html, body { height: 100%; overflow: hidden; margin: 0; padding: 0; }
-        body { background: var(--bg); color: white; font-family: sans-serif; padding: 8px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 450px; height: 100%; display: flex; flex-direction: column; gap: 8px; }
-        .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; }
-        .pool-section { flex: 1; min-height: 0; } 
-        h2 { font-size: 0.65rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; opacity: 0.7; letter-spacing: 1px; }
-        
-        .name-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 5px; }
-        .name-input { 
-            background: #111; border: 1px solid #333; color: white; padding: 6px 4px; 
-            border-radius: 8px; text-align: center; font-size: 11px; width: 100%; 
-            box-sizing: border-box; outline: none; 
-        }
-        #nameL { border-left: 3px solid var(--green); }
-        #nameR { border-right: 3px solid var(--blue); }
-
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 12px 5px; font-size: 13px; font-weight: 800; border-radius: 10px; border: 2px solid #333; background: #111; color: white; text-transform: uppercase; transition: all 0.2s ease; }
-        .player-btn { padding: 14px 5px; font-size: 13px; border-width: 2px; }
-        
-        .active-l { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
-        .active-r { border-color: var(--blue) !important; color: var(--blue) !important; background: rgba(0, 229, 255, 0.05) !important; }
-        .mode-btn.active-mode { border-color: var(--green) !important; color: var(--green) !important; box-shadow: 0 0 8px rgba(0, 255, 65, 0.3); }
-
-        .ball-scroll-area { flex: 1; overflow-y: auto; margin-bottom: 8px; }
-        .ball-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; justify-items: center; }
-        .ball-btn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #000; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; background: white; }
-        .num-label { background: white; color: black; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: 900; border: 1px solid black; z-index: 10; }
-        .sunk { opacity: 0.15; filter: grayscale(1); transform: scale(0.9); }
-        
-        .stripe-band { position: absolute; width: 100%; height: 24px; top: 14px; z-index: 1; }
-        .dark-set.striped { background: black !important; }
-        .classic-set.striped { background: white !important; }
-
-        .f-1, .b9 { background-color: #ffcc00; } .f-2, .b10 { background-color: #0055aa; }
-        .f-3, .b11 { background-color: #cc0000; } .f-4, .b12 { background-color: #ff66aa; }
-        .f-5, .b13 { background-color: #663399; } .f-6, .b14 { background-color: #007744; }
-        .f-7, .b15 { background-color: #884422; } .f-8 { background-color: black; }
+        body { background: #050505; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 500px; margin: auto; }
+        .btn { padding: 20px; border-radius: 10px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; color: white; }
+        .s1 { background: #00FF41; color: black; }
+        .s2 { background: #00E5FF; color: black; }
+        .foul-btn { background: #441111; color: #ff4444; border: 1px solid #662222; padding: 10px; margin-top: 5px; }
+        .foul-btn:active { background: #ff4444; color: white; }
+        .header { grid-column: span 2; padding: 10px; background: #111; border-radius: 10px; margin-bottom: 5px; }
+        input { background: #222; border: 1px solid #444; color: white; padding: 8px; width: 80%; margin: 5px 0; border-radius: 5px; text-align: center; }
+        .reset-section { grid-column: span 2; margin-top: 20px; border-top: 1px solid #222; padding-top: 15px; }
+        .btn-stop { background: #221111; color: #ff4444; width: 100%; }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="section" style="padding: 10px 5px;">
-        <h2>Spillernavn (S1 / S2)</h2>
-        <div class="name-grid">
-            <input type="text" id="nameL" class="name-input" placeholder="Navn S1" oninput="updateNames()">
-            <input type="text" id="nameR" class="name-input" placeholder="Navn S2" oninput="updateNames()">
-        </div>
+
+<div class="grid">
+    <div class="header">
+        <h3>🎙️ MATCH CONTROL</h3>
+        <input type="text" id="cueScoreID" placeholder="CueScore Match ID" value="79253032">
     </div>
 
-    <div class="section pool-section">
-        <h2>Pool Control</h2>
-        <div class="ball-scroll-area">
-            <div class="ball-grid" id="ball-grid"></div>
-        </div>
-        <div class="grid" style="gap: 5px; grid-template-columns: 1fr 1fr 1fr 1fr 1fr;">
-            <button class="mini-btn" onclick="reputtActiveBalls()" title="Re-Rack">♻️</button>
-            <button id="ballSetBtn" class="mini-btn" onclick="toggleBallSet()" title="Endre kulesett">🎨</button>
-            <button id="mode-9" class="mode-btn" onclick="resetPool(9)">9</button>
-            <button id="mode-10" class="mode-btn" onclick="resetPool(10)">10</button>
-            <button id="mode-8" class="mode-btn" onclick="resetPool(8)">8</button>
-        </div>
+    <div>
+        <button class="btn s1" style="width:100%" onclick="handlePlayer('left')">◀ SPILLER 1</button>
+        <button class="btn foul-btn" style="width:100%" onclick="addFoul('left')">⚠ FOUL S1</button>
     </div>
 
-    <div class="section">
-        <h2>Shotclock & Match</h2>
-        <div class="grid">
-            <button style="background:#1b5e20; grid-column: span 1;" onclick="startMatch()">🟢 START</button>
-            <button style="background:#b71c1c; grid-column: span 1;" onclick="avsluttMatch()">🔴 STOPP</button>
-            <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ S1</button>
-            <button id="btnR" class="player-btn" onclick="shotReset('right')">S2 ▶</button>
-            <button id="toggleBtn" onclick="sendClock('toggle')">▶ START / PAUSE</button>
-            <button style="border-color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
-            <button style="grid-column: span 2; color: var(--ext); border-color: var(--ext);" onclick="useExtension()">+ BRUK EXTENSION</button>
-        </div>
+    <div>
+        <button class="btn s2" style="width:100%" onclick="handlePlayer('right')">SPILLER 2 ▶</button>
+        <button class="btn foul-btn" style="width:100%" onclick="addFoul('right')">⚠ FOUL S2</button>
+    </div>
+
+    <div class="reset-section">
+        <button class="btn btn-stop" onclick="avsluttMatch()">AVSLUTT & NULLSTILL KAMP</button>
     </div>
 </div>
 
@@ -94,183 +47,33 @@
     const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
-    let lastResetTime = Date.now();
-    let currentVisitPots = 0;
-    let ballStyle = 'dark';
 
-    // Vibreringsfunksjon
-    function vibe(ms = 40) {
-        if (navigator.vibrate) {
-            navigator.vibrate(ms);
-        }
-    }
+    function vibe(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
 
-    function toggleBallSet() {
-        vibe(60);
-        ballStyle = (ballStyle === 'dark') ? 'classic' : 'dark';
-        db.ref('settings/ballStyle').set(ballStyle);
-        renderBalls();
-    }
-
-    function updateNames() {
-        db.ref('stats/names').set({
-            left: document.getElementById('nameL').value || "Spiller 1",
-            right: document.getElementById('nameR').value || "Spiller 2"
-        });
-    }
-
-    function startMatch() {
-    vibe(100);
-    const nå = Date.now();
-    db.ref('stats/startTime').set(nå); // Setter tiden først
-    db.ref('activePlayer').set("");
-    db.ref('shotclock/status').set('paused');
-    resetPool(9); 
-    db.ref('shotclock/cmd').set({ action: 'reset30', ts: nå });
-    setTimeout(() => { db.ref('shotclock/cmd').set({ action: 'stop' }); }, 500);
-}
-
-    function resetPool(max) {
-        vibe(60);
-        let updates = {};
-        for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null;
-        if (max === 8) for (let i = 1; i <= 15; i++) updates[i] = true;
-        db.ref('balls').set(updates);
-        db.ref('gameMode').set(max);
-        db.ref('breakStatus').set({ active: true, ballsSunk: 0 });
-    }
-
-    const grid = document.getElementById('ball-grid');
-    for (let i = 1; i <= 15; i++) {
-        const b = document.createElement('div');
-        b.id = `btn-${i}`; b.className = 'ball-btn';
-        let num = document.createElement('div'); num.className = 'num-label'; num.innerText = i; b.appendChild(num);
-        let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
-
-        b.onclick = () => {
-            vibe(30);
-            const ref = db.ref(`balls/${i}`);
-            ref.once('value').then(snap => {
-                const isSinking = snap.val() !== false;
-                ref.set(!isSinking);
-                if (isSinking) {
-                    db.ref().once('value', mSnap => {
-                        const d = mSnap.val();
-                        const player = d.activePlayer;
-                        if (!player) return;
-                        currentVisitPots++;
-                        db.ref(`stats/pots/${player}`).transaction(c => (c || 0) + 1);
-                        if (d.breakStatus?.active) db.ref('breakStatus/ballsSunk').transaction(c => (c || 0) + 1);
-                        
-                        const mode = d.gameMode || 9;
-                        if (i == mode) {
-                            let others = false;
-                            const limit = (mode === 8) ? 15 : mode;
-                            for (let n = 1; n <= limit; n++) { if (n !== i && d.balls[n] === true) others = true; }
-                            if (mode == 9 || !others) {
-                                db.ref(`stats/matchWins/${player}`).transaction(c => (c || 0) + 1);
-                                if (currentVisitPots >= 5) db.ref(`stats/runouts/${player}`).transaction(c => (c || 0) + 1);
-                            } else if (mode == 8) {
-                                db.ref(`stats/errors/${player}`).transaction(c => (c || 0) + 1);
-                                db.ref(`stats/matchWins/${player === 'left' ? 'right' : 'left'}`).transaction(c => (c || 0) + 1);
-                            }
-                        }
-                    });
-                }
-            });
-        };
-        grid.appendChild(b);
-    }
-
-    function renderBalls() {
-        const data = window.currentActiveData || {};
-        for (let i = 1; i <= 15; i++) {
-            const b = document.getElementById(`btn-${i}`);
-            const band = document.getElementById(`band-${i}`);
-            if (!b) continue;
-            b.classList.toggle('sunk', data[i] === false);
-            b.style.display = (data[i] === undefined) ? 'none' : 'flex';
-            b.className = 'ball-btn' + (data[i] === false ? ' sunk' : '');
-            band.className = 'stripe-band';
-            if (i <= 8) { b.classList.add(`f-${i}`); band.style.display = 'none'; }
-            else { band.style.display = 'block'; band.classList.add(`f-${i-8}`); b.classList.add('striped'); b.classList.add(ballStyle === 'dark' ? 'dark-set' : 'classic-set'); }
-        }
-    }
-
-    function shotReset(player) {
+    function handlePlayer(side) {
         vibe(50);
-        db.ref('breakStatus').once('value', s => {
-            const b = s.val();
-            if (b?.active) {
-                if (b.ballsSunk === 0) db.ref(`stats/dryBreaks/${player}`).transaction(c => (c || 0) + 1);
-                db.ref('breakStatus/active').set(false);
-            }
+        const nå = Date.now();
+        // Logikk for skudd-historikk (brukes til graf og tid)
+        db.ref('stats/history').push({
+            player: side,
+            time: 20, // Her ville din shotclock-logikk hentet faktisk tid
+            timestamp: nå
         });
-        db.ref('activePlayer').once('value', s => { if (s.val() !== player) currentVisitPots = 0; });
-        const now = Date.now();
-        const timeSpent = (now - lastResetTime) / 1000;
-        if (timeSpent > 1.5 && timeSpent < 120) {
-            db.ref('stats/history').push({ time: timeSpent, player: player });
-            db.ref(`stats/visits/${player}`).transaction(c => (c || 0) + 1);
-        }
-        lastResetTime = now;
-        db.ref('activePlayer').set(player);
-        db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
+        db.ref('activePlayer').set(side);
     }
 
-    function startBreak() { vibe(60); sendClock('reset60'); db.ref('breakStatus/active').set(true); }
-    function useExtension() { vibe(80); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); sendClock('extension'); }
-    function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
+    function addFoul(side) {
+        vibe(100);
+        db.ref(`stats/fouls/${side}`).transaction(current => (current || 0) + 1);
+    }
+
     function avsluttMatch() {
-    vibe(100); 
-    if(confirm("Vil du avslutte kampen og nullstille all statistikk?")) {
-        // 1. Dette resetter ALT i stats-mappen i Firebase (klokke, poeng, historikk)
-        db.ref('stats').set({ 
-            startTime: 0,
-            matchWins: { left: 0, right: 0 },
-            pots: { left: 0, right: 0 },
-            visits: { left: 1, right: 1 },
-            names: { 
-                left: document.getElementById('nameL').value || "Player 1", 
-                right: document.getElementById('nameR').value || "Player 2" 
-            }
-        });
-        
-        // 2. Rydd opp i bordet og shotclock
-        db.ref('activePlayer').set("");
-        db.ref('balls').set(null);
-        db.ref('shotclock/status').set('hidden');
-        db.ref('shotclock/cmd').set({ action: 'stop' });
-        
-        console.log("Match avsluttet og statistikk nullstilt.");
+        if(confirm("Vil du avslutte kampen og slette all statistikk?")) {
+            db.ref('stats').set({ startTime: 0 });
+            db.ref('activePlayer').set("");
+            alert("Match nullstilt!");
+        }
     }
-}
-    
-    db.ref('activePlayer').on('value', snap => {
-        const p = snap.val();
-        document.getElementById('btnL').classList.toggle('active-l', p === 'left');
-        document.getElementById('btnR').classList.toggle('active-r', p === 'right');
-    });
-
-    db.ref('gameMode').on('value', snap => {
-        const activeMode = snap.val();
-        [8, 9, 10].forEach(m => {
-            const btn = document.getElementById(`mode-${m}`);
-            if (btn) btn.classList.toggle('active-mode', m === activeMode);
-        });
-    });
-
-    db.ref('balls').on('value', snap => {
-        window.currentActiveData = snap.val() || {};
-        renderBalls();
-    });
-
-    db.ref('settings/ballStyle').on('value', snap => {
-        if (snap.val()) { ballStyle = snap.val(); renderBalls(); }
-    });
-
-    function reputtActiveBalls() { vibe(50); if (!window.currentActiveData) return; let updates = {}; for (let i = 1; i <= 15; i++) { if (window.currentActiveData[i] !== undefined) updates[i] = true; } db.ref('balls').update(updates); }
 </script>
 </body>
 </html>
