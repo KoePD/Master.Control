@@ -100,17 +100,14 @@
     let lastResetTime = Date.now();
     let currentVisitPots = 0;
     let ballStyle = 'dark';
+    let currentGameMode = 9;
 
+    // --- HJELPEFUNKSJONER ---
     function vibe(ms = 40) { if (navigator.vibrate) navigator.vibrate(ms); }
 
     function updateMatchID() {
         const id = document.getElementById('matchIDInput').value;
         db.ref('settings/cueScoreMatchID').set(id);
-    }
-
-    function addFoul(side) {
-        vibe(80);
-        db.ref(`stats/fouls/${side}`).transaction(c => (c || 0) + 1);
     }
 
     function updateNames() {
@@ -120,44 +117,59 @@
         });
     }
 
-    function startMatch() {
-        vibe(100);
-        db.ref('stats/startTime').set(Date.now());
-        db.ref('activePlayer').set("");
-        db.ref('shotclock/status').set('paused');
-        db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
+    function addFoul(side) {
+        vibe(80);
+        db.ref(`stats/fouls/${side}`).transaction(c => (c || 0) + 1);
     }
 
-    // Gjenbruk din eksisterende ball-logikk her...
-    function resetPool(max) {
-        vibe(60);
-        let updates = {};
-        for (let i = 1; i <= 15; i++) updates[i] = (i <= max) ? true : null;
-        db.ref('balls').set(updates);
-        db.ref('gameMode').set(max);
-        db.ref('breakStatus').set({ active: true, ballsSunk: 0 });
-    }
-
-    // Render baller logikk (samme som din)
+    // --- KULE LOGIKK ---
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
-        b.id = `btn-${i}`; b.className = 'ball-btn';
-        let num = document.createElement('div'); num.className = 'num-label'; num.innerText = i; b.appendChild(num);
-        let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
+        b.id = `btn-${i}`; 
+        b.className = 'ball-btn';
+        
+        let num = document.createElement('div'); 
+        num.className = 'num-label'; 
+        num.innerText = i; 
+        b.appendChild(num);
+        
+        let band = document.createElement('div'); 
+        band.id = `band-${i}`; 
+        band.className = 'stripe-band'; 
+        b.appendChild(band);
+
         b.onclick = () => {
             vibe(30);
-            db.ref(`balls/${i}`).once('value').then(snap => {
+            const ref = db.ref(`balls/${i}`);
+            ref.once('value').then(snap => {
                 const isSinking = snap.val() !== false;
-                db.ref(`balls/${i}`).set(!isSinking);
+                ref.set(!isSinking);
+
                 if (isSinking) {
                     db.ref().once('value', mSnap => {
                         const d = mSnap.val();
                         const player = d.activePlayer;
                         if (!player) return;
+                        
+                        currentVisitPots++;
                         db.ref(`stats/pots/${player}`).transaction(c => (c || 0) + 1);
-                        if (i == (d.gameMode || 9)) {
-                            db.ref(`stats/matchWins/${player}`).transaction(c => (c || 0) + 1);
+                        
+                        // Sjekk for Match Win / 8-ball loss
+                        if (i == currentGameMode) {
+                            let othersRemaining = false;
+                            const limit = (currentGameMode === 8) ? 15 : currentGameMode;
+                            for (let n = 1; n <= limit; n++) { 
+                                if (n !== i && d.balls && d.balls[n] === true) othersRemaining = true; 
+                            }
+
+                            if (currentGameMode == 9 || !othersRemaining) {
+                                // Lovlig senking av siste ball
+                                if (currentVisitPots >= 5) db.ref(`stats/runouts/${player}`).transaction(c => (c || 0) + 1);
+                            } else if (currentGameMode == 8 && othersRemaining) {
+                                // Tidlig 8-ball senking = Tap i 8-ball
+                                db.ref(`stats/errors/${player}`).transaction(c => (c || 0) + 1);
+                            }
                         }
                     });
                 }
@@ -166,45 +178,108 @@
         grid.appendChild(b);
     }
 
+    function renderBalls() {
+        const data = window.currentActiveData || {};
+        const colors = ["", "#ffcc00", "#0055aa", "#cc0000", "#ff66aa", "#ff8800", "#007744", "#884422", "#000"];
+
+        for (let i = 1; i <= 15; i++) {
+            const b = document.getElementById(`btn-${i}`);
+            const band = document.getElementById(`band-${i}`);
+            if (!b) continue;
+
+            let shouldShow = false;
+            if (currentGameMode == 8) shouldShow = true;
+            else if (currentGameMode == 9 && i <= 9) shouldShow = true;
+            else if (currentGameMode == 10 && i <= 10) shouldShow = true;
+
+            b.style.display = shouldShow ? 'flex' : 'none';
+            b.classList.toggle('sunk', data[i] === false);
+            
+            band.style.display = 'none';
+            if (i <= 8) {
+                b.style.backgroundColor = colors[i];
+                b.style.border = "2px solid #000";
+            } else {
+                b.style.backgroundColor = "white";
+                band.style.display = 'block';
+                band.style.backgroundColor = colors[i - 8];
+                b.classList.add('striped');
+            }
+        }
+    }
+
+    // --- MATCH KONTROLL ---
+    function startMatch() {
+        vibe(100);
+        db.ref('stats/startTime').set(Date.now());
+        db.ref('activePlayer').set("");
+        resetPool(currentGameMode);
+        db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
+    }
+
+    function resetPool(max) {
+        vibe(60);
+        let updates = {};
+        const limit = (max === 8) ? 15 : max;
+        for (let i = 1; i <= 15; i++) updates[i] = (i <= limit) ? true : null;
+        db.ref('balls').set(updates);
+        db.ref('gameMode').set(max);
+        db.ref('breakStatus').set({ active: true, ballsSunk: 0 });
+    }
+
     function shotReset(player) {
         vibe(50);
         const now = Date.now();
+        db.ref('activePlayer').once('value', s => { if (s.val() !== player) currentVisitPots = 0; });
+        
         db.ref('activePlayer').set(player);
         db.ref(`stats/visits/${player}`).transaction(c => (c || 0) + 1);
         db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
-        db.ref('stats/history').push({ time: 25, player: player }); // Forenklet tidsstatistikk
+        
+        // Lagre skudd-tid for grafen i stats.html
+        const timeSpent = (now - lastResetTime) / 1000;
+        if (timeSpent > 1 && timeSpent < 150) {
+            db.ref('stats/history').push({ time: timeSpent, player: player, ts: now });
+        }
+        lastResetTime = now;
     }
 
     function startBreak() { vibe(60); db.ref('shotclock/cmd').set({action:'reset60', ts:Date.now()}); db.ref('breakStatus/active').set(true); }
     function useExtension() { vibe(80); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
     function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
-    function avsluttMatch() { vibe(100); if(confirm("Avslutt?")) { db.ref('stats/startTime').set(0); db.ref('balls').set(null); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
+    
+    function avsluttMatch() { 
+        vibe(100); 
+        if(confirm("Vil du avslutte og nullstille alt?")) { 
+            db.ref('stats').set({ startTime: 0 });
+            db.ref('activePlayer').set(null); 
+            db.ref('balls').set(null); 
+            db.ref('shotclock/cmd').set({ action: 'stop' }); 
+        } 
+    }
 
+    // --- LYTTERE ---
     db.ref('activePlayer').on('value', snap => {
         const p = snap.val();
         document.getElementById('btnL').classList.toggle('active-l', p === 'left');
         document.getElementById('btnR').classList.toggle('active-r', p === 'right');
     });
 
-    db.ref('balls').on('value', snap => {
-        window.currentActiveData = snap.val() || {};
-        // Her kaller du renderBalls() funksjonen din
-        for (let i = 1; i <= 15; i++) {
-            const b = document.getElementById(`btn-${i}`);
-            if (b) {
-                b.classList.toggle('sunk', window.currentActiveData[i] === false);
-                b.style.display = (window.currentActiveData[i] === undefined) ? 'none' : 'flex';
-                const band = document.getElementById(`band-${i}`);
-                if (i > 8) band.style.backgroundColor = getBallColor(i);
-                else b.style.backgroundColor = getBallColor(i);
-            }
-        }
+    db.ref('gameMode').on('value', snap => {
+        currentGameMode = snap.val() || 9;
+        [8, 9, 10].forEach(m => {
+            const btn = document.getElementById(`mode-${m}`);
+            if (btn) btn.classList.toggle('active-mode', m === currentGameMode);
+        });
+        renderBalls();
     });
 
-    function getBallColor(i) {
-        const colors = ["", "#ffcc00", "#0055aa", "#cc0000", "#ff66aa", "#ff8800", "#007744", "#884422", "#000", "#ffcc00", "#0055aa", "#cc0000", "#ff66aa", "#ff8800", "#007744", "#884422"];
-        return colors[i];
-    }
+    db.ref('balls').on('value', snap => {
+        window.currentActiveData = snap.val() || {};
+        renderBalls();
+    });
+
+    function reputtActiveBalls() { vibe(50); if (!window.currentActiveData) return; let updates = {}; for (let i = 1; i <= 15; i++) { if (window.currentActiveData[i] !== undefined) updates[i] = true; } db.ref('balls').update(updates); }
 </script>
 </body>
 </html>
