@@ -3,75 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KØ-PÅDD Controller Pro</title>
+    <title>KØ-PÅDD Ultimate Controller</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        body { background: #050505; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 500px; margin: auto; }
-        .btn { padding: 20px; border-radius: 10px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; color: white; }
-        .s1 { background: #00FF41; color: black; }
-        .s2 { background: #00E5FF; color: black; }
-        .foul-btn { background: #441111; color: #ff4444; border: 1px solid #662222; padding: 10px; margin-top: 5px; }
-        .foul-btn:active { background: #ff4444; color: white; }
-        .header { grid-column: span 2; padding: 10px; background: #111; border-radius: 10px; margin-bottom: 5px; }
-        input { background: #222; border: 1px solid #444; color: white; padding: 8px; width: 80%; margin: 5px 0; border-radius: 5px; text-align: center; }
-        .reset-section { grid-column: span 2; margin-top: 20px; border-top: 1px solid #222; padding-top: 15px; }
-        .btn-stop { background: #221111; color: #ff4444; width: 100%; }
+        :root { --s1: #00FF41; --s2: #00E5FF; --gold: #ffcc00; --red: #ff4444; --bg: #050505; }
+        body { background: var(--bg); color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; user-select: none; }
+        
+        .section { background: #111; border: 1px solid #222; border-radius: 12px; padding: 15px; margin-bottom: 10px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        button { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: transform 0.1s; }
+        button:active { transform: scale(0.95); }
+
+        /* Main Player Buttons */
+        .btn-player { padding: 25px 10px; font-size: 1.2rem; color: black; width: 100%; }
+        .s1 { background: var(--s1); }
+        .s2 { background: var(--s2); }
+
+        /* Action Buttons */
+        .btn-action { padding: 12px 5px; font-size: 0.8rem; margin-top: 5px; width: 100%; }
+        .ext { background: #333; border: 1px solid #555; }
+        .foul { background: #300; border: 1px solid #600; color: var(--red); }
+        .dry { background: #221100; border: 1px solid #553300; color: var(--gold); }
+
+        /* Ball Rack */
+        .ball-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 15px; }
+        .ball { width: 100%; aspect-ratio: 1; border-radius: 50%; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; color: black; border: 2px solid transparent; }
+        .ball.off { opacity: 0.2; filter: grayscale(1); border-color: rgba(255,255,255,0.1); }
+        
+        /* Ball Colors */
+        .b1 { background: #ffea00; } .b2 { background: #0055ff; color: white; } .b3 { background: #ff0000; color: white; }
+        .b4 { background: #aa00ff; color: white; } .b5 { background: #ff8800; } .b6 { background: #00aa00; color: white; }
+        .b7 { background: #990000; color: white; } .b8 { background: #111; color: white; } .b9 { background: #fff; border: 2px solid #ffea00; }
+        .b10 { background: #fff; border: 2px solid #0055ff; }
+
+        /* Match Controls */
+        .btn-match { padding: 15px; width: 100%; font-size: 1rem; text-transform: uppercase; margin-top: 5px; }
+        .start { background: #004400; color: #00ff00; border: 1px solid #006600; }
+        .stop { background: #330000; color: var(--red); border: 1px solid #550000; }
+        
+        input { background: #222; border: 1px solid #444; color: var(--gold); padding: 10px; width: 90%; border-radius: 6px; text-align: center; font-size: 1rem; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-<div class="grid">
-    <div class="header">
-        <h3>🎙️ MATCH CONTROL</h3>
-        <input type="text" id="cueScoreID" placeholder="CueScore Match ID" value="79253032">
-    </div>
+    <div style="max-width: 500px; margin: auto;">
+        
+        <div class="section">
+            <input type="text" id="csID" placeholder="CueScore Match ID" value="79253032">
+            <div class="grid-2">
+                <button class="btn-match start" onclick="startMatch()">▶ START KAMP</button>
+                <button class="btn-match stop" onclick="avsluttMatch()">⏹ AVSLUTT / RESET</button>
+            </div>
+        </div>
 
-    <div>
-        <button class="btn s1" style="width:100%" onclick="handlePlayer('left')">◀ SPILLER 1</button>
-        <button class="btn foul-btn" style="width:100%" onclick="addFoul('left')">⚠ FOUL S1</button>
-    </div>
+        <div class="grid-2">
+            <div class="section">
+                <button class="btn-player s1" onclick="handleVisit('left')">◀ S1</button>
+                <button class="btn-action ext" onclick="addStat('extensions', 'left')">+ EXTENSION</button>
+                <button class="btn-action foul" onclick="addStat('fouls', 'left')">⚠ FOUL</button>
+                <button class="btn-action dry" onclick="addStat('dryBreaks', 'left')">TØRR BREKK</button>
+            </div>
 
-    <div>
-        <button class="btn s2" style="width:100%" onclick="handlePlayer('right')">SPILLER 2 ▶</button>
-        <button class="btn foul-btn" style="width:100%" onclick="addFoul('right')">⚠ FOUL S2</button>
-    </div>
+            <div class="section">
+                <button class="btn-player s2" onclick="handleVisit('right')">S2 ▶</button>
+                <button class="btn-action ext" onclick="addStat('extensions', 'right')">+ EXTENSION</button>
+                <button class="btn-action foul" onclick="addStat('fouls', 'right')">⚠ FOUL</button>
+                <button class="btn-action dry" onclick="addStat('dryBreaks', 'right')">TØRR BREKK</button>
+            </div>
+        </div>
 
-    <div class="reset-section">
-        <button class="btn btn-stop" onclick="avsluttMatch()">AVSLUTT & NULLSTILL KAMP</button>
+        <div class="section">
+            <div style="font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 10px;">Balls Potted (Select balls)</div>
+            <div class="ball-grid" id="ballGrid">
+                </div>
+        </div>
+
     </div>
-</div>
 
 <script>
     const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    let currentBalls = {};
+
     function vibe(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
 
-    function handlePlayer(side) {
-        vibe(50);
-        const nå = Date.now();
-        // Logikk for skudd-historikk (brukes til graf og tid)
-        db.ref('stats/history').push({
-            player: side,
-            time: 20, // Her ville din shotclock-logikk hentet faktisk tid
-            timestamp: nå
-        });
-        db.ref('activePlayer').set(side);
+    // Generer kuler 1-10
+    const ballGrid = document.getElementById('ballGrid');
+    for(let i=1; i<=10; i++) {
+        const b = document.createElement('div');
+        b.className = `ball b${i}`;
+        b.id = `ball-${i}`;
+        b.innerText = i;
+        b.onclick = () => toggleBall(i);
+        ballGrid.appendChild(b);
     }
 
-    function addFoul(side) {
+    function toggleBall(num) {
+        vibe(40);
+        currentBalls[num] = !currentBalls[num];
+        const el = document.getElementById(`ball-${num}`);
+        el.classList.toggle('off', !currentBalls[num]);
+        
+        // Oppdater balls i Firebase (hvis du bruker ball-overlay)
+        db.ref('balls').set(currentBalls);
+
+        // Hvis ballen senkes (blir "på"), legg til i pots for aktiv spiller
+        if(currentBalls[num]) {
+            db.ref('activePlayer').once('value', snap => {
+                const p = snap.val();
+                if(p) db.ref(`stats/pots/${p}`).transaction(c => (c || 0) + 1);
+            });
+        }
+    }
+
+    function handleVisit(side) {
+        vibe(60);
+        const nå = Date.now();
+        db.ref('activePlayer').set(side);
+        db.ref(`stats/visits/${side}`).transaction(c => (c || 0) + 1);
+        
+        // Lagre skudd i historikken for grafen
+        db.ref('stats/history').push({
+            player: side,
+            time: 25, // Standardtid hvis klokka ikke er koblet
+            timestamp: nå
+        });
+    }
+
+    function addStat(path, side) {
+        vibe(80);
+        db.ref(`stats/${path}/${side}`).transaction(c => (c || 0) + 1);
+    }
+
+    function startMatch() {
         vibe(100);
-        db.ref(`stats/fouls/${side}`).transaction(current => (current || 0) + 1);
+        const nå = Date.now();
+        db.ref('stats/startTime').set(nå);
+        db.ref('activePlayer').set("");
+        // Reset baller for ny match
+        for(let i=1; i<=10; i++) {
+            currentBalls[i] = false;
+            document.getElementById(`ball-${i}`).classList.add('off');
+        }
+        db.ref('balls').set(currentBalls);
     }
 
     function avsluttMatch() {
-        if(confirm("Vil du avslutte kampen og slette all statistikk?")) {
+        vibe(200);
+        if(confirm("Vil du avslutte kampen og nullstille all statistikk?")) {
             db.ref('stats').set({ startTime: 0 });
             db.ref('activePlayer').set("");
-            alert("Match nullstilt!");
+            db.ref('balls').set(null);
+            location.reload(); 
         }
     }
 </script>
