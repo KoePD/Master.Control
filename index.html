@@ -105,25 +105,59 @@
     function vibe(ms = 40) { if (navigator.vibrate) navigator.vibrate(ms); }
 
     // --- CUESCORE DATA HENTING ---
-    async function fetchCueScoreData() {
-        const id = document.getElementById('matchIDInput').value;
-        if (!id || id.length < 5) return;
-
-        const proxyUrl = "https://api.allorigins.win/get?url=";
-        const apiUrl = `https://cuescore.com/api/getTableMatch:${id}`;
-        
-        try {
-            const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
-            const raw = await response.json();
-            const data = JSON.parse(raw.contents);
-            const match = data.match || data;
-
-            if (match && (match.playerA || match.player1)) {
-                console.log("CueScore data synkronisert ved start.");
-                // Vi trenger ikke lagre navn manuelt her da stats.html henter dem direkte fra ID-en
-            }
-        } catch (e) { console.log("Kunne ikke forhåndshente CueScore data."); }
+    // --- KORRIGERT CUESCORE DATA HENTING FOR HOVEDBORD 9158140 ---
+async function fetchCueScoreData() {
+    // Vi bruker ID-en fra feltet, eller faller tilbake til hovedbordet hvis feltet er tomt
+    let id = document.getElementById('matchIDInput').value;
+    if (!id || id.trim() === "") {
+        id = "9158140"; 
+        document.getElementById('matchIDInput').value = id;
     }
+
+    const proxyUrl = "https://api.allorigins.win/get?url=";
+    const apiUrl = `https://cuescore.com/api/getTableMatch:${id}`;
+    
+    console.log("Prøver å hente navn fra CueScore for bord:", id);
+
+    try {
+        const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+        const raw = await response.json();
+        const data = JSON.parse(raw.contents);
+        
+        // CueScore API-et kan returnere data i litt ulike formater
+        const match = data.match || data;
+
+        if (match) {
+            // Sjekker alle mulige navnefelt CueScore bruker
+            const p1 = match.playerA || match.player1 || (match.player1data ? match.player1data.name : null);
+            const p2 = match.playerB || match.player2 || (match.player2data ? match.player2data.name : null);
+
+            if (p1 && p2) {
+                const name1 = typeof p1 === 'object' ? p1.name : p1;
+                const name2 = typeof p2 === 'object' ? p2.name : p2;
+                const hcp1 = p1.handicap || "0";
+                const hcp2 = p2.handicap || "0";
+
+                // Oppdaterer Firebase slik at stats.html og kontrollpanelet synkroniseres
+                db.ref('stats/names').set({
+                    left: name1,
+                    right: name2
+                });
+                
+                db.ref('stats/handicaps').set({
+                    left: hcp1,
+                    right: hcp2
+                });
+
+                console.log("Suksess! Hentet:", name1, "vs", name2);
+            } else {
+                console.log("Fant match-data, men ingen spillernavn ennå. Er kampen startet på CueScore?");
+            }
+        }
+    } catch (e) { 
+        console.error("Feil ved henting av CueScore-navn:", e); 
+    }
+}
 
     function updateMatchID() {
         const id = document.getElementById('matchIDInput').value;
