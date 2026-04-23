@@ -240,7 +240,7 @@
         syncCueScore();
     };
 
-    // --- STABILE LYTTERE (Henter navn fra Master Control) ---
+    // --- STABILE LYTTERE (Henter navn fra Master Control)  ---
     db.ref('stats/names').on('value', snap => {
         const n = snap.val();
         if (n) {
