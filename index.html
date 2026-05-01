@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Ultra Pro</title>
+    <title>KØ-PÅDD App v3</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -29,27 +29,27 @@
             overflow: hidden; position: fixed;
         }
         
-        body { padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px; display: flex; flex-direction: column; }
+        body { padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom) 8px; display: flex; flex-direction: column; }
 
         .container { display: flex; flex-direction: column; height: 100%; width: 100%; }
 
-        .top-nav { padding: 15px 0 5px 0; flex: 0 0 auto; display: flex; justify-content: center; }
+        /* Match ID */
+        .top-nav { padding: 10px 0 5px 0; flex: 0 0 auto; display: flex; justify-content: center; }
         .name-input {
-            background: var(--btn-bg); border: 2px solid var(--border); color: var(--accent);
-            text-align: center; font-size: 24px; width: 100%; max-width: 420px; 
-            font-weight: 900; text-transform: uppercase; letter-spacing: 2px; 
-            padding: 15px; border-radius: 15px;
+            background: var(--btn-bg); border: 1px solid var(--border); color: var(--accent);
+            text-align: center; font-size: 22px; width: 100%; max-width: 420px; 
+            font-weight: 900; text-transform: uppercase; padding: 15px; border-radius: 12px;
         }
 
+        /* Ball-seksjon - Stor stil fra bilde 2 */
         .pool-section { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }
         .ball-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 30px 25px; /* Litt mindre gap enn sist for å spare plass til knapper */
-            justify-items: center; width: 100%; max-width: 420px; padding: 5px;
+            gap: 35px 25px; justify-items: center; width: 100%; max-width: 420px; padding: 10px;
         }
 
         .ball-btn {
-            width: 28vw; height: 28vw; max-width: 115px; max-height: 115px;
+            width: 29vw; height: 29vw; max-width: 120px; max-height: 120px;
             border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.6);
             position: relative; display: flex; justify-content: center; align-items: center;
             overflow: hidden; 
@@ -67,19 +67,17 @@
         .stripe-band { position: absolute; width: 100%; height: 38%; z-index: 1; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* Kompakt Modus-rad for å få plass til alt */
-        .mode-container { display: flex; flex-direction: column; gap: 5px; padding: 5px 0; }
-        .mode-row-top { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .mode-row-bottom { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-
+        /* Kompakt Modus-seksjon */
+        .mode-container { display: flex; flex-direction: column; gap: 4px; padding: 5px 0; }
+        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
         .mode-btn {
-            background: var(--btn-bg); border: 1px solid #222; padding: 15px 0;
-            color: #eee; font-size: 16px; font-weight: 800; border-radius: 10px;
+            background: var(--btn-bg); border: 1px solid #222; padding: 18px 0;
+            color: #eee; font-size: 14px; font-weight: 800; border-radius: 8px;
             box-shadow: 0 3px 0 #000;
         }
         .mode-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #000; }
 
-        /* Hovedkontroller - Extension inkludert i rutenettet */
+        /* Hovedknapper */
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding-bottom: 5px; }
         .btn-main { 
             background: var(--btn-bg); border: 1px solid #222; color: white; 
@@ -99,12 +97,12 @@
         .btn-sub { padding: 25px 5px; font-size: 14px; }
         .btn-foul { color: #f87171; }
         
-        .extension-btn { 
-            grid-column: span 2; 
-            padding: 30px; 
-            color: var(--blue); 
-            font-size: 22px; 
-            border-color: rgba(2, 132, 199, 0.4);
+        /* Her samler vi Pause og Extension for å spare plass */
+        .bottom-row { grid-column: span 2; display: grid; grid-template-columns: 1fr 1.5fr; gap: 6px; }
+
+        .btn-break { 
+            grid-column: span 2; padding: 25px; color: var(--accent); 
+            font-size: 20px; border-color: rgba(255, 204, 0, 0.3);
         }
     </style>
 </head>
@@ -121,11 +119,11 @@
 
     <div class="bottom-controls">
         <div class="mode-container">
-            <div class="mode-row-top">
-                <button class="mode-btn" onclick="reputtActiveBalls()">♻️ RESIRKULER</button>
+            <div class="mode-row">
+                <button class="mode-btn" style="grid-column: span 2; border-color: var(--green);" onclick="reputtActiveBalls()">♻️ RESIRKULER</button>
                 <button class="mode-btn" onclick="toggleBallSet()">🎨 STIL</button>
             </div>
-            <div class="mode-row-bottom">
+            <div class="mode-row">
                 <button class="mode-btn" onclick="resetPool(9)">9-BALL</button>
                 <button class="mode-btn" onclick="resetPool(10)">10-BALL</button>
                 <button class="mode-btn" onclick="resetPool(8)">8-BALL</button>
@@ -142,10 +140,12 @@
             <button class="btn-main btn-sub btn-foul" onclick="addFoul('left')">⚠ FOUL S1</button>
             <button class="btn-main btn-sub btn-foul" onclick="addFoul('right')">⚠ FOUL S2</button>
 
-            <button id="toggleBtn" class="btn-main btn-sub" onclick="sendClock('toggle')">▶ PAUSE</button>
-            <button class="btn-main btn-sub" style="color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
+            <div class="bottom-row">
+                <button id="toggleBtn" class="btn-main btn-sub" onclick="sendClock('toggle')">▶ PAUSE</button>
+                <button class="btn-main btn-sub" style="color: var(--blue);" onclick="useExtension()">+ BRUK EXTENSION</button>
+            </div>
             
-            <button class="btn-main extension-btn" onclick="useExtension()">+ BRUK EXTENSION</button>
+            <button class="btn-main btn-break" onclick="startBreak()">⚡ 60s BREAK</button>
         </div>
     </div>
 </div>
