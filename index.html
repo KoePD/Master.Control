@@ -29,7 +29,6 @@
             overflow: hidden; position: fixed;
         }
         
-        /* Fjerner padding for å utnytte hver piksel vertikalt */
         body { padding: env(safe-area-inset-top) 8px 0 8px; display: flex; flex-direction: column; }
 
         .container { 
@@ -37,10 +36,9 @@
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
-            justify-content: flex-start; /* Samler alt øverst */
+            justify-content: flex-start;
         }
 
-        /* Match ID - Litt mer kompakt */
         .top-nav { padding: 5px 0; flex: 0 0 auto; display: flex; justify-content: center; }
         .name-input {
             background: var(--btn-bg); border: 1px solid var(--border); color: var(--accent);
@@ -48,9 +46,8 @@
             font-weight: 900; text-transform: uppercase; padding: 10px; border-radius: 10px;
         }
 
-        /* Ball-seksjon - Samlet med knappene */
         .pool-section { 
-            flex: 0 0 auto; /* Ikke la denne strekke seg */
+            flex: 0 0 auto;
             display: flex; 
             flex-direction: column; 
             align-items: center; 
@@ -59,7 +56,7 @@
         }
         .ball-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 15px 25px; /* Minimalt gap vertikalt */
+            gap: 15px 25px;
             justify-items: center; width: 100%; max-width: 420px;
         }
 
@@ -81,9 +78,8 @@
         .stripe-band { position: absolute; width: 100%; height: 38%; z-index: 1; }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* BUNNKONTROLLER - Nå dratt helt opp mot kulene */
         .bottom-controls { 
-            flex: 1; /* Lar denne fylle resten, men vi dytter innholdet opp */
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 4px;
@@ -111,9 +107,10 @@
         
         .bottom-row { grid-column: span 2; display: grid; grid-template-columns: 1fr 1.2fr; gap: 4px; }
 
-        .btn-break { 
-            grid-column: span 2; padding: 18px; color: var(--accent); 
-            font-size: 18px; border-color: rgba(255, 204, 0, 0.3);
+        /* Her er den store Extension-knappen nederst */
+        .btn-extension-huge { 
+            grid-column: span 2; padding: 22px; color: var(--blue); 
+            font-size: 20px; border-color: rgba(2, 132, 199, 0.4);
         }
     </style>
 </head>
@@ -153,10 +150,10 @@
 
             <div class="bottom-row">
                 <button id="toggleBtn" class="btn-main btn-sub" onclick="sendClock('toggle')">▶ PAUSE</button>
-                <button class="btn-main btn-sub" style="color: var(--blue); border-color: var(--blue);" onclick="useExtension()">+ EXTENSION</button>
+                <button class="btn-main btn-sub" style="color: var(--accent); border-color: rgba(255, 204, 0, 0.3);" onclick="startBreak()">⚡ 60s BREAK</button>
             </div>
             
-            <button class="btn-main btn-break" onclick="startBreak()">⚡ 60s BREAK</button>
+            <button class="btn-main btn-extension-huge" onclick="useExtension()">+ BRUK EXTENSION</button>
         </div>
     </div>
 </div>
