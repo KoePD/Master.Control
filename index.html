@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
-            --bg: #000; --card: #0a0a0a; --border: #1a1a1a;
+            --bg: #000; --card: #000; --border: #1a1a1a;
             --accent: #ffcc00; --green: #00FF41; --blue: #00E5FF;
             --red: #ff4444; --ext: #00E5FF;
         }
@@ -25,36 +25,35 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            width: 100%; /* Bruker hele bredden */
-            gap: 4px;
+            width: 100%;
+            gap: 0; /* Fjernet gap mellom seksjoner for sømløs look */
         }
 
         .section {
             background: var(--card);
             border-bottom: 1px solid var(--border);
-            border-top: 1px solid var(--border);
-            padding: 10px 15px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
         }
 
-        /* Pool-seksjonen fyller nå alt tilgjengelig tomrom */
         .pool-section {
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;
             min-height: 0;
-            padding: 15px;
+            padding: 10px 0; /* Mer plass til kulene */
         }
 
-        h2 { font-size: 0.65rem; color: var(--accent); text-align: center; margin: 0 0 8px 0; text-transform: uppercase; opacity: 0.5; letter-spacing: 2px; }
+        h2 { font-size: 0.6rem; color: var(--accent); text-align: center; margin: 0 0 10px 0; text-transform: uppercase; opacity: 0.5; letter-spacing: 2px; }
 
         .ball-scroll-area { 
             flex: 1; 
             display: flex; 
             align-items: center; 
             justify-content: center;
+            width: 100%;
         }
 
         .ball-grid {
@@ -63,12 +62,12 @@
             gap: 20px;
             justify-items: center;
             width: 100%;
-            max-width: 400px;
+            padding: 0 10px;
         }
 
         .ball-btn {
-            width: 75px; /* Enda større baller */
-            height: 75px;
+            width: 85px; /* Enda større baller */
+            height: 85px;
             border-radius: 50%;
             border: 2px solid #000;
             position: relative;
@@ -77,21 +76,21 @@
             align-items: center;
             overflow: hidden;
             background: white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
         
-        .ball-btn:active { transform: scale(0.9); }
+        .ball-btn:active { transform: scale(0.9); opacity: 0.6; }
 
         .num-label {
             background: white;
             color: black;
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 900;
             border: 1px solid black;
             z-index: 10;
@@ -100,63 +99,66 @@
         .stripe-band {
             position: absolute;
             width: 100%;
-            height: 38%;
+            height: 40%;
             z-index: 1;
         }
 
-        .sunk { opacity: 0.05; filter: grayscale(1); transform: scale(0.8); box-shadow: none; }
+        .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); box-shadow: none !important; }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 0 4px; }
         
         button {
-            padding: 18px 5px;
+            padding: 20px 5px;
             font-size: 14px;
             font-weight: 800;
-            border-radius: 12px;
-            border: 1px solid #222;
-            background: #111;
+            border-radius: 0; /* Fjerner radius for "kant-til-kant" look */
+            border: 1px solid #111;
+            background: #080808;
             color: white;
             text-transform: uppercase;
         }
 
-        button:active { background: #222; }
+        button:active { background: #1a1a1a; }
 
-        .player-btn { font-size: 18px; border-width: 2px; padding: 22px 5px; }
-        .foul-btn { border-color: #221111; color: #cc5555; font-size: 11px; padding: 12px; }
+        /* Spesialknapper nederst får litt radius for å skille seg ut */
+        .match-controls button { border-radius: 8px; margin: 2px 0; }
+
+        .player-btn { font-size: 20px; padding: 25px 5px; }
+        .foul-btn { color: #cc5555; font-size: 11px; padding: 15px 0; }
         
         .active-l { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
         .active-r { border-color: var(--blue) !important; color: var(--blue) !important; background: rgba(0, 229, 255, 0.05) !important; }
 
         .name-input {
-            background: #0a0a0a; border: 1px solid #222; color: white; padding: 15px;
-            border-radius: 10px; text-align: center; font-size: 16px; width: 100%; outline: none;
+            background: #000; border: 1px solid #222; color: white; padding: 18px;
+            border-radius: 0; text-align: center; font-size: 16px; width: 100%; outline: none;
         }
-        #matchIDInput { border-color: #333; color: var(--accent); }
+        #matchIDInput { border: 1px solid #222; color: var(--accent); }
+
+        .mode-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 5px; background: #050505; }
+        .mode-row button { padding: 15px 0; font-size: 11px; background: #000; border: 1px solid #111; }
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="section" style="border-top:none;">
-        <h2>CueScore Match ID</h2>
-        <input type="text" id="matchIDInput" class="name-input" placeholder="Lim inn ID" oninput="updateMatchID()">
+    <div class="section" style="padding:0;">
+        <input type="text" id="matchIDInput" class="name-input" placeholder="Lim inn Match ID" oninput="updateMatchID()">
     </div>
 
     <div class="section pool-section">
-        <h2>Pool Control</h2>
         <div class="ball-scroll-area">
             <div class="ball-grid" id="ball-grid"></div>
         </div>
-        <div class="grid" style="gap: 8px; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; margin-top: 10px;">
-            <button onclick="reputtActiveBalls()" style="padding:12px 0;">♻️</button>
-            <button onclick="toggleBallSet()" style="padding:12px 0;">🎨</button>
-            <button onclick="resetPool(9)" style="padding:12px 0;">9</button>
-            <button onclick="resetPool(10)" style="padding:12px 0;">10</button>
-            <button onclick="resetPool(8)" style="padding:12px 0;">8</button>
+        <div class="mode-row">
+            <button onclick="reputtActiveBalls()">♻️</button>
+            <button onclick="toggleBallSet()">🎨</button>
+            <button onclick="resetPool(9)">9</button>
+            <button onclick="resetPool(10)">10</button>
+            <button onclick="resetPool(8)">8</button>
         </div>
     </div>
 
-    <div class="section" style="border-bottom:none; padding-bottom: 25px;">
-        <h2>Match & Stats</h2>
+    <div class="section match-controls" style="border-bottom:none; padding-bottom: 20px;">
         <div class="grid">
             <button style="background:#0a3d1a; border:none;" onclick="startMatch()">🟢 START</button>
             <button style="background:#3d0a0a; border:none;" onclick="avsluttMatch()">🔴 STOPP</button>
@@ -168,9 +170,9 @@
             <button class="foul-btn" onclick="addFoul('right')">⚠ FOUL S2</button>
 
             <button id="toggleBtn" onclick="sendClock('toggle')">▶ PAUSE</button>
-            <button style="border-color: #444; color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
+            <button style="border-color: #333; color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
             
-            <button style="grid-column: span 2; color: var(--ext); border-color: #00444a;" onclick="useExtension()">+ BRUK EXTENSION</button>
+            <button style="grid-column: span 2; color: var(--ext); border: 1px solid #00444a;" onclick="useExtension()">+ BRUK EXTENSION</button>
         </div>
     </div>
 </div>
