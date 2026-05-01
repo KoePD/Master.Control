@@ -18,6 +18,7 @@
             --border: #1a1a1a;
             --ball-shine: rgba(255,255,255,0.4);
             --ball-shadow: rgba(0,0,0,0.4);
+            --btn-bg: #111;
         }
 
         * { 
@@ -40,7 +41,7 @@
         }
         
         body { 
-            padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; 
+            padding: env(safe-area-inset-top) 5px env(safe-area-inset-bottom) 5px; 
             display: flex; 
             flex-direction: column; 
         }
@@ -53,15 +54,16 @@
         }
 
         .top-nav { 
-            background: #0a0a0a; 
-            border-bottom: 2px solid var(--border); 
+            background: #000; 
+            padding: 15px 0;
             flex: 0 0 auto;
         }
+
         .name-input {
             background: transparent; border: none; color: var(--accent);
-            padding: 35px 0; text-align: center; font-size: 24px;
+            text-align: center; font-size: 22px;
             width: 100%; font-weight: 900; text-transform: uppercase;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
         }
 
         .pool-section {
@@ -71,23 +73,22 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            padding: 10px 0;
         }
 
         .ball-grid {
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
-            gap: 45px; 
+            gap: 35px; 
             justify-items: center; 
             width: 100%; 
             padding: 10px;
         }
 
         .ball-btn {
-            width: 28vw;
-            height: 28vw; 
-            max-width: 130px;
-            max-height: 130px;
+            width: 27vw;
+            height: 27vw; 
+            max-width: 120px;
+            max-height: 120px;
             border-radius: 50%; 
             border: 2px solid rgba(0,0,0,0.5);
             position: relative; 
@@ -98,77 +99,95 @@
             background: radial-gradient(circle at 30% 30%, var(--ball-shine) 0%, rgba(255,255,255,0) 60%), 
                         radial-gradient(circle at 70% 70%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%),
                         #fff;
-            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.4), 
-                        5px 10px 20px rgba(0,0,0,0.6);
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.3), 5px 8px 15px rgba(0,0,0,0.5);
         }
         
-        .ball-btn:active { transform: scale(0.92); opacity: 0.6; }
-        
+        /* FIKS FOR TALL I SIRKELEN */
         .num-label {
             background: white; color: black; 
-            width: 42%; height: 42%; 
+            width: 44%; height: 44%; 
             border-radius: 50%;
             display: flex; justify-content: center; align-items: center; 
-            font-size: 5vw; 
-            font-weight: 900; border: 1px solid black; z-index: 10;
-            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            font-size: 5.5vw; 
+            font-weight: 900; 
+            border: 1px solid black; 
+            z-index: 10;
+            line-height: 1;
+            /* Sikrer at 10-15 ikke ser "brede" ut */
+            letter-spacing: -1px; 
+        }
+
+        /* Spesifikk fiks for tosifrede tall */
+        .ball-btn[data-num^="1"] .num-label {
+            font-size: 4.8vw;
         }
         
         .stripe-band { 
-            position: absolute; 
-            width: 100%; 
-            height: 60%; 
-            z-index: 1;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            position: absolute; width: 100%; height: 40%; z-index: 1;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
         }
-        .sunk { opacity: 0.02 !important; filter: grayscale(1); transform: scale(0.8); box-shadow: none !important; }
 
+        .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
+
+        /* MODUS-KNAPPER - Ordentlig knappeform */
         .mode-row { 
             display: grid; 
             grid-template-columns: repeat(5, 1fr); 
-            background: #000; 
-            border-top: 3px solid var(--border); 
+            gap: 8px;
+            padding: 10px;
+            background: #000;
         }
         
         .mode-row button {
-            background: transparent; border: 1px solid var(--border); 
-            padding: 40px 0; 
-            color: #fff; font-size: 18px; font-weight: 900;
+            background: var(--btn-bg); 
+            border: 1px solid #333; 
+            padding: 25px 0; 
+            color: #fff; font-size: 16px; font-weight: 900;
+            border-radius: 12px;
+            box-shadow: 0 4px 0 #000;
+        }
+        .mode-row button:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; background: var(--accent); color: #000; }
+
+        /* HOVED-HANDLINGER - Ordentlig knappeform */
+        .bottom-controls {
+            padding: 5px;
         }
 
         .action-grid { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
-            background: var(--border); 
-            gap: 2px; 
+            gap: 8px; 
         }
 
         .btn-main { 
-            background: #000; 
-            border: none; 
+            background: var(--btn-bg); 
+            border: 1px solid #333; 
             color: white; 
             font-weight: 900; 
             text-transform: uppercase;
+            border-radius: 15px;
+            box-shadow: 0 4px 0 #000;
         }
+        .btn-main:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; }
 
-        /* OPPGAVER: Større fonter her */
-        .btn-status { padding: 45px 10px; font-size: 24px; } /* Økt fra 20px */
-        .btn-start { color: var(--green); }
-        .btn-stop { color: var(--red); }
+        .btn-status { padding: 35px 10px; font-size: 20px; }
+        .btn-start { color: var(--green); border-color: var(--green); }
+        .btn-stop { color: var(--red); border-color: var(--red); }
 
-        .btn-player { padding: 75px 10px; font-size: 34px; letter-spacing: 2px; }
-        .active-l { background: var(--green) !important; color: white !important; }
-        .active-r { background: var(--blue) !important; color: white !important; }
+        .btn-player { padding: 60px 10px; font-size: 32px; }
+        .active-l { background: var(--green) !important; color: white !important; border-color: #fff; }
+        .active-r { background: var(--blue) !important; color: white !important; border-color: #fff; }
 
-        .btn-sub { padding: 45px 10px; font-size: 18px; } /* Økt fra 14px */
-        .btn-foul { color: #f87171; background: #0a0000; }
+        .btn-sub { padding: 35px 10px; font-size: 16px; }
+        .btn-foul { color: #f87171; }
         
         .extension-btn { 
             grid-column: span 2; 
-            padding: 50px; 
+            padding: 40px; 
             color: var(--blue); 
-            border-top: 2px solid var(--border);
-            font-size: 26px; /* Økt fra 22px */
+            font-size: 24px;
+            border-color: var(--blue);
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -176,7 +195,7 @@
 
 <div class="container">
     <div class="top-nav">
-        <input type="text" id="matchIDInput" class="name-input" placeholder="TAP FOR MATCH ID" oninput="updateMatchID()">
+        <input type="text" id="matchIDInput" class="name-input" placeholder="MATCH ID" oninput="updateMatchID()">
     </div>
 
     <div class="pool-section">
@@ -193,7 +212,6 @@
         </div>
 
         <div class="action-grid">
-            <!-- Endret tekst og fonter -->
             <button class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START MATCH</button>
             <button class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP MATCH</button>
             
@@ -206,7 +224,6 @@
             <button id="toggleBtn" class="btn-main btn-sub" onclick="sendClock('toggle')">▶ PAUSE</button>
             <button class="btn-main btn-sub" style="color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
             
-            <!-- Extension knappen er nå tilbake -->
             <button class="btn-main extension-btn" onclick="useExtension()">+ BRUK EXTENSION</button>
         </div>
     </div>
@@ -245,7 +262,9 @@
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
-        b.id = `btn-${i}`; b.className = 'ball-btn';
+        b.id = `btn-${i}`; 
+        b.className = 'ball-btn';
+        b.setAttribute('data-num', i); // Brukes for CSS-styling av tosifrede tall
         let numLabel = document.createElement('div'); numLabel.className = 'num-label'; numLabel.innerText = i; b.appendChild(numLabel);
         let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
         b.onclick = () => {
