@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>KØ-PÅDD Ultra</title>
+    <title>KØ-PÅDD Fullscreen</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -20,27 +20,39 @@
         * { -webkit-tap-highlight-color: transparent; user-select: none; box-sizing: border-box; outline: none; }
 
         html, body { 
-            height: 100%; margin: 0; padding: 0; background: var(--bg); 
+            height: 100vh; margin: 0; padding: 0; background: var(--bg); 
             color: white; font-family: -apple-system, sans-serif; overflow: hidden; 
         }
         
         body { padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; display: flex; flex-direction: column; }
 
-        /* Match ID - Mye større */
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* Tvinger container til full skjermhøyde */
+            width: 100%;
+        }
+
+        /* Match ID */
         .top-nav {
             background: #0a0a0a;
             border-bottom: 2px solid var(--border);
+            flex-shrink: 0;
         }
 
         .name-input {
             background: transparent; border: none; color: var(--accent);
-            padding: 25px 10px; text-align: center; font-size: 20px;
+            padding: 20px 10px; text-align: center; font-size: 18px;
             width: 100%; font-weight: 800; text-transform: uppercase;
         }
 
-        /* Ballseksjonen */
+        /* Ballseksjonen - Denne fyller nå alt tomrom */
         .pool-section {
-            flex: 1; display: flex; flex-direction: column; justify-content: center;
+            flex: 1; /* GJØR AT DENNE STREKKER SEG */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         .ball-grid {
@@ -63,37 +75,36 @@
         .stripe-band { position: absolute; width: 100%; height: 40%; z-index: 1; }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.85); box-shadow: none !important; }
 
-        /* Game Mode Rad - Større knapper */
+        /* Kontroller i bunn - Disse klistres til bunnen */
+        .bottom-controls {
+            flex-shrink: 0;
+        }
+
         .mode-row { display: grid; grid-template-columns: repeat(5, 1fr); background: #0a0a0a; }
         .mode-row button {
-            background: transparent; border: 1px solid var(--border); padding: 25px 0;
+            background: transparent; border: 1px solid var(--border); padding: 20px 0;
             color: #888; font-size: 14px; font-weight: 900;
         }
-        .mode-row button:active { background: var(--accent); color: #000; }
 
-        /* Action Grid - GIGANTISKE knapper */
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; background: var(--border); gap: 2px; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; background: var(--border); gap: 1px; }
 
         .btn-main {
             background: #000; border: none; color: white; font-weight: 900;
-            text-transform: uppercase; letter-spacing: 1px; transition: 0.1s;
+            text-transform: uppercase; letter-spacing: 1px;
         }
 
-        /* Start/Stopp */
-        .btn-status { padding: 30px 10px; font-size: 16px; }
+        .btn-status { padding: 25px 10px; font-size: 15px; }
         .btn-start { color: var(--green); }
         .btn-stop { color: var(--red); }
 
-        /* Spillerknapper - De viktigste */
-        .btn-player { padding: 45px 10px; font-size: 24px; }
+        .btn-player { padding: 40px 10px; font-size: 22px; }
         .active-l { background: var(--green) !important; color: white !important; }
         .active-r { background: var(--blue) !important; color: white !important; }
 
-        /* Fouls og Klokke */
-        .btn-sub { padding: 25px 10px; font-size: 13px; }
+        .btn-sub { padding: 20px 10px; font-size: 12px; }
         .btn-foul { color: #f87171; background: #0f0000; }
         
-        .extension-btn { grid-column: span 2; padding: 25px; color: var(--blue); border-top: 2px solid var(--border); }
+        .extension-btn { grid-column: span 2; padding: 25px; color: var(--blue); border-top: 1px solid var(--border); }
 
     </style>
 </head>
@@ -101,9 +112,10 @@
 
 <div class="container">
     <div class="top-nav">
-        <input type="text" id="matchIDInput" class="name-input" placeholder="Lim inn Match ID" oninput="updateMatchID()">
+        <input type="text" id="matchIDInput" class="name-input" placeholder="MATCH ID" oninput="updateMatchID()">
     </div>
 
+    <!-- Denne seksjonen suger til seg gapet -->
     <div class="pool-section">
         <div class="ball-grid" id="ball-grid"></div>
     </div>
@@ -144,7 +156,7 @@
     let ballStyle = 'classic'; 
     let currentGameMode = 9;
 
-    function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
+    function vibe(ms = 40) { if (navigator.vibrate) navigator.vibrate(ms); }
 
     async function fetchCueScoreData() {
         let tID = document.getElementById('matchIDInput').value || "79253032"; 
@@ -192,7 +204,7 @@
         let numLabel = document.createElement('div'); numLabel.className = 'num-label'; numLabel.innerText = i; b.appendChild(numLabel);
         let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
         b.onclick = () => {
-            vibe(30);
+            vibe(25);
             const ref = db.ref(`balls/${i}`);
             ref.once('value').then(snap => {
                 const isSinking = snap.val() !== false;
@@ -227,7 +239,7 @@
     }
 
     function startMatch() {
-        vibe(100);
+        vibe(80);
         db.ref('stats').update({ startTime: Date.now() });
         db.ref('shotclock/visibility').set(true);
         db.ref('activePlayer').set("");
@@ -236,7 +248,7 @@
     }
 
     function avsluttMatch() {
-        vibe(100);
+        vibe(80);
         if(confirm("AVSLUTT?")) {
             db.ref('shotclock/visibility').set(false);
             db.ref('stats').update({ startTime: 0 });
