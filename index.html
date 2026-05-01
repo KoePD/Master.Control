@@ -64,22 +64,20 @@
             letter-spacing: 3px;
         }
 
-        /* BALL-SEKSJONEN: Justert for å flytte kulene lenger ned */
         .pool-section {
             flex: 1; 
             display: flex;
             flex-direction: column;
-            justify-content: center; /* Flyttet fra flex-start til center for å få dem lenger ned */
+            justify-content: center;
             align-items: center;
             width: 100%;
-            padding-top: 20px;
-            padding-bottom: 20px;
+            padding: 10px 0;
         }
 
         .ball-grid {
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
-            gap: 45px; /* Økt mellomrom mellom kulene ytterligere */
+            gap: 45px; 
             justify-items: center; 
             width: 100%; 
             padding: 10px;
@@ -106,13 +104,12 @@
         
         .ball-btn:active { transform: scale(0.92); opacity: 0.6; }
         
-        /* Den hvite sirkelen i midten: Gjort større */
         .num-label {
             background: white; color: black; 
-            width: 42%; height: 42%; /* Økt fra 32% for å gjøre sirkelen større */
+            width: 42%; height: 42%; 
             border-radius: 50%;
             display: flex; justify-content: center; align-items: center; 
-            font-size: 5vw; /* Litt større tallfont */
+            font-size: 5vw; 
             font-weight: 900; border: 1px solid black; z-index: 10;
             box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
         }
@@ -138,7 +135,6 @@
             padding: 40px 0; 
             color: #fff; font-size: 18px; font-weight: 900;
         }
-        .mode-row button:active { background: var(--accent); color: #000; }
 
         .action-grid { 
             display: grid; 
@@ -155,7 +151,8 @@
             text-transform: uppercase;
         }
 
-        .btn-status { padding: 45px 10px; font-size: 20px; }
+        /* OPPGAVER: Større fonter her */
+        .btn-status { padding: 45px 10px; font-size: 24px; } /* Økt fra 20px */
         .btn-start { color: var(--green); }
         .btn-stop { color: var(--red); }
 
@@ -163,7 +160,7 @@
         .active-l { background: var(--green) !important; color: white !important; }
         .active-r { background: var(--blue) !important; color: white !important; }
 
-        .btn-sub { padding: 45px 10px; font-size: 14px; }
+        .btn-sub { padding: 45px 10px; font-size: 18px; } /* Økt fra 14px */
         .btn-foul { color: #f87171; background: #0a0000; }
         
         .extension-btn { 
@@ -171,7 +168,7 @@
             padding: 50px; 
             color: var(--blue); 
             border-top: 2px solid var(--border);
-            font-size: 22px;
+            font-size: 26px; /* Økt fra 22px */
         }
     </style>
 </head>
@@ -196,8 +193,9 @@
         </div>
 
         <div class="action-grid">
+            <!-- Endret tekst og fonter -->
             <button class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START MATCH</button>
-            <button class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP</button>
+            <button class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP MATCH</button>
             
             <button id="btnL" class="btn-main btn-player" onclick="shotReset('left')">◀ S1</button>
             <button id="btnR" class="btn-main btn-player" onclick="shotReset('right')">S2 ▶</button>
@@ -208,7 +206,8 @@
             <button id="toggleBtn" class="btn-main btn-sub" onclick="sendClock('toggle')">▶ PAUSE</button>
             <button class="btn-main btn-sub" style="color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
             
-            <button class="btn-main btn-sub extension-btn" onclick="useExtension()">+ BRUK EXTENSION</button>
+            <!-- Extension knappen er nå tilbake -->
+            <button class="btn-main extension-btn" onclick="useExtension()">+ BRUK EXTENSION</button>
         </div>
     </div>
 </div>
@@ -289,7 +288,7 @@
     }
 
     function startMatch() { vibe(100); db.ref('stats').update({ startTime: Date.now() }); db.ref('shotclock/visibility').set(true); db.ref('activePlayer').set(""); resetPool(currentGameMode); }
-    function avsluttMatch() { vibe(100); if(confirm("AVSLUTT?")) { db.ref('shotclock/visibility').set(false); db.ref('stats').update({ startTime: 0 }); db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
+    function avsluttMatch() { vibe(100); if(confirm("AVSLUTT KAMP?")) { db.ref('shotclock/visibility').set(false); db.ref('stats').update({ startTime: 0 }); db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
     function shotReset(player) { vibe(40); db.ref('activePlayer').set(player); db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() }); }
     function resetPool(max) { vibe(60); let updates = {}; const limit = (max === 8) ? 15 : max; for (let i = 1; i <= 15; i++) updates[i] = (i <= limit) ? true : null; db.ref('balls').set(updates); db.ref('gameMode').set(max); }
     function addFoul(player) { vibe(60); db.ref(`stats/fouls/${player}`).transaction(c => (c || 0) + 1); }
