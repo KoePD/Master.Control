@@ -33,25 +33,23 @@
 
         .container { display: flex; flex-direction: column; height: 100%; width: 100%; }
 
-        /* Match ID Boks */
         .top-nav { padding: 15px 0 5px 0; flex: 0 0 auto; display: flex; justify-content: center; }
         .name-input {
             background: var(--btn-bg); border: 2px solid var(--border); color: var(--accent);
             text-align: center; font-size: 24px; width: 100%; max-width: 420px; 
             font-weight: 900; text-transform: uppercase; letter-spacing: 2px; 
-            padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            padding: 15px; border-radius: 15px;
         }
 
-        /* Ball-seksjon - Tilbakestilt til bilde 2 størrelse og luft */
         .pool-section { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }
         .ball-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 40px 25px; /* Mye luft vertikalt som i bilde 2 */
-            justify-items: center; width: 100%; max-width: none; padding: 10px;
+            gap: 30px 25px; /* Litt mindre gap enn sist for å spare plass til knapper */
+            justify-items: center; width: 100%; max-width: 420px; padding: 5px;
         }
 
         .ball-btn {
-            width: 30vw; height: 30vw; max-width: 125px; max-height: 125px;
+            width: 28vw; height: 28vw; max-width: 115px; max-height: 115px;
             border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.6);
             position: relative; display: flex; justify-content: center; align-items: center;
             overflow: hidden; 
@@ -69,44 +67,44 @@
         .stripe-band { position: absolute; width: 100%; height: 38%; z-index: 1; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* Modus-container */
-        .mode-container { display: flex; flex-direction: column; gap: 8px; padding: 10px 0; }
-        .mode-row-top { display: grid; grid-template-columns: 1.5fr 1fr; gap: 8px; }
-        .mode-row-bottom { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        /* Kompakt Modus-rad for å få plass til alt */
+        .mode-container { display: flex; flex-direction: column; gap: 5px; padding: 5px 0; }
+        .mode-row-top { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .mode-row-bottom { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
 
         .mode-btn {
-            background: var(--btn-bg); border: 1px solid #222; padding: 25px 0;
-            color: #eee; font-size: 18px; font-weight: 800; border-radius: 12px;
+            background: var(--btn-bg); border: 1px solid #222; padding: 15px 0;
+            color: #eee; font-size: 16px; font-weight: 800; border-radius: 10px;
             box-shadow: 0 3px 0 #000;
         }
-        .mode-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #000; background: var(--accent); color: #000; }
-        .btn-recycle { font-size: 30px; border-color: var(--green); }
+        .mode-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #000; }
 
-        /* Hovedkontroller */
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-bottom: 5px; }
+        /* Hovedkontroller - Extension inkludert i rutenettet */
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding-bottom: 5px; }
         .btn-main { 
             background: var(--btn-bg); border: 1px solid #222; color: white; 
-            font-weight: 900; text-transform: uppercase; border-radius: 15px;
+            font-weight: 900; text-transform: uppercase; border-radius: 12px;
             box-shadow: 0 4px 0 #000;
         }
-        .btn-main:active { background: #1a1a1a; transform: translateY(2px); box-shadow: 0 2px 0 #000; }
+        .btn-main:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
 
-        .btn-status { padding: 30px 5px; font-size: 18px; }
+        .btn-status { padding: 25px 5px; font-size: 16px; }
         .btn-start { color: var(--green); }
         .btn-stop { color: var(--red); }
 
-        .btn-player { padding: 55px 5px; font-size: 32px; }
+        .btn-player { padding: 45px 5px; font-size: 28px; }
         .active-l { background: var(--green) !important; color: white !important; }
         .active-r { background: var(--blue) !important; color: white !important; }
 
-        .btn-sub { padding: 35px 5px; font-size: 16px; }
+        .btn-sub { padding: 25px 5px; font-size: 14px; }
         .btn-foul { color: #f87171; }
         
-        /* Extension-knapp er nå definitivt med */
         .extension-btn { 
-            grid-column: span 2; padding: 45px; color: var(--blue); 
-            font-size: 26px; border-color: rgba(2, 132, 199, 0.4);
-            margin-top: 5px;
+            grid-column: span 2; 
+            padding: 30px; 
+            color: var(--blue); 
+            font-size: 22px; 
+            border-color: rgba(2, 132, 199, 0.4);
         }
     </style>
 </head>
@@ -124,7 +122,7 @@
     <div class="bottom-controls">
         <div class="mode-container">
             <div class="mode-row-top">
-                <button class="mode-btn btn-recycle" onclick="reputtActiveBalls()">♻️ RE-RACK</button>
+                <button class="mode-btn" onclick="reputtActiveBalls()">♻️ RESIRKULER</button>
                 <button class="mode-btn" onclick="toggleBallSet()">🎨 STIL</button>
             </div>
             <div class="mode-row-bottom">
@@ -135,8 +133,8 @@
         </div>
 
         <div class="action-grid">
-            <button class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START MATCH</button>
-            <button class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP MATCH</button>
+            <button class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START</button>
+            <button class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP</button>
             
             <button id="btnL" class="btn-main btn-player" onclick="shotReset('left')">◀ S1</button>
             <button id="btnR" class="btn-main btn-player" onclick="shotReset('right')">S2 ▶</button>
@@ -200,7 +198,7 @@
     }
 
     function startMatch() { vibe(80); db.ref('stats').update({ startTime: Date.now() }); db.ref('shotclock/visibility').set(true); db.ref('activePlayer').set(""); resetPool(currentGameMode); }
-    function avsluttMatch() { vibe(80); if(confirm("AVSLUTT MATCH?")) { db.ref('shotclock/visibility').set(false); db.ref('stats').update({ startTime: 0 }); db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
+    function avsluttMatch() { vibe(80); if(confirm("AVSLUTT?")) { db.ref('shotclock/visibility').set(false); db.ref('stats').update({ startTime: 0 }); db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
     function shotReset(player) { vibe(40); db.ref('activePlayer').set(player); db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() }); }
     function resetPool(max) { vibe(60); let updates = {}; const limit = (max === 8) ? 15 : max; for (let i = 1; i <= 15; i++) updates[i] = (i <= limit) ? true : null; db.ref('balls').set(updates); db.ref('gameMode').set(max); }
     function addFoul(player) { vibe(60); db.ref(`stats/fouls/${player}`).transaction(c => (c || 0) + 1); }
