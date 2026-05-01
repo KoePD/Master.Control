@@ -3,17 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>KØ-PÅDD Kontrollpanel Pro</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>KØ-PÅDD Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
-            --bg: #000; --card: #000; --border: #1a1a1a;
-            --accent: #ffcc00; --green: #00FF41; --blue: #00E5FF;
-            --red: #ff4444; --ext: #00E5FF;
+            --bg: #000;
+            --accent: #ffcc00;
+            --green: #15803d;
+            --red: #991b1b;
+            --blue: #0ea5e9;
+            --gray: #111;
+            --border: #222;
         }
-        * { -webkit-tap-highlight-color: transparent; user-select: none; box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; }
+
+        * { 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none; 
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            background: var(--bg); 
+            color: white; 
+            font-family: -apple-system, system-ui, sans-serif; 
+            overflow: hidden; 
+        }
         
         body {
             padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
@@ -26,48 +47,48 @@
             flex-direction: column;
             height: 100%;
             width: 100%;
-            gap: 0; /* Fjernet gap mellom seksjoner for sømløs look */
         }
 
-        .section {
-            background: var(--card);
+        /* Top Bar / Match ID */
+        .top-nav {
+            background: #000;
             border-bottom: 1px solid var(--border);
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
+            padding: 5px 10px;
         }
 
+        .name-input {
+            background: transparent;
+            border: none;
+            color: var(--accent);
+            padding: 12px;
+            text-align: center;
+            font-size: 14px;
+            width: 100%;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* Midten - Baller */
         .pool-section {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            min-height: 0;
-            padding: 10px 0; /* Mer plass til kulene */
-        }
-
-        h2 { font-size: 0.6rem; color: var(--accent); text-align: center; margin: 0 0 10px 0; text-transform: uppercase; opacity: 0.5; letter-spacing: 2px; }
-
-        .ball-scroll-area { 
-            flex: 1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            width: 100%;
+            background: #000;
         }
 
         .ball-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            gap: 25px;
             justify-items: center;
             width: 100%;
-            padding: 0 10px;
+            padding: 20px;
         }
 
         .ball-btn {
-            width: 85px; /* Enda større baller */
-            height: 85px;
+            width: 82px;
+            height: 82px;
             border-radius: 50%;
             border: 2px solid #000;
             position: relative;
@@ -76,10 +97,11 @@
             align-items: center;
             overflow: hidden;
             background: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transition: transform 0.1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
         }
         
-        .ball-btn:active { transform: scale(0.9); opacity: 0.6; }
+        .ball-btn:active { transform: scale(0.85); opacity: 0.7; }
 
         .num-label {
             background: white;
@@ -103,76 +125,99 @@
             z-index: 1;
         }
 
-        .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); box-shadow: none !important; }
+        .sunk { opacity: 0.05 !important; filter: grayscale(1); transform: scale(0.8); box-shadow: none !important; }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 0 4px; }
-        
-        button {
-            padding: 20px 5px;
-            font-size: 14px;
-            font-weight: 800;
-            border-radius: 0; /* Fjerner radius for "kant-til-kant" look */
-            border: 1px solid #111;
-            background: #080808;
+        /* Bottom Controls */
+        .bottom-controls {
+            background: #000;
+            padding-bottom: 10px;
+        }
+
+        .mode-row { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mode-row button {
+            background: transparent;
+            border: none;
+            border-right: 1px solid var(--border);
+            padding: 15px 0;
+            color: #666;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .mode-row button:last-child { border-right: none; }
+        .mode-row button:active { background: #111; color: var(--accent); }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: var(--border);
+        }
+
+        button.main-action {
+            background: #000;
+            border: none;
             color: white;
+            padding: 22px 10px;
+            font-size: 13px;
+            font-weight: 800;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        button:active { background: #1a1a1a; }
+        button.main-action:active { background: #111; }
 
-        /* Spesialknapper nederst får litt radius for å skille seg ut */
-        .match-controls button { border-radius: 8px; margin: 2px 0; }
+        .player-btn { font-size: 18px !important; color: #fff; }
+        .active-l { background: rgba(21, 128, 61, 0.2) !important; color: var(--green) !important; }
+        .active-r { background: rgba(14, 165, 233, 0.2) !important; color: var(--blue) !important; }
 
-        .player-btn { font-size: 20px; padding: 25px 5px; }
-        .foul-btn { color: #cc5555; font-size: 11px; padding: 15px 0; }
-        
-        .active-l { border-color: var(--green) !important; color: var(--green) !important; background: rgba(0, 255, 65, 0.05) !important; }
-        .active-r { border-color: var(--blue) !important; color: var(--blue) !important; background: rgba(0, 229, 255, 0.05) !important; }
+        .foul-btn { color: #cc5555 !important; font-size: 10px !important; padding: 12px !important; }
+        .start-btn { color: var(--green) !important; }
+        .stop-btn { color: #cc5555 !important; }
+        .extension-btn { grid-column: span 2; color: var(--blue) !important; border-top: 1px solid var(--border) !important; }
 
-        .name-input {
-            background: #000; border: 1px solid #222; color: white; padding: 18px;
-            border-radius: 0; text-align: center; font-size: 16px; width: 100%; outline: none;
-        }
-        #matchIDInput { border: 1px solid #222; color: var(--accent); }
-
-        .mode-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 5px; background: #050505; }
-        .mode-row button { padding: 15px 0; font-size: 11px; background: #000; border: 1px solid #111; }
     </style>
 </head>
 <body>
+
 <div class="container">
-    <div class="section" style="padding:0;">
-        <input type="text" id="matchIDInput" class="name-input" placeholder="Lim inn Match ID" oninput="updateMatchID()">
+    <div class="top-nav">
+        <input type="text" id="matchIDInput" class="name-input" placeholder="TAP FOR MATCH ID" oninput="updateMatchID()">
     </div>
 
-    <div class="section pool-section">
-        <div class="ball-scroll-area">
-            <div class="ball-grid" id="ball-grid"></div>
-        </div>
+    <div class="pool-section">
+        <div class="ball-grid" id="ball-grid"></div>
+        
         <div class="mode-row">
             <button onclick="reputtActiveBalls()">♻️</button>
             <button onclick="toggleBallSet()">🎨</button>
-            <button onclick="resetPool(9)">9</button>
-            <button onclick="resetPool(10)">10</button>
-            <button onclick="resetPool(8)">8</button>
+            <button onclick="resetPool(9)">9-BALL</button>
+            <button onclick="resetPool(10)">10-BALL</button>
+            <button onclick="resetPool(8)">8-BALL</button>
         </div>
     </div>
 
-    <div class="section match-controls" style="border-bottom:none; padding-bottom: 20px;">
-        <div class="grid">
-            <button style="background:#0a3d1a; border:none;" onclick="startMatch()">🟢 START</button>
-            <button style="background:#3d0a0a; border:none;" onclick="avsluttMatch()">🔴 STOPP</button>
+    <div class="bottom-controls">
+        <div class="action-grid">
+            <button class="main-action start-btn" onclick="startMatch()">🟢 Start</button>
+            <button class="main-action stop-btn" onclick="avsluttMatch()">🔴 Stopp</button>
             
-            <button id="btnL" class="player-btn" onclick="shotReset('left')">◀ S1</button>
-            <button id="btnR" class="player-btn" onclick="shotReset('right')">S2 ▶</button>
+            <button id="btnL" class="main-action player-btn" onclick="shotReset('left')">◀ S1</button>
+            <button id="btnR" class="main-action player-btn" onclick="shotReset('right')">S2 ▶</button>
             
-            <button class="foul-btn" onclick="addFoul('left')">⚠ FOUL S1</button>
-            <button class="foul-btn" onclick="addFoul('right')">⚠ FOUL S2</button>
+            <button class="main-action foul-btn" onclick="addFoul('left')">⚠ FOUL S1</button>
+            <button class="main-action foul-btn" onclick="addFoul('right')">⚠ FOUL S2</button>
 
-            <button id="toggleBtn" onclick="sendClock('toggle')">▶ PAUSE</button>
-            <button style="border-color: #333; color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
+            <button id="toggleBtn" class="main-action" onclick="sendClock('toggle')">▶ PAUSE</button>
+            <button class="main-action" style="color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
             
-            <button style="grid-column: span 2; color: var(--ext); border: 1px solid #00444a;" onclick="useExtension()">+ BRUK EXTENSION</button>
+            <button class="main-action extension-btn" onclick="useExtension()">+ BRUK EXTENSION</button>
         </div>
     </div>
 </div>
@@ -186,7 +231,7 @@
     let ballStyle = 'classic'; 
     let currentGameMode = 9;
 
-    function vibe(ms = 40) { if (navigator.vibrate) navigator.vibrate(ms); }
+    function vibe(ms = 35) { if (navigator.vibrate) navigator.vibrate(ms); }
 
     async function fetchCueScoreData() {
         let tID = document.getElementById('matchIDInput').value || "79253032"; 
@@ -213,14 +258,14 @@
     }
 
     function toggleBallSet() {
-        vibe(60);
+        vibe(50);
         ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic';
         db.ref('settings/ballStyle').set(ballStyle);
         renderBalls();
     }
 
     function reputtActiveBalls() {
-        vibe(60);
+        vibe(50);
         db.ref('balls').once('value', snap => {
             let updates = snap.val() || {};
             for (let i in updates) { if (updates[i] === false) updates[i] = true; }
@@ -235,7 +280,7 @@
         let numLabel = document.createElement('div'); numLabel.className = 'num-label'; numLabel.innerText = i; b.appendChild(numLabel);
         let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
         b.onclick = () => {
-            vibe(30);
+            vibe(25);
             const ref = db.ref(`balls/${i}`);
             ref.once('value').then(snap => {
                 const isSinking = snap.val() !== false;
@@ -274,7 +319,7 @@
     }
 
     function startMatch() {
-        vibe(100);
+        vibe(80);
         db.ref('stats').update({ startTime: Date.now() });
         db.ref('shotclock/visibility').set(true);
         db.ref('activePlayer').set("");
@@ -283,8 +328,8 @@
     }
 
     function avsluttMatch() {
-        vibe(100);
-        if(confirm("Avslutte kamp?")) {
+        vibe(80);
+        if(confirm("AVSLUTT KAMP?")) {
             db.ref('shotclock/visibility').set(false);
             db.ref('stats').update({ startTime: 0 });
             db.ref('activePlayer').set(null);
@@ -294,7 +339,7 @@
     }
 
     function shotReset(player) {
-        vibe(50);
+        vibe(40);
         const now = Date.now();
         db.ref('activePlayer').set(player);
         db.ref(`stats/visits/${player}`).transaction(c => (c || 0) + 1);
@@ -303,6 +348,7 @@
     }
 
     function resetPool(max) {
+        vibe(60);
         let updates = {};
         const limit = (max === 8) ? 15 : max;
         for (let i = 1; i <= 15; i++) updates[i] = (i <= limit) ? true : null;
@@ -310,15 +356,15 @@
         db.ref('gameMode').set(max);
     }
 
-    function addFoul(player) { vibe(80); db.ref(`stats/fouls/${player}`).transaction(c => (c || 0) + 1); }
+    function addFoul(player) { vibe(60); db.ref(`stats/fouls/${player}`).transaction(c => (c || 0) + 1); }
     function startBreak() { vibe(60); db.ref('shotclock/cmd').set({action:'reset60', ts:Date.now()}); }
-    function useExtension() { vibe(80); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
+    function useExtension() { vibe(60); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
     function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
 
     db.ref('activePlayer').on('value', snap => {
         const p = snap.val();
-        document.getElementById('btnL').classList.toggle('active-l', p === 'left');
-        document.getElementById('btnR').classList.toggle('active-r', p === 'right');
+        document.getElementById('btnL').className = `main-action player-btn ${p === 'left' ? 'active-l' : ''}`;
+        document.getElementById('btnR').className = `main-action player-btn ${p === 'right' ? 'active-r' : ''}`;
     });
     db.ref('gameMode').on('value', snap => { currentGameMode = snap.val() || 9; renderBalls(); });
     db.ref('balls').on('value', snap => { window.currentActiveData = snap.val() || {}; renderBalls(); });
