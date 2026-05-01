@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD 3D Max</title>
+    <title>KØ-PÅDD Insight Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -52,7 +52,6 @@
             width: 100%; 
         }
 
-        /* GIGANTISK Match ID bar */
         .top-nav { 
             background: #0a0a0a; 
             border-bottom: 2px solid var(--border); 
@@ -65,31 +64,32 @@
             letter-spacing: 3px;
         }
 
-        /* BALL-SEKSJONEN med 3D effekt */
+        /* BALL-SEKSJONEN: Justert for å flytte kulene lenger ned */
         .pool-section {
             flex: 1; 
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: center; /* Flyttet fra flex-start til center for å få dem lenger ned */
             align-items: center;
             width: 100%;
-            padding-top: 25px;
+            padding-top: 20px;
+            padding-bottom: 20px;
         }
 
         .ball-grid {
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
-            gap: 30px; 
+            gap: 45px; /* Økt mellomrom mellom kulene ytterligere */
             justify-items: center; 
             width: 100%; 
             padding: 10px;
         }
 
         .ball-btn {
-            width: 30vw;
-            height: 30vw; 
-            max-width: 135px;
-            max-height: 135px;
+            width: 28vw;
+            height: 28vw; 
+            max-width: 130px;
+            max-height: 130px;
             border-radius: 50%; 
             border: 2px solid rgba(0,0,0,0.5);
             position: relative; 
@@ -97,7 +97,6 @@
             justify-content: center; 
             align-items: center;
             overflow: hidden; 
-            /* 3D EFFEKT: Radial gradient for dybde */
             background: radial-gradient(circle at 30% 30%, var(--ball-shine) 0%, rgba(255,255,255,0) 60%), 
                         radial-gradient(circle at 70% 70%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%),
                         #fff;
@@ -107,9 +106,13 @@
         
         .ball-btn:active { transform: scale(0.92); opacity: 0.6; }
         
+        /* Den hvite sirkelen i midten: Gjort større */
         .num-label {
-            background: white; color: black; width: 32%; height: 32%; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; font-size: 4.5vw;
+            background: white; color: black; 
+            width: 42%; height: 42%; /* Økt fra 32% for å gjøre sirkelen større */
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 5vw; /* Litt større tallfont */
             font-weight: 900; border: 1px solid black; z-index: 10;
             box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
         }
@@ -123,7 +126,6 @@
         }
         .sunk { opacity: 0.02 !important; filter: grayscale(1); transform: scale(0.8); box-shadow: none !important; }
 
-        /* MODUS-KNAPPER: Mye større nå */
         .mode-row { 
             display: grid; 
             grid-template-columns: repeat(5, 1fr); 
@@ -133,12 +135,11 @@
         
         .mode-row button {
             background: transparent; border: 1px solid var(--border); 
-            padding: 40px 0; /* Ekstra høyde */
+            padding: 40px 0; 
             color: #fff; font-size: 18px; font-weight: 900;
         }
         .mode-row button:active { background: var(--accent); color: #000; }
 
-        /* BUNN KONTROLLER */
         .action-grid { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
@@ -269,7 +270,6 @@
             b.style.display = show ? 'flex' : 'none';
             b.classList.toggle('sunk', data[i] === false);
             
-            // Fargelegging med 3D-base
             if (i <= 8) { 
                 const c = colors[i];
                 b.style.background = `radial-gradient(circle at 30% 30%, var(--ball-shine) 0%, rgba(255,255,255,0) 60%), 
