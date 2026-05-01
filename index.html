@@ -4,183 +4,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Pro</title>
+    <title>KØ-PÅDD Ultra</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --bg: #000;
             --accent: #ffcc00;
-            --green: #15803d;
-            --red: #991b1b;
-            --blue: #0ea5e9;
-            --gray: #111;
-            --border: #222;
+            --green: #16a34a;
+            --red: #dc2626;
+            --blue: #0284c7;
+            --border: #1a1a1a;
         }
 
-        * { 
-            -webkit-tap-highlight-color: transparent; 
-            user-select: none; 
-            box-sizing: border-box;
-            outline: none;
-        }
+        * { -webkit-tap-highlight-color: transparent; user-select: none; box-sizing: border-box; outline: none; }
 
         html, body { 
-            height: 100%; 
-            margin: 0; 
-            padding: 0; 
-            background: var(--bg); 
-            color: white; 
-            font-family: -apple-system, system-ui, sans-serif; 
-            overflow: hidden; 
+            height: 100%; margin: 0; padding: 0; background: var(--bg); 
+            color: white; font-family: -apple-system, sans-serif; overflow: hidden; 
         }
         
-        body {
-            padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
-            display: flex;
-            flex-direction: column;
-        }
+        body { padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; display: flex; flex-direction: column; }
 
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            width: 100%;
-        }
-
-        /* Top Bar / Match ID */
+        /* Match ID - Mye større */
         .top-nav {
-            background: #000;
-            border-bottom: 1px solid var(--border);
-            padding: 5px 10px;
+            background: #0a0a0a;
+            border-bottom: 2px solid var(--border);
         }
 
         .name-input {
-            background: transparent;
-            border: none;
-            color: var(--accent);
-            padding: 12px;
-            text-align: center;
-            font-size: 14px;
-            width: 100%;
-            font-weight: 600;
-            letter-spacing: 1px;
+            background: transparent; border: none; color: var(--accent);
+            padding: 25px 10px; text-align: center; font-size: 20px;
+            width: 100%; font-weight: 800; text-transform: uppercase;
         }
 
-        /* Midten - Baller */
+        /* Ballseksjonen */
         .pool-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            background: #000;
+            flex: 1; display: flex; flex-direction: column; justify-content: center;
         }
 
         .ball-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-            justify-items: center;
-            width: 100%;
-            padding: 20px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+            justify-items: center; width: 100%; padding: 10px;
         }
 
         .ball-btn {
-            width: 82px;
-            height: 82px;
-            border-radius: 50%;
-            border: 2px solid #000;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            background: white;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            transition: transform 0.1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            width: 85px; height: 85px; border-radius: 50%; border: 3px solid #000;
+            position: relative; display: flex; justify-content: center; align-items: center;
+            overflow: hidden; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.8);
         }
         
-        .ball-btn:active { transform: scale(0.85); opacity: 0.7; }
-
+        .ball-btn:active { transform: scale(0.9); opacity: 0.5; }
         .num-label {
-            background: white;
-            color: black;
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 13px;
-            font-weight: 900;
-            border: 1px solid black;
-            z-index: 10;
+            background: white; color: black; width: 28px; height: 28px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-size: 14px;
+            font-weight: 900; border: 1px solid black; z-index: 10;
         }
+        .stripe-band { position: absolute; width: 100%; height: 40%; z-index: 1; }
+        .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.85); box-shadow: none !important; }
 
-        .stripe-band {
-            position: absolute;
-            width: 100%;
-            height: 40%;
-            z-index: 1;
-        }
-
-        .sunk { opacity: 0.05 !important; filter: grayscale(1); transform: scale(0.8); box-shadow: none !important; }
-
-        /* Bottom Controls */
-        .bottom-controls {
-            background: #000;
-            padding-bottom: 10px;
-        }
-
-        .mode-row { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
-        }
-
+        /* Game Mode Rad - Større knapper */
+        .mode-row { display: grid; grid-template-columns: repeat(5, 1fr); background: #0a0a0a; }
         .mode-row button {
-            background: transparent;
-            border: none;
-            border-right: 1px solid var(--border);
-            padding: 15px 0;
-            color: #666;
-            font-size: 12px;
-            font-weight: 700;
+            background: transparent; border: 1px solid var(--border); padding: 25px 0;
+            color: #888; font-size: 14px; font-weight: 900;
+        }
+        .mode-row button:active { background: var(--accent); color: #000; }
+
+        /* Action Grid - GIGANTISKE knapper */
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; background: var(--border); gap: 2px; }
+
+        .btn-main {
+            background: #000; border: none; color: white; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 1px; transition: 0.1s;
         }
 
-        .mode-row button:last-child { border-right: none; }
-        .mode-row button:active { background: #111; color: var(--accent); }
+        /* Start/Stopp */
+        .btn-status { padding: 30px 10px; font-size: 16px; }
+        .btn-start { color: var(--green); }
+        .btn-stop { color: var(--red); }
 
-        .action-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1px;
-            background: var(--border);
-        }
+        /* Spillerknapper - De viktigste */
+        .btn-player { padding: 45px 10px; font-size: 24px; }
+        .active-l { background: var(--green) !important; color: white !important; }
+        .active-r { background: var(--blue) !important; color: white !important; }
 
-        button.main-action {
-            background: #000;
-            border: none;
-            color: white;
-            padding: 22px 10px;
-            font-size: 13px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        button.main-action:active { background: #111; }
-
-        .player-btn { font-size: 18px !important; color: #fff; }
-        .active-l { background: rgba(21, 128, 61, 0.2) !important; color: var(--green) !important; }
-        .active-r { background: rgba(14, 165, 233, 0.2) !important; color: var(--blue) !important; }
-
-        .foul-btn { color: #cc5555 !important; font-size: 10px !important; padding: 12px !important; }
-        .start-btn { color: var(--green) !important; }
-        .stop-btn { color: #cc5555 !important; }
-        .extension-btn { grid-column: span 2; color: var(--blue) !important; border-top: 1px solid var(--border) !important; }
+        /* Fouls og Klokke */
+        .btn-sub { padding: 25px 10px; font-size: 13px; }
+        .btn-foul { color: #f87171; background: #0f0000; }
+        
+        .extension-btn { grid-column: span 2; padding: 25px; color: var(--blue); border-top: 2px solid var(--border); }
 
     </style>
 </head>
@@ -188,36 +101,36 @@
 
 <div class="container">
     <div class="top-nav">
-        <input type="text" id="matchIDInput" class="name-input" placeholder="TAP FOR MATCH ID" oninput="updateMatchID()">
+        <input type="text" id="matchIDInput" class="name-input" placeholder="Lim inn Match ID" oninput="updateMatchID()">
     </div>
 
     <div class="pool-section">
         <div class="ball-grid" id="ball-grid"></div>
-        
-        <div class="mode-row">
-            <button onclick="reputtActiveBalls()">♻️</button>
-            <button onclick="toggleBallSet()">🎨</button>
-            <button onclick="resetPool(9)">9-BALL</button>
-            <button onclick="resetPool(10)">10-BALL</button>
-            <button onclick="resetPool(8)">8-BALL</button>
-        </div>
     </div>
 
     <div class="bottom-controls">
-        <div class="action-grid">
-            <button class="main-action start-btn" onclick="startMatch()">🟢 Start</button>
-            <button class="main-action stop-btn" onclick="avsluttMatch()">🔴 Stopp</button>
-            
-            <button id="btnL" class="main-action player-btn" onclick="shotReset('left')">◀ S1</button>
-            <button id="btnR" class="main-action player-btn" onclick="shotReset('right')">S2 ▶</button>
-            
-            <button class="main-action foul-btn" onclick="addFoul('left')">⚠ FOUL S1</button>
-            <button class="main-action foul-btn" onclick="addFoul('right')">⚠ FOUL S2</button>
+        <div class="mode-row">
+            <button onclick="reputtActiveBalls()">♻️</button>
+            <button onclick="toggleBallSet()">🎨</button>
+            <button onclick="resetPool(9)">9</button>
+            <button onclick="resetPool(10)">10</button>
+            <button onclick="resetPool(8)">8</button>
+        </div>
 
-            <button id="toggleBtn" class="main-action" onclick="sendClock('toggle')">▶ PAUSE</button>
-            <button class="main-action" style="color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
+        <div class="action-grid">
+            <button class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START MATCH</button>
+            <button class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP</button>
             
-            <button class="main-action extension-btn" onclick="useExtension()">+ BRUK EXTENSION</button>
+            <button id="btnL" class="btn-main btn-player" onclick="shotReset('left')">◀ SPILLER 1</button>
+            <button id="btnR" class="btn-main btn-player" onclick="shotReset('right')">SPILLER 2 ▶</button>
+            
+            <button class="btn-main btn-sub btn-foul" onclick="addFoul('left')">⚠ FOUL S1</button>
+            <button class="btn-main btn-sub btn-foul" onclick="addFoul('right')">⚠ FOUL S2</button>
+
+            <button id="toggleBtn" class="btn-main btn-sub" onclick="sendClock('toggle')">▶ PAUSE / PLAY</button>
+            <button class="btn-main btn-sub" style="color: var(--accent);" onclick="startBreak()">⚡ 60s BREAK</button>
+            
+            <button class="btn-main btn-sub extension-btn" onclick="useExtension()">+ BRUK EXTENSION</button>
         </div>
     </div>
 </div>
@@ -231,7 +144,7 @@
     let ballStyle = 'classic'; 
     let currentGameMode = 9;
 
-    function vibe(ms = 35) { if (navigator.vibrate) navigator.vibrate(ms); }
+    function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
 
     async function fetchCueScoreData() {
         let tID = document.getElementById('matchIDInput').value || "79253032"; 
@@ -248,28 +161,27 @@
                 db.ref('stats/handicaps').set({ left: currentMatch.player1_handicap, right: currentMatch.player2_handicap });
                 db.ref('settings/cueScoreMatchID').set(tID);
             }
-        } catch (e) { console.error("Feil:", e); }
+        } catch (e) { console.error(e); }
     }
     
     function updateMatchID() {
-        const id = document.getElementById('matchIDInput').value;
-        db.ref('settings/cueScoreMatchID').set(id);
+        db.ref('settings/cueScoreMatchID').set(document.getElementById('matchIDInput').value);
         fetchCueScoreData();
     }
 
     function toggleBallSet() {
-        vibe(50);
+        vibe();
         ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic';
         db.ref('settings/ballStyle').set(ballStyle);
         renderBalls();
     }
 
     function reputtActiveBalls() {
-        vibe(50);
+        vibe();
         db.ref('balls').once('value', snap => {
-            let updates = snap.val() || {};
-            for (let i in updates) { if (updates[i] === false) updates[i] = true; }
-            db.ref('balls').set(updates);
+            let u = snap.val() || {};
+            for (let i in u) { if (u[i] === false) u[i] = true; }
+            db.ref('balls').set(u);
         });
     }
 
@@ -280,7 +192,7 @@
         let numLabel = document.createElement('div'); numLabel.className = 'num-label'; numLabel.innerText = i; b.appendChild(numLabel);
         let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
         b.onclick = () => {
-            vibe(25);
+            vibe(30);
             const ref = db.ref(`balls/${i}`);
             ref.once('value').then(snap => {
                 const isSinking = snap.val() !== false;
@@ -302,24 +214,20 @@
         for (let i = 1; i <= 15; i++) {
             const b = document.getElementById(`btn-${i}`);
             if (!b) continue;
-            let shouldShow = (currentGameMode == 8) || (currentGameMode == 9 && i <= 9) || (currentGameMode == 10 && i <= 10);
-            b.style.display = shouldShow ? 'flex' : 'none';
+            let show = (currentGameMode == 8) || (currentGameMode == 9 && i <= 9) || (currentGameMode == 10 && i <= 10);
+            b.style.display = show ? 'flex' : 'none';
             b.classList.toggle('sunk', data[i] === false);
-            
-            if (i <= 8) { 
-                b.style.background = colors[i]; 
-                document.getElementById(`band-${i}`).style.display='none';
-            } else {
-                const band = document.getElementById(`band-${i}`);
-                band.style.display='block';
-                band.style.background = colors[i-8];
+            if (i <= 8) { b.style.background = colors[i]; document.getElementById(`band-${i}`).style.display='none'; }
+            else {
+                document.getElementById(`band-${i}`).style.display='block';
+                document.getElementById(`band-${i}`).style.background = colors[i-8];
                 b.style.background = (ballStyle === 'dark') ? 'black' : 'white';
             }
         }
     }
 
     function startMatch() {
-        vibe(80);
+        vibe(100);
         db.ref('stats').update({ startTime: Date.now() });
         db.ref('shotclock/visibility').set(true);
         db.ref('activePlayer').set("");
@@ -328,8 +236,8 @@
     }
 
     function avsluttMatch() {
-        vibe(80);
-        if(confirm("AVSLUTT KAMP?")) {
+        vibe(100);
+        if(confirm("AVSLUTT?")) {
             db.ref('shotclock/visibility').set(false);
             db.ref('stats').update({ startTime: 0 });
             db.ref('activePlayer').set(null);
@@ -340,11 +248,9 @@
 
     function shotReset(player) {
         vibe(40);
-        const now = Date.now();
         db.ref('activePlayer').set(player);
         db.ref(`stats/visits/${player}`).transaction(c => (c || 0) + 1);
-        db.ref('shotclock/cmd').set({ action: 'reset30', ts: now });
-        lastResetTime = now;
+        db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() });
     }
 
     function resetPool(max) {
@@ -363,8 +269,8 @@
 
     db.ref('activePlayer').on('value', snap => {
         const p = snap.val();
-        document.getElementById('btnL').className = `main-action player-btn ${p === 'left' ? 'active-l' : ''}`;
-        document.getElementById('btnR').className = `main-action player-btn ${p === 'right' ? 'active-r' : ''}`;
+        document.getElementById('btnL').className = `btn-main btn-player ${p === 'left' ? 'active-l' : ''}`;
+        document.getElementById('btnR').className = `btn-main btn-player ${p === 'right' ? 'active-r' : ''}`;
     });
     db.ref('gameMode').on('value', snap => { currentGameMode = snap.val() || 9; renderBalls(); });
     db.ref('balls').on('value', snap => { window.currentActiveData = snap.val() || {}; renderBalls(); });
