@@ -18,189 +18,102 @@
             --border: #1a1a1a;
             --ball-shine: rgba(255,255,255,0.4);
             --ball-shadow: rgba(0,0,0,0.4);
-            --btn-bg: #111;
+            --btn-bg: #0a0a0a;
         }
 
-        * { 
-            -webkit-tap-highlight-color: transparent; 
-            user-select: none; 
-            box-sizing: border-box; 
-            outline: none; 
-        }
+        * { -webkit-tap-highlight-color: transparent; user-select: none; box-sizing: border-box; outline: none; }
 
         html, body { 
-            height: 100vh; 
-            width: 100vw; 
-            margin: 0; 
-            padding: 0; 
-            background: var(--bg); 
-            color: white; 
-            font-family: -apple-system, system-ui, sans-serif; 
-            overflow: hidden; 
-            position: fixed;
+            height: 100vh; width: 100vw; margin: 0; padding: 0; 
+            background: var(--bg); color: white; font-family: -apple-system, sans-serif; 
+            overflow: hidden; position: fixed;
         }
         
-        body { 
-            padding: env(safe-area-inset-top) 5px env(safe-area-inset-bottom) 5px; 
-            display: flex; 
-            flex-direction: column; 
-        }
+        body { padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom) 8px; display: flex; flex-direction: column; }
 
-        .container { 
-            display: flex; 
-            flex-direction: column; 
-            height: 100%; 
-            width: 100%; 
-        }
+        .container { display: flex; flex-direction: column; height: 100%; width: 100%; }
 
-        .top-nav { 
-            background: #000; 
-            padding: 15px 0;
-            flex: 0 0 auto;
-        }
-
+        .top-nav { background: #000; padding: 10px 0; flex: 0 0 auto; }
         .name-input {
             background: transparent; border: none; color: var(--accent);
-            text-align: center; font-size: 22px;
-            width: 100%; font-weight: 900; text-transform: uppercase;
-            letter-spacing: 2px;
+            text-align: center; font-size: 20px; width: 100%; font-weight: 900; 
+            text-transform: uppercase; letter-spacing: 2px;
         }
 
         .pool-section {
-            flex: 1; 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
+            flex: 1; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; width: 100%;
         }
 
         .ball-grid {
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 35px; 
-            justify-items: center; 
-            width: 100%; 
-            padding: 10px;
+            display: grid; grid-template-columns: repeat(3, 1fr); 
+            gap: 30px; justify-items: center; width: 100%; padding: 10px;
         }
 
         .ball-btn {
-            width: 27vw;
-            height: 27vw; 
-            max-width: 120px;
-            max-height: 120px;
-            border-radius: 50%; 
-            border: 2px solid rgba(0,0,0,0.5);
-            position: relative; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
+            width: 27vw; height: 27vw; max-width: 120px; max-height: 120px;
+            border-radius: 50%; border: 2px solid rgba(0,0,0,0.5);
+            position: relative; display: flex; justify-content: center; align-items: center;
             overflow: hidden; 
             background: radial-gradient(circle at 30% 30%, var(--ball-shine) 0%, rgba(255,255,255,0) 60%), 
-                        radial-gradient(circle at 70% 70%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%),
-                        #fff;
-            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.3), 5px 8px 15px rgba(0,0,0,0.5);
+                        radial-gradient(circle at 70% 70%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%), #fff;
+            box-shadow: inset -4px -4px 12px rgba(0,0,0,0.3), 5px 8px 15px rgba(0,0,0,0.5);
         }
         
-        /* FIKS FOR TALL I SIRKELEN */
+        /* FIKS FOR TALL: Større hvit sirkel for å gi plass til 10-15 */
         .num-label {
             background: white; color: black; 
-            width: 44%; height: 44%; 
+            width: 48%; height: 48%; /* Økt størrelse for å unngå trang tekst */
             border-radius: 50%;
             display: flex; justify-content: center; align-items: center; 
-            font-size: 5.5vw; 
-            font-weight: 900; 
-            border: 1px solid black; 
-            z-index: 10;
-            line-height: 1;
-            /* Sikrer at 10-15 ikke ser "brede" ut */
-            letter-spacing: -1px; 
-        }
-
-        /* Spesifikk fiks for tosifrede tall */
-        .ball-btn[data-num^="1"] .num-label {
-            font-size: 4.8vw;
+            font-size: 5.2vw; font-weight: 900; 
+            border: 1px solid black; z-index: 10;
+            letter-spacing: 0px; /* Fjernet negativ spacing */
         }
         
-        .stripe-band { 
-            position: absolute; width: 100%; height: 40%; z-index: 1;
-            box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
-        }
-
+        .stripe-band { position: absolute; width: 100%; height: 40%; z-index: 1; }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* MODUS-KNAPPER - Ordentlig knappeform */
-        .mode-row { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            gap: 8px;
-            padding: 10px;
-            background: #000;
-        }
-        
+        /* MODUS-RAD */
+        .mode-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px 0; }
         .mode-row button {
-            background: var(--btn-bg); 
-            border: 1px solid #333; 
-            padding: 25px 0; 
-            color: #fff; font-size: 16px; font-weight: 900;
-            border-radius: 12px;
-            box-shadow: 0 4px 0 #000;
-        }
-        .mode-row button:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; background: var(--accent); color: #000; }
-
-        /* HOVED-HANDLINGER - Ordentlig knappeform */
-        .bottom-controls {
-            padding: 5px;
+            background: var(--btn-bg); border: 1px solid #222; padding: 22px 0;
+            color: #eee; font-size: 15px; font-weight: 800; border-radius: 10px;
         }
 
-        .action-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 8px; 
-        }
-
+        /* HOVED-KONTROLLER */
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding-bottom: 5px; }
         .btn-main { 
-            background: var(--btn-bg); 
-            border: 1px solid #333; 
-            color: white; 
-            font-weight: 900; 
-            text-transform: uppercase;
-            border-radius: 15px;
-            box-shadow: 0 4px 0 #000;
+            background: var(--btn-bg); border: 1px solid #222; color: white; 
+            font-weight: 900; text-transform: uppercase; border-radius: 12px;
         }
-        .btn-main:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; }
+        .btn-main:active { background: #1a1a1a; transform: scale(0.98); }
 
-        .btn-status { padding: 35px 10px; font-size: 20px; }
-        .btn-start { color: var(--green); border-color: var(--green); }
-        .btn-stop { color: var(--red); border-color: var(--red); }
+        .btn-status { padding: 35px 5px; font-size: 20px; }
+        .btn-start { color: var(--green); border-color: rgba(22, 163, 74, 0.3); }
+        .btn-stop { color: var(--red); border-color: rgba(220, 38, 38, 0.3); }
 
-        .btn-player { padding: 60px 10px; font-size: 32px; }
-        .active-l { background: var(--green) !important; color: white !important; border-color: #fff; }
-        .active-r { background: var(--blue) !important; color: white !important; border-color: #fff; }
+        .btn-player { padding: 55px 5px; font-size: 30px; }
+        .active-l { background: var(--green) !important; color: white !important; }
+        .active-r { background: var(--blue) !important; color: white !important; }
 
-        .btn-sub { padding: 35px 10px; font-size: 16px; }
+        .btn-sub { padding: 35px 5px; font-size: 16px; }
         .btn-foul { color: #f87171; }
         
+        /* EXTENSION ER TILBAKE */
         .extension-btn { 
-            grid-column: span 2; 
-            padding: 40px; 
-            color: var(--blue); 
-            font-size: 24px;
-            border-color: var(--blue);
-            margin-top: 5px;
+            grid-column: span 2; padding: 40px; color: var(--blue); 
+            font-size: 24px; border-color: rgba(2, 132, 199, 0.3);
+            margin-top: 4px;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="top-nav">
-        <input type="text" id="matchIDInput" class="name-input" placeholder="MATCH ID" oninput="updateMatchID()">
-    </div>
+    <div class="top-nav"><input type="text" id="matchIDInput" class="name-input" placeholder="MATCH ID" oninput="updateMatchID()"></div>
 
-    <div class="pool-section">
-        <div class="ball-grid" id="ball-grid"></div>
-    </div>
+    <div class="pool-section"><div class="ball-grid" id="ball-grid"></div></div>
 
     <div class="bottom-controls">
         <div class="mode-row">
@@ -237,44 +150,19 @@
     let ballStyle = 'classic'; 
     let currentGameMode = 9;
 
-    function vibe(ms = 60) { if (navigator.vibrate) navigator.vibrate(ms); }
+    function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
 
-    function updateMatchID() {
-        db.ref('settings/cueScoreMatchID').set(document.getElementById('matchIDInput').value);
-    }
-
-    function toggleBallSet() {
-        vibe();
-        ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic';
-        db.ref('settings/ballStyle').set(ballStyle);
-        renderBalls();
-    }
-
-    function reputtActiveBalls() {
-        vibe();
-        db.ref('balls').once('value', snap => {
-            let u = snap.val() || {};
-            for (let i in u) { if (u[i] === false) u[i] = true; }
-            db.ref('balls').set(u);
-        });
-    }
+    function updateMatchID() { db.ref('settings/cueScoreMatchID').set(document.getElementById('matchIDInput').value); }
+    function toggleBallSet() { vibe(); ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic'; db.ref('settings/ballStyle').set(ballStyle); renderBalls(); }
+    function reputtActiveBalls() { vibe(); db.ref('balls').once('value', snap => { let u = snap.val() || {}; for (let i in u) { if (u[i] === false) u[i] = true; } db.ref('balls').set(u); }); }
 
     const grid = document.getElementById('ball-grid');
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
-        b.id = `btn-${i}`; 
-        b.className = 'ball-btn';
-        b.setAttribute('data-num', i); // Brukes for CSS-styling av tosifrede tall
+        b.id = `btn-${i}`; b.className = 'ball-btn';
         let numLabel = document.createElement('div'); numLabel.className = 'num-label'; numLabel.innerText = i; b.appendChild(numLabel);
         let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
-        b.onclick = () => {
-            vibe(30);
-            const ref = db.ref(`balls/${i}`);
-            ref.once('value').then(snap => {
-                const isSinking = snap.val() !== false;
-                ref.set(!isSinking);
-            });
-        };
+        b.onclick = () => { vibe(30); const ref = db.ref(`balls/${i}`); ref.once('value').then(snap => { ref.set(snap.val() === false); }); };
         grid.appendChild(b);
     }
 
@@ -287,27 +175,22 @@
             let show = (currentGameMode == 8) || (currentGameMode == 9 && i <= 9) || (currentGameMode == 10 && i <= 10);
             b.style.display = show ? 'flex' : 'none';
             b.classList.toggle('sunk', data[i] === false);
-            
             if (i <= 8) { 
                 const c = colors[i];
-                b.style.background = `radial-gradient(circle at 30% 30%, var(--ball-shine) 0%, rgba(255,255,255,0) 60%), 
-                                     radial-gradient(circle at 70% 70%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%), ${c}`;
+                b.style.background = `radial-gradient(circle at 30% 30%, var(--ball-shine) 0%, rgba(255,255,255,0) 60%), radial-gradient(circle at 70% 70%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%), ${c}`;
                 document.getElementById(`band-${i}`).style.display='none'; 
-            }
-            else {
+            } else {
                 const c = colors[i-8];
                 const base = (ballStyle === 'dark') ? '#111' : '#fff';
-                b.style.background = `radial-gradient(circle at 30% 30%, var(--ball-shine) 0%, rgba(255,255,255,0) 60%), 
-                                     radial-gradient(circle at 70% 70%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%), ${base}`;
+                b.style.background = `radial-gradient(circle at 30% 30%, var(--ball-shine) 0%, rgba(255,255,255,0) 60%), radial-gradient(circle at 70% 70%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%), ${base}`;
                 const band = document.getElementById(`band-${i}`);
-                band.style.display='block';
-                band.style.background = c;
+                band.style.display='block'; band.style.background = c;
             }
         }
     }
 
-    function startMatch() { vibe(100); db.ref('stats').update({ startTime: Date.now() }); db.ref('shotclock/visibility').set(true); db.ref('activePlayer').set(""); resetPool(currentGameMode); }
-    function avsluttMatch() { vibe(100); if(confirm("AVSLUTT KAMP?")) { db.ref('shotclock/visibility').set(false); db.ref('stats').update({ startTime: 0 }); db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
+    function startMatch() { vibe(80); db.ref('stats').update({ startTime: Date.now() }); db.ref('shotclock/visibility').set(true); db.ref('activePlayer').set(""); resetPool(currentGameMode); }
+    function avsluttMatch() { vibe(80); if(confirm("AVSLUTT?")) { db.ref('shotclock/visibility').set(false); db.ref('stats').update({ startTime: 0 }); db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
     function shotReset(player) { vibe(40); db.ref('activePlayer').set(player); db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() }); }
     function resetPool(max) { vibe(60); let updates = {}; const limit = (max === 8) ? 15 : max; for (let i = 1; i <= 15; i++) updates[i] = (i <= limit) ? true : null; db.ref('balls').set(updates); db.ref('gameMode').set(max); }
     function addFoul(player) { vibe(60); db.ref(`stats/fouls/${player}`).transaction(c => (c || 0) + 1); }
@@ -315,11 +198,7 @@
     function useExtension() { vibe(60); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
     function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
 
-    db.ref('activePlayer').on('value', snap => {
-        const p = snap.val();
-        document.getElementById('btnL').className = `btn-main btn-player ${p === 'left' ? 'active-l' : ''}`;
-        document.getElementById('btnR').className = `btn-main btn-player ${p === 'right' ? 'active-r' : ''}`;
-    });
+    db.ref('activePlayer').on('value', snap => { const p = snap.val(); document.getElementById('btnL').className = `btn-main btn-player ${p === 'left' ? 'active-l' : ''}`; document.getElementById('btnR').className = `btn-main btn-player ${p === 'right' ? 'active-r' : ''}`; });
     db.ref('gameMode').on('value', snap => { currentGameMode = snap.val() || 9; renderBalls(); });
     db.ref('balls').on('value', snap => { window.currentActiveData = snap.val() || {}; renderBalls(); });
 </script>
