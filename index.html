@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Ultra App</title>
+    <title>KØ-PÅDD Ultra</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -18,7 +18,6 @@
             --border: #1a1a1a;
         }
 
-        /* Fjerner alle standard nettleser-stiler og tvinger app-oppførsel */
         * { 
             -webkit-tap-highlight-color: transparent; 
             user-select: none; 
@@ -49,9 +48,10 @@
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
+            justify-content: space-between; /* Presser innholdet ut mot kantene */
         }
 
-        /* Match ID - Smalere bar for å gi plass til knapper */
+        /* Match ID - Veldig diskret bar øverst */
         .top-nav { 
             background: #000; 
             border-bottom: 1px solid var(--border); 
@@ -59,64 +59,74 @@
         }
         .name-input {
             background: transparent; border: none; color: var(--accent);
-            padding: 10px 0; text-align: center; font-size: 14px;
+            padding: 12px 0; text-align: center; font-size: 14px;
             width: 100%; font-weight: 700; text-transform: uppercase;
-            opacity: 0.5;
+            opacity: 0.6;
         }
 
-        /* BALL-SEKSJONEN: Fyller midten perfekt uten tomrom */
+        /* BALL-SEKSJONEN: Fyller midten og bruker 3 i bredden */
         .pool-section {
             flex: 1; 
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 0;
+            width: 100%;
         }
 
         .ball-grid {
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
-            gap: 20px; 
+            gap: 15px; 
             justify-items: center; 
             width: 100%; 
-            max-width: 420px;
+            padding: 10px;
         }
 
         .ball-btn {
-            width: 92px; /* Store, fete kuler */
-            height: 92px; 
-            border-radius: 50%; border: 3px solid #000;
-            position: relative; display: flex; justify-content: center; align-items: center;
-            overflow: hidden; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+            width: 28vw; /* Basert på skjermbredde for å fylle mest mulig */
+            height: 28vw; 
+            max-width: 110px;
+            max-height: 110px;
+            border-radius: 50%; 
+            border: 3px solid #000;
+            position: relative; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            overflow: hidden; 
+            background: white; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.7);
         }
+        
         .ball-btn:active { transform: scale(0.9); opacity: 0.5; }
+        
         .num-label {
-            background: white; color: black; width: 28px; height: 28px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; font-size: 14px;
+            background: white; color: black; width: 28%; height: 28%; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-size: 3.5vw;
             font-weight: 900; border: 1px solid black; z-index: 10;
         }
+        
         .stripe-band { position: absolute; width: 100%; height: 38%; z-index: 1; }
-        .sunk { opacity: 0.02 !important; filter: grayscale(1); transform: scale(0.8); }
+        .sunk { opacity: 0.05 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* BUNN-KONTROLLER: Nå helt massive */
+        /* BUNN-KONTROLLER: Maksimert størrelse */
         .bottom-controls { 
             flex: 0 0 auto; 
-            display: flex;
-            flex-direction: column;
+            width: 100%;
         }
 
         .mode-row { 
             display: grid; 
             grid-template-columns: repeat(5, 1fr); 
             background: #000; 
-            border-top: 2px solid var(--border); 
+            border-top: 1px solid var(--border); 
         }
+        
         .mode-row button {
-            background: transparent; border: 1px solid var(--border); padding: 22px 0;
-            color: #666; font-size: 14px; font-weight: 900;
+            background: transparent; border: 1px solid var(--border); padding: 25px 0;
+            color: #888; font-size: 14px; font-weight: 900;
         }
-        .mode-row button:active { background: #111; color: var(--accent); }
 
         .action-grid { 
             display: grid; 
@@ -131,29 +141,26 @@
             color: white; 
             font-weight: 900; 
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
-        .btn-main:active { background: #111; }
 
-        /* Høyere knapper for bedre app-følelse */
-        .btn-status { padding: 35px 10px; font-size: 16px; }
+        .btn-status { padding: 40px 10px; font-size: 16px; }
         .btn-start { color: var(--green); }
         .btn-stop { color: var(--red); }
 
-        /* SPILLERKNAPPER: Ekstremt store flater */
-        .btn-player { padding: 55px 10px; font-size: 26px; }
+        /* GIGANTISKE SPILLERKNAPPER */
+        .btn-player { padding: 65px 10px; font-size: 28px; }
         .active-l { background: var(--green) !important; color: white !important; }
         .active-r { background: var(--blue) !important; color: white !important; }
 
-        .btn-sub { padding: 28px 10px; font-size: 12px; }
-        .btn-foul { color: #f87171; background: #080000; }
+        .btn-sub { padding: 35px 10px; font-size: 13px; }
+        .btn-foul { color: #f87171; background: #0a0000; }
         
         .extension-btn { 
             grid-column: span 2; 
-            padding: 30px; 
+            padding: 35px; 
             color: var(--blue); 
-            border-top: 1px solid var(--border); 
-            font-size: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 18px;
         }
     </style>
 </head>
@@ -161,7 +168,7 @@
 
 <div class="container">
     <div class="top-nav">
-        <input type="text" id="matchIDInput" class="name-input" placeholder="Lim inn Match ID" oninput="updateMatchID()">
+        <input type="text" id="matchIDInput" class="name-input" placeholder="TAP FOR MATCH ID" oninput="updateMatchID()">
     </div>
 
     <div class="pool-section">
@@ -181,8 +188,8 @@
             <button class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START MATCH</button>
             <button class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP</button>
             
-            <button id="btnL" class="btn-main btn-player" onclick="shotReset('left')">◀ S 1</button>
-            <button id="btnR" class="btn-main btn-player" onclick="shotReset('right')">S 2 ▶</button>
+            <button id="btnL" class="btn-main btn-player" onclick="shotReset('left')">◀ SPILLER 1</button>
+            <button id="btnR" class="btn-main btn-player" onclick="shotReset('right')">SPILLER 2 ▶</button>
             
             <button class="btn-main btn-sub btn-foul" onclick="addFoul('left')">⚠ FOUL S1</button>
             <button class="btn-main btn-sub btn-foul" onclick="addFoul('right')">⚠ FOUL S2</button>
@@ -261,40 +268,10 @@
         }
     }
 
-    function startMatch() { 
-        vibe(100); 
-        db.ref('stats').update({ startTime: Date.now() }); 
-        db.ref('shotclock/visibility').set(true); 
-        db.ref('activePlayer').set(""); 
-        resetPool(currentGameMode); 
-    }
-    
-    function avsluttMatch() { 
-        vibe(100); 
-        if(confirm("AVSLUTT?")) { 
-            db.ref('shotclock/visibility').set(false); 
-            db.ref('stats').update({ startTime: 0 }); 
-            db.ref('activePlayer').set(null); 
-            db.ref('balls').set(null); 
-            db.ref('shotclock/cmd').set({ action: 'stop' }); 
-        } 
-    }
-    
-    function shotReset(player) { 
-        vibe(40); 
-        db.ref('activePlayer').set(player); 
-        db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() }); 
-    }
-    
-    function resetPool(max) { 
-        vibe(60); 
-        let updates = {}; 
-        const limit = (max === 8) ? 15 : max; 
-        for (let i = 1; i <= 15; i++) updates[i] = (i <= limit) ? true : null; 
-        db.ref('balls').set(updates); 
-        db.ref('gameMode').set(max); 
-    }
-    
+    function startMatch() { vibe(100); db.ref('stats').update({ startTime: Date.now() }); db.ref('shotclock/visibility').set(true); db.ref('activePlayer').set(""); resetPool(currentGameMode); }
+    function avsluttMatch() { vibe(100); if(confirm("AVSLUTT?")) { db.ref('shotclock/visibility').set(false); db.ref('stats').update({ startTime: 0 }); db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
+    function shotReset(player) { vibe(40); db.ref('activePlayer').set(player); db.ref('shotclock/cmd').set({ action: 'reset30', ts: Date.now() }); }
+    function resetPool(max) { vibe(60); let updates = {}; const limit = (max === 8) ? 15 : max; for (let i = 1; i <= 15; i++) updates[i] = (i <= limit) ? true : null; db.ref('balls').set(updates); db.ref('gameMode').set(max); }
     function addFoul(player) { vibe(60); db.ref(`stats/fouls/${player}`).transaction(c => (c || 0) + 1); }
     function startBreak() { vibe(60); db.ref('shotclock/cmd').set({action:'reset60', ts:Date.now()}); }
     function useExtension() { vibe(60); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
