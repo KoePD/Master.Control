@@ -10,7 +10,7 @@
             margin: 0; 
             display: flex; 
             justify-content: center; 
-            align-items: flex-start; /* Flyttet fra center til flex-start så den ligger i toppen */
+            align-items: flex-start; /* Holder containeren låst til toppen av skjermen */
             height: 100vh; 
             font-family: Arial, sans-serif;
             overflow: hidden;
@@ -19,15 +19,14 @@
         .ball-container {
             display: flex;
             justify-content: center;
+            align-items: center; /* SIKRER AT KULENE ER SENTRERT VERTIKALT */
             gap: 10px; 
             background: rgba(255, 255, 255, 0.95);
-            /* Topp-venstre, topp-høyre er 0. Bunn-høyre, bunn-venstre er 25px */
             border-radius: 0 0 25px 25px;
-            /* Fjernet skygge på toppen, beholdt skygge som faller nedover */
             box-shadow: 0 8px 15px rgba(0,0,0,0.25);
             min-width: 520px; 
-            height: 60px; /* Økt litt for å gi fin luft i bunnen */
-            padding: 5px 15px 10px 15px; /* Mindre padding på topp, mer i bunn */
+            height: 60px; 
+            padding: 0 15px; /* Jevn padding på sidene, lar flex-center styre topp/bunn */
             border-top: none;
         }
 
