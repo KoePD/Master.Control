@@ -140,11 +140,18 @@
         .f-6, .b14 { background-color: #007744; }
         .f-7, .b15 { background-color: #884422; } 
         .f-8 { background-color: black; }
+
+        /* Gjemmer CueScore-skrapet vi bruker til å hente data i bakgrunnen */
+        #cuescore-bridge { 
+            display: none !important; 
+        }
     </style>
 </head>
 <body>
 
     <div class="ball-container" id="display"></div>
+
+    <iframe id="cuescore-bridge" src="https://cuescore.com/scoreboard/overlay/custom/?tableId=9158140"></iframe>
 
     <script>
         const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
@@ -154,7 +161,6 @@
         let currentBallStyle = 'dark'; 
         let lastBallData = null;
         
-        // Globale verdier for handicaps
         let hcpA = "-";
         let hcpB = "-";
 
@@ -217,37 +223,43 @@
         }
 
         // ==========================================================================
-        // SKUDDSIKKER OVERVÅKNING AV HOVEDTAVLEN I OBS
+        // AUTOMATISK UTKLYPP FRA DIN CUESCORE-MAL (Hvert 3. sekund)
         // ==========================================================================
-        function scrapeOBSOverlay() {
-            // Ser etter CueScore-browser sourcen som kjører i samme OBS-scene
-            const parentDoc = window.parent.document;
-            if (parentDoc) {
-                // Skanner alle tilgjengelige elementer etter navnegruppene fra koden din
-                const nameA = parentDoc.querySelector('#namePlayerA .handicap');
-                const nameB = parentDoc.querySelector('#namePlayerB .handicap');
+        function fetchHandicapsFromBridge() {
+            const iframe = document.getElementById('cuescore-bridge');
+            if (iframe && iframe.contentWindow) {
+                try {
+                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                    
+                    // Sjekker klassene (.handicap) direkte fra din egne HTML-mal i bakgrunnen
+                    const nameA = doc.querySelector('#namePlayerA .handicap');
+                    const nameB = doc.querySelector('#namePlayerB .handicap');
 
-                let changed = false;
+                    let changed = false;
 
-                if (nameA) {
-                    // Stripper bort parentesene (f.eks "(2)" blir "2")
-                    let cleanA = nameA.innerText.replace(/[\(\)]/g, '').trim();
-                    if (hcpA !== cleanA) { hcpA = cleanA; changed = true; }
-                }
-                if (nameB) {
-                    let cleanB = nameB.innerText.replace(/[\(\)]/g, '').trim();
-                    if (hcpB !== cleanB) { hcpB = cleanB; changed = true; }
-                }
+                    if (nameA) {
+                        // Tar f.eks "(2)" og gjør det til "2"
+                        let cleanA = nameA.innerText.replace(/[\(\)]/g, '').trim();
+                        if (hcpA !== cleanA) { hcpA = cleanA; changed = true; }
+                    }
+                    if (nameB) {
+                        // Tar f.eks "(3)" og gjør det til "3"
+                        let cleanB = nameB.innerText.replace(/[\(\)]/g, '').trim();
+                        if (hcpB !== cleanB) { hcpB = cleanB; changed = true; }
+                    }
 
-                // Hvis tallene har endret seg på hovedtavla, oppdaterer vi boksene med en gang
-                if (changed && lastBallData) {
-                    renderOverlay(lastBallData);
+                    // Oppdaterer kun boksene hvis tallene faktisk har endret seg på CueScore
+                    if (changed && lastBallData) {
+                        renderOverlay(lastBallData);
+                    }
+                } catch (e) {
+                    console.log("Henter oppdaterte hcp-tall fra malen...");
                 }
             }
         }
 
-        // Kjører en skanning hvert 3. sekund for å sjekke om handicap har endret seg
-        setInterval(scrapeOBSOverlay, 3000);
+        // Sjekker etter endringer hvert 3. sekund
+        setInterval(fetchHandicapsFromBridge, 3000);
 
         // FIREBASE-STRØM (Dine originale)
         db.ref('settings/ballStyle').on('value', snap => {
@@ -258,7 +270,7 @@
         db.ref('balls').on('value', snap => {
             lastBallData = snap.val();
             renderOverlay(lastBallData);
-            setTimeout(scrapeOBSOverlay, 200);
+            setTimeout(fetchHandicapsFromBridge, 400);
         });
     </script>
 </body>
