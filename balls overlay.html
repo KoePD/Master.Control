@@ -17,33 +17,34 @@
             position: relative;
         }
 
-        /* MANUELL KONTROLLPANEL (Vises kun når du holder musa over øverst til venstre i OBS) */
+        /* 1. MANUELL KONTROLLPANEL (Vises kun når du hovrer over øverst til venstre i OBS Interager) */
         .hcp-control {
             position: absolute;
             top: 5px;
             left: 5px;
-            background: rgba(0,0,0,0.85);
-            padding: 8px;
+            background: rgba(0,0,0,0.9);
+            padding: 10px;
             border-radius: 6px;
             z-index: 9999;
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            opacity: 0.1; /* Nesten usynlig på streamen */
+            gap: 8px;
+            opacity: 0.05; /* Nesten helt usynlig på streamen */
             transition: opacity 0.2s ease;
         }
         .hcp-control:hover {
-            opacity: 1; /* Blir helt synlig når du skal endre tallet i OBS */
+            opacity: 1; /* Helt synlig når du konfigurerer i OBS */
         }
-        .hcp-control label { color: white; font-size: 11px; font-weight: bold; }
-        .hcp-control select { background: #222; color: white; border: 1px solid #444; padding: 2px; font-size: 11px; }
+        .hcp-control label { color: white; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+        .hcp-control select { background: #222; color: white; border: 1px solid #444; padding: 2px; font-size: 11px; width: 50px; }
+        .hcp-control .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .hcp-control-toggle { border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 2px; }
+
         .main-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: visible;
-            margin-top: 0px;
         }
 
         /* DIN ORIGINALE KULERAD-CONTAINER */
@@ -65,10 +66,10 @@
         /* HANDICAP-VINGENE */
         .hcp-wing {
             background: #083c2c; 
-            height: 24px; 
+            height: 48px; 
             display: flex;
             align-items: center;
-            padding: 0 12px;
+            padding: 0 18px;
             box-sizing: border-box;
             color: #ffffff;
             font-family: 'Open Sans', Arial, sans-serif;
@@ -81,6 +82,11 @@
             align-self: center; 
         }
 
+        /* Denne klassen trigger når du fjerner haken i OBS, og gjemmer boksene helt */
+        .hcp-wing.hidden {
+            display: none !important;
+        }
+
         .hcp-value {
             color: #00af79; 
             font-weight: 900;
@@ -88,16 +94,17 @@
             font-size: 18px;
         }
 
+        /* 2. PLASSERING PÅ LINJE MED TOPPEN AV KULERADEN & RETTING AV SKRIVEFEIL */
         #hcp-A {
-            border-radius: 0px 0px 0px 8px !important;
-            margin-right: -2px;
-            transform: translateY(-10px) !important; /* Flytter boksen piksler opp */
+            border-radius: 0px 0px 0px 8px !important; /* Runder mykt på yttersiden */
+            margin-right: -2px; 
+            transform: translateY(-12px) !important; /* Flyttet til -6px for å flukte perfekt med toppen */
         }
 
         #hcp-B {
-            border-radius: 0px 0px 8px 0px !important;
-            margin-left: -2px;
-            transform: translateY(-10px) !important; /* Flytter boksen piksler opp */
+            border-radius: 0px px 8px 0px !important; /* Runder mykt på yttersiden */
+            margin-left: -2px; 
+            transform: translateY(-12px) !important; /* Flyttet til -6px for å flukte perfekt med toppen */
         }
 
         /* DINE ORIGINALE KULE-STILER */
@@ -172,19 +179,22 @@
 <body>
 
     <div class="hcp-control">
-        <div>
-            <label>Hcp A:</label>
+        <div class="hcp-control-toggle">
+            <label><input type="checkbox" id="toggle-hcp" onchange="updateManualHcp()"> Vis Handicap</label>
+        </div>
+        <div class="row">
+            <label>Spiller A:</label>
             <select id="select-hcpA" onchange="updateManualHcp()">
-                <option value="0">0</option><option value="1">1</option><option value="2" selected>2</option>
+                <option value="0">0</option><option value="1">1</option><option value="2">2</option>
                 <option value="3">3</option><option value="4">4</option><option value="5">5</option>
                 <option value="6">6</option><option value="7">7</option><option value="8">8</option>
             </select>
         </div>
-        <div>
-            <label>Hcp B:</label>
+        <div class="row">
+            <label>Spiller B:</label>
             <select id="select-hcpB" onchange="updateManualHcp()">
                 <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-                <option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
+                <option value="3">3</option><option value="4">4</option><option value="5">5</option>
                 <option value="6">6</option><option value="7">7</option><option value="8">8</option>
             </select>
         </div>
@@ -200,21 +210,23 @@
         let currentBallStyle = 'dark'; 
         let lastBallData = null;
         
-        // Henter lagret verdi fra nettleserminnet så du slipper å sette det på nytt hver gang OBS restarter
+        // 3. JAVASCRIPT-LOGIKK FOR Å HUSKE OM KNAPPEN ER AV ELLER PÅ
         let hcpA = localStorage.getItem('hcp_val_A') || "2";
         let hcpB = localStorage.getItem('hcp_val_B') || "3";
+        let showHcp = localStorage.getItem('hcp_show') !== "false"; // Starter som PÅ som standard
 
-        // Setter dropdown-menyene til de lagrede verdiene ved start
         document.getElementById('select-hcpA').value = hcpA;
         document.getElementById('select-hcpB').value = hcpB;
+        document.getElementById('toggle-hcp').checked = showHcp;
 
         function updateManualHcp() {
             hcpA = document.getElementById('select-hcpA').value;
             hcpB = document.getElementById('select-hcpB').value;
+            showHcp = document.getElementById('toggle-hcp').checked;
             
-            // Lagrer valget lokalt
             localStorage.setItem('hcp_val_A', hcpA);
             localStorage.setItem('hcp_val_B', hcpB);
+            localStorage.setItem('hcp_show', showHcp);
             
             if (lastBallData) {
                 renderOverlay(lastBallData);
@@ -232,9 +244,9 @@
 
             mainFrame.innerHTML = '';
 
-            // Venstre handicap
+            // Venstre boks (gjemmes hvis showHcp er false)
             const boxA = document.createElement('div');
-            boxA.className = 'hcp-wing';
+            boxA.className = `hcp-wing ${showHcp ? '' : 'hidden'}`;
             boxA.id = 'hcp-A';
             boxA.innerHTML = `Handicap: <span class="hcp-value">${hcpA}</span>`;
             mainFrame.appendChild(boxA);
@@ -276,9 +288,9 @@
             
             mainFrame.appendChild(ballContainer);
 
-            // Høyre handicap
+            // Høyre boks (gjemmes hvis showHcp er false)
             const boxB = document.createElement('div');
-            boxB.className = 'hcp-wing';
+            boxB.className = `hcp-wing ${showHcp ? '' : 'hidden'}`;
             boxB.id = 'hcp-B';
             boxB.innerHTML = `Handicap: <span class="hcp-value">${hcpB}</span>`;
             mainFrame.appendChild(boxB);
