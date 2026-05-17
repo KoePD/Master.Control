@@ -10,46 +10,55 @@
             margin: 0; 
             display: flex; 
             justify-content: center; 
-            align-items: flex-start; 
+            align-items: flex-start; /* Holder containeren låst til toppen av skjermen */
             height: 100vh; 
             font-family: Arial, sans-serif;
             overflow: hidden;
         }
 
-        /* DIN ORIGINALE CONTAINER */
+        /* OVERORDNET BEHOLDER SOM SAMLER ALT SIDESIDENS UPRØRT */
+        .main-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+        }
+
+        /* DIN ORIGINALE KULERAD-CONTAINER (100% GJENOPPRETTET) */
         .ball-container {
             display: flex;
             justify-content: center;
-            align-items: center; 
+            align-items: center; /* SIKRER AT KULENE ER SENTRERT VERTIKALT */
             gap: 10px; 
-            background: rgba(255, 255, 255, 0.95); 
-            border-radius: 0 0 25px 25px; 
-            box-shadow: 0 8px 15px rgba(0,0,0,0.25); 
+            background: rgba(255, 255, 255, 0.95); /* Hvit bakgrunn */
+            border-radius: 0 0 25px 25px; /* Fine runde kanter i bunn */
+            box-shadow: 0 8px 15px rgba(0,0,0,0.25);
             min-width: 520px; 
             height: 60px; 
-            padding: 0 15px; 
+            padding: 0 15px; /* Jevn luft på sidene */
             border-top: none;
-            overflow: visible !important; 
+            z-index: 2;
         }
 
         /* ==========================================================================
-           HANDICAP-BOKSER (Integrert og klistret til kulene)
+           HANDICAP-VINGENE (Ligger på utsiden og berører den hvite kanten)
            ========================================================================== */
-        .hcp-box {
+        .hcp-wing {
             background: #083c2c; /* Mørkegrønn */
-            height: 48px; 
+            height: 48px; /* Litt lavere enn kuleraden for å flukte pent vertikalt */
             display: flex;
             align-items: center;
-            padding: 0 16px;
+            padding: 0 18px;
             box-sizing: border-box;
             color: #ffffff;
             font-family: 'Open Sans', Arial, sans-serif;
             font-size: 16px;
             font-weight: 700;
             white-space: nowrap;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.3s ease;
+            z-index: 1;
+            align-self: center; /* Sørger for perfekt sentrering i høyden */
         }
 
         .hcp-value {
@@ -59,20 +68,20 @@
             font-size: 18px;
         }
 
-        /* Speilvendt form på venstre side */
+        /* Venstre boks: Runder kun ytre venstrekant, dytter seg inntil den hvite raden */
         #hcp-A {
             border-radius: 24px 0 0 24px !important;
-            margin-right: 5px; 
+            margin-right: -2px; /* Liten overlapp for å tette eventuelle sprekker */
         }
 
-        /* Speilvendt form på høyre side */
+        /* Høyre boks: Runder kun ytre høyrekant, dytter seg inntil den hvite raden */
         #hcp-B {
             border-radius: 0 24px 24px 0 !important;
-            margin-left: 5px; 
+            margin-left: -2px; /* Liten overlapp for å tette eventuelle sprekker */
         }
 
         /* ==========================================================================
-           DINE ORIGINALE KULER (100% URØRT)
+           DINE ORIGINALE KULE-STILER (100% INTREGRERT IGJEN)
            ========================================================================== */
         .ball {
             width: 48px;
@@ -142,14 +151,13 @@
         .f-8 { background-color: black; }
 
         /* Gjemmer CueScore-skrapet vi bruker til å hente data i bakgrunnen */
-        #cuescore-bridge { 
-            display: none !important; 
-        }
+        #cuescore-bridge { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="ball-container" id="display"></div>
+    <div class="main-wrapper" id="main-frame">
+        </div>
 
     <iframe id="cuescore-bridge" src="https://cuescore.com/scoreboard/overlay/custom/?tableId=9158140"></iframe>
 
@@ -165,24 +173,27 @@
         let hcpB = "-";
 
         function renderOverlay(data) {
-            const display = document.getElementById('display');
+            const mainFrame = document.getElementById('main-frame');
             if (!data || Object.keys(data).length === 0) {
-                display.style.display = 'none'; 
+                mainFrame.style.display = 'none'; 
                 return;
             } else {
-                display.style.display = 'flex';
+                mainFrame.style.display = 'flex';
             }
 
-            display.innerHTML = '';
+            mainFrame.innerHTML = '';
 
-            // 1. Venstre handicap-boks
+            // 1. GENERER VENSTRE SPEILVENDTE HANDICAP-VINGER
             const boxA = document.createElement('div');
-            boxA.className = 'hcp-box';
+            boxA.className = 'hcp-wing';
             boxA.id = 'hcp-A';
             boxA.innerHTML = `Handicap: <span class="hcp-value">${hcpA}</span>`;
-            display.appendChild(boxA);
+            mainFrame.appendChild(boxA);
 
-            // 2. Kulerads-generering
+            // 2. OPPRETT DIN DETALJERTE ORIGINALE KULERAD
+            const ballContainer = document.createElement('div');
+            ballContainer.className = 'ball-container';
+
             for (let i = 1; i <= 15; i++) {
                 if (data[i] === undefined) continue;
 
@@ -211,55 +222,54 @@
                 overlay.className = 'ball-overlay-3d';
                 b.appendChild(overlay);
                 
-                display.appendChild(b);
+                ballContainer.appendChild(b);
             }
+            
+            // Skyver kuleraden inn i midten av skjermen
+            mainFrame.appendChild(ballContainer);
 
-            // 3. Høyre handicap-boks
+            // 3. GENERER HØYRE SPEILVENDTE HANDICAP-VINGER
             const boxB = document.createElement('div');
-            boxB.className = 'hcp-box';
+            boxB.className = 'hcp-wing';
             boxB.id = 'hcp-B';
             boxB.innerHTML = `Handicap: <span class="hcp-value">${hcpB}</span>`;
-            display.appendChild(boxB);
+            mainFrame.appendChild(boxB);
         }
 
         // ==========================================================================
-        // AUTOMATISK UTKLYPP FRA DIN CUESCORE-MAL (Hvert 3. sekund)
+        // UTKLYPP FRA LIVE CUESCORE SCOREBOARD (Hvert 3. sekund)
         // ==========================================================================
-        function fetchHandicapsFromBridge() {
+        function fetchLiveHandicaps() {
             const iframe = document.getElementById('cuescore-bridge');
             if (iframe && iframe.contentWindow) {
                 try {
                     const doc = iframe.contentDocument || iframe.contentWindow.document;
                     
-                    // Sjekker klassene (.handicap) direkte fra din egne HTML-mal i bakgrunnen
+                    // Skanner etter .handicap-klassene i din custom mal
                     const nameA = doc.querySelector('#namePlayerA .handicap');
                     const nameB = doc.querySelector('#namePlayerB .handicap');
 
                     let changed = false;
 
                     if (nameA) {
-                        // Tar f.eks "(2)" og gjør det til "2"
                         let cleanA = nameA.innerText.replace(/[\(\)]/g, '').trim();
                         if (hcpA !== cleanA) { hcpA = cleanA; changed = true; }
                     }
                     if (nameB) {
-                        // Tar f.eks "(3)" og gjør det til "3"
                         let cleanB = nameB.innerText.replace(/[\(\)]/g, '').trim();
                         if (hcpB !== cleanB) { hcpB = cleanB; changed = true; }
                     }
 
-                    // Oppdaterer kun boksene hvis tallene faktisk har endret seg på CueScore
                     if (changed && lastBallData) {
                         renderOverlay(lastBallData);
                     }
                 } catch (e) {
-                    console.log("Henter oppdaterte hcp-tall fra malen...");
+                    console.log("Synkroniserer...");
                 }
             }
         }
 
-        // Sjekker etter endringer hvert 3. sekund
-        setInterval(fetchHandicapsFromBridge, 3000);
+        setInterval(fetchLiveHandicaps, 3000);
 
         // FIREBASE-STRØM (Dine originale)
         db.ref('settings/ballStyle').on('value', snap => {
@@ -270,7 +280,7 @@
         db.ref('balls').on('value', snap => {
             lastBallData = snap.val();
             renderOverlay(lastBallData);
-            setTimeout(fetchHandicapsFromBridge, 400);
+            setTimeout(fetchLiveHandicaps, 400);
         });
     </script>
 </body>
