@@ -18,12 +18,12 @@
             position: relative;
         }
 
-        /* 1. OBS-TRYGG KONTROLLPANEL (Helt usynlig på streamen, men 100% klikkbar) */
+        /* 1. OBS-TRYGG KONTROLLPANEL (Skjult på stream, dukker opp i Interager-vinduet) */
         .hcp-control {
             margin-top: 15px;
             background: #111111;
             border: 2px solid #333333;
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
             z-index: 9999;
             display: flex;
@@ -31,18 +31,30 @@
             gap: 8px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             opacity: 0; /* SKJULER PANELET FRA STREAMEN DIN */
-            pointer-events: auto; /* Sørger for at klikk registreres */
+            pointer-events: auto;
         }
 
-        /* MAGISK OBS-TRICKS: Gjør panelet synlig KUN når du åpner "Interager"-vinduet i OBS! */
-        :hover .hcp-control, 
+        /* Vises KUN når du åpner "Interager" i OBS */
+        body:hover .hcp-control, 
         body:focus-within .hcp-control,
         .hcp-control:focus-within {
             opacity: 1 !important;
         }
 
         .hcp-control label { color: #ffffff; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 6px; }
-        .hcp-control select { background: #252525; color: #ffffff; border: 1px solid #555555; padding: 4px; border-radius: 4px; font-size: 12px; width: 60px; }
+        
+        /* STIL FOR DE NYE MANUELLE TEKSTBOKSENE */
+        .hcp-control input[type="text"] { 
+            background: #252525; 
+            color: #ffffff; 
+            border: 1px solid #555555; 
+            padding: 4px; 
+            border-radius: 4px; 
+            font-size: 12px; 
+            width: 45px; 
+            text-align: center;
+        }
+        
         .hcp-control .row { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
         .hcp-control-toggle { border-bottom: 1px solid #333333; padding-bottom: 6px; margin-bottom: 4px; }
 
@@ -51,10 +63,10 @@
             align-items: center;
             justify-content: center;
             overflow: visible;
-            margin-top: 25px; /* Litt luft fra toppen av skjermen */
+            margin-top: 25px;
         }
 
-        /* DIN ORIGINALE KULERAD-CONTAINER (100% Intakt) */
+        /* DIN ORIGINALE KULERAD-CONTAINER */
         .ball-container {
             display: flex;
             justify-content: center;
@@ -73,7 +85,7 @@
         /* HANDICAP-VINGENE */
         .hcp-wing {
             background: #083c2c; 
-            height: 24px; /* Din egne custom høyde */
+            height: 24px; 
             display: flex;
             align-items: center;
             padding: 0 18px;
@@ -99,17 +111,17 @@
             font-size: 18px;
         }
 
-        /* 2. SPEILVENDTE HJØRNER & FLUKTER STRØKENT MED TOPPEN */
+        /* 2. SPEILVENDTE HJØRNER SOM FLUKTER MED TOPPEN */
         #hcp-A {
-            border-radius: 10px 0px 0px 10px !important; /* Topp-venstre og Bunn-venstre */
+            border-radius: 10px 0px 0px 10px !important; 
             margin-right: -2px; 
-            transform: translateY(-18px) !important; /* Klistrer overkanten til kulerad-toppen */
+            transform: translateY(-18px) !important; 
         }
 
         #hcp-B {
-            border-radius: 0px 10px 10px 0px !important; /* Topp-høyre og Bunn-høyre */
+            border-radius: 0px 10px 10px 0px !important; 
             margin-left: -2px; 
-            transform: translateY(-18px) !important; /* Matcher høyden til A perfekt */
+            transform: translateY(-18px) !important; 
         }
 
         /* DINE ORIGINALE KULE-STILER */
@@ -191,19 +203,11 @@
         </div>
         <div class="row">
             <label>Spiller A:</label>
-            <select id="select-hcpA" onchange="updateManualHcp()">
-                <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-                <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-                <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            </select>
+            <input type="text" id="input-hcpA" oninput="updateManualHcp()" placeholder="2">
         </div>
         <div class="row">
             <label>Spiller B:</label>
-            <select id="select-hcpB" onchange="updateManualHcp()">
-                <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-                <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-                <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            </select>
+            <input type="text" id="input-hcpB" oninput="updateManualHcp()" placeholder="3">
         </div>
     </div>
 
@@ -215,17 +219,18 @@
         let currentBallStyle = 'dark'; 
         let lastBallData = null;
         
+        // Henter lagrede verdier fra OBS-minnet
         let hcpA = localStorage.getItem('hcp_val_A') || "2";
         let hcpB = localStorage.getItem('hcp_val_B') || "3";
         let showHcp = localStorage.getItem('hcp_show') !== "false"; 
 
-        document.getElementById('select-hcpA').value = hcpA;
-        document.getElementById('select-hcpB').value = hcpB;
+        document.getElementById('input-hcpA').value = hcpA;
+        document.getElementById('input-hcpB').value = hcpB;
         document.getElementById('toggle-hcp').checked = showHcp;
 
         function updateManualHcp() {
-            hcpA = document.getElementById('select-hcpA').value;
-            hcpB = document.getElementById('select-hcpB').value;
+            hcpA = document.getElementById('input-hcpA').value;
+            hcpB = document.getElementById('input-hcpB').value;
             showHcp = document.getElementById('toggle-hcp').checked;
             
             localStorage.setItem('hcp_val_A', hcpA);
