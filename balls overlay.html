@@ -10,13 +10,12 @@
             margin: 0; 
             display: flex; 
             justify-content: center; 
-            align-items: flex-start; /* Holder containeren låst til toppen av skjermen */
+            align-items: flex-start; 
             height: 100vh; 
             font-family: Arial, sans-serif;
             overflow: hidden;
         }
 
-        /* OVERORDNET BEHOLDER SOM SAMLER ALT SIDESIDENS UPRØRT */
         .main-wrapper {
             display: flex;
             align-items: center;
@@ -24,28 +23,26 @@
             overflow: visible;
         }
 
-        /* DIN ORIGINALE KULERAD-CONTAINER (100% GJENOPPRETTET) */
+        /* DIN ORIGINALE KULERAD-CONTAINER */
         .ball-container {
             display: flex;
             justify-content: center;
-            align-items: center; /* SIKRER AT KULENE ER SENTRERT VERTIKALT */
+            align-items: center; 
             gap: 10px; 
-            background: rgba(255, 255, 255, 0.95); /* Hvit bakgrunn */
-            border-radius: 0 0 25px 25px; /* Fine runde kanter i bunn */
+            background: rgba(255, 255, 255, 0.95); 
+            border-radius: 0 0 0px 0px; 
             box-shadow: 0 8px 15px rgba(0,0,0,0.25);
             min-width: 520px; 
             height: 60px; 
-            padding: 0 15px; /* Jevn luft på sidene */
+            padding: 0 15px; 
             border-top: none;
             z-index: 2;
         }
 
-        /* ==========================================================================
-           HANDICAP-VINGENE (Ligger på utsiden og berører den hvite kanten)
-           ========================================================================== */
+        /* HANDICAP-VINGENE */
         .hcp-wing {
-            background: #083c2c; /* Mørkegrønn */
-            height: 48px; /* Litt lavere enn kuleraden for å flukte pent vertikalt */
+            background: #083c2c; 
+            height: 48px; 
             display: flex;
             align-items: center;
             padding: 0 18px;
@@ -58,31 +55,27 @@
             box-shadow: 0 6px 12px rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.1);
             z-index: 1;
-            align-self: center; /* Sørger for perfekt sentrering i høyden */
+            align-self: center; 
         }
 
         .hcp-value {
-            color: #00af79; /* Lysegrønt tall */
+            color: #00af79; 
             font-weight: 900;
             margin-left: 6px;
             font-size: 18px;
         }
 
-        /* Venstre boks: Runder kun ytre venstrekant, dytter seg inntil den hvite raden */
         #hcp-A {
             border-radius: 24px 0 0 24px !important;
-            margin-right: -2px; /* Liten overlapp for å tette eventuelle sprekker */
+            margin-right: -2px; 
         }
 
-        /* Høyre boks: Runder kun ytre høyrekant, dytter seg inntil den hvite raden */
         #hcp-B {
             border-radius: 0 24px 24px 0 !important;
-            margin-left: -2px; /* Liten overlapp for å tette eventuelle sprekker */
+            margin-left: -2px; 
         }
 
-        /* ==========================================================================
-           DINE ORIGINALE KULE-STILER (100% INTREGRERT IGJEN)
-           ========================================================================== */
+        /* DINE ORIGINALE KULE-STILER */
         .ball {
             width: 48px;
             height: 48px;
@@ -149,17 +142,11 @@
         .f-6, .b14 { background-color: #007744; }
         .f-7, .b15 { background-color: #884422; } 
         .f-8 { background-color: black; }
-
-        /* Gjemmer CueScore-skrapet vi bruker til å hente data i bakgrunnen */
-        #cuescore-bridge { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="main-wrapper" id="main-frame">
-        </div>
-
-    <iframe id="cuescore-bridge" src="https://cuescore.com/scoreboard/overlay/custom/?tableId=9158140"></iframe>
+    <div class="main-wrapper" id="main-frame"></div>
 
     <script>
         const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
@@ -183,14 +170,14 @@
 
             mainFrame.innerHTML = '';
 
-            // 1. GENERER VENSTRE SPEILVENDTE HANDICAP-VINGER
+            // Venstre handicap
             const boxA = document.createElement('div');
             boxA.className = 'hcp-wing';
             boxA.id = 'hcp-A';
             boxA.innerHTML = `Handicap: <span class="hcp-value">${hcpA}</span>`;
             mainFrame.appendChild(boxA);
 
-            // 2. OPPRETT DIN DETALJERTE ORIGINALE KULERAD
+            // Midten (Kulene)
             const ballContainer = document.createElement('div');
             ballContainer.className = 'ball-container';
 
@@ -225,10 +212,9 @@
                 ballContainer.appendChild(b);
             }
             
-            // Skyver kuleraden inn i midten av skjermen
             mainFrame.appendChild(ballContainer);
 
-            // 3. GENERER HØYRE SPEILVENDTE HANDICAP-VINGER
+            // Høyre handicap
             const boxB = document.createElement('div');
             boxB.className = 'hcp-wing';
             boxB.id = 'hcp-B';
@@ -237,41 +223,38 @@
         }
 
         // ==========================================================================
-        // UTKLYPP FRA LIVE CUESCORE SCOREBOARD (Hvert 3. sekund)
+        // DIREKTE HENTING FRA CUESCORE SITT UTVIKLER-API (Sikker og godkjent metode)
         // ==========================================================================
-        function fetchLiveHandicaps() {
-            const iframe = document.getElementById('cuescore-bridge');
-            if (iframe && iframe.contentWindow) {
-                try {
-                    const doc = iframe.contentDocument || iframe.contentWindow.document;
-                    
-                    // Skanner etter .handicap-klassene i din custom mal
-                    const nameA = doc.querySelector('#namePlayerA .handicap');
-                    const nameB = doc.querySelector('#namePlayerB .handicap');
-
+        async function fetchLiveHandicaps() {
+            try {
+                // Henter de rå livescore-dataene direkte i JSON-format
+                const response = await fetch('https://cuescore.com/scoreboard/overlay/poll.php?tableId=9158140');
+                const json = await response.json();
+                
+                if (json && json.match) {
                     let changed = false;
 
-                    if (nameA) {
-                        let cleanA = nameA.innerText.replace(/[\(\)]/g, '').trim();
-                        if (hcpA !== cleanA) { hcpA = cleanA; changed = true; }
-                    }
-                    if (nameB) {
-                        let cleanB = nameB.innerText.replace(/[\(\)]/g, '').trim();
-                        if (hcpB !== cleanB) { hcpB = cleanB; changed = true; }
-                    }
+                    // Henter ut handicap-verdiene direkte fra datastrømmen
+                    let newHcpA = json.match.playerA_handicap || "0";
+                    let newHcpB = json.match.playerB_handicap || "0";
 
+                    if (hcpA !== newHcpA) { hcpA = newHcpA; changed = true; }
+                    if (hcpB !== newHcpB) { hcpB = newHcpB; changed = true; }
+
+                    // Tegner boksene på nytt hvis verdiene har endret seg
                     if (changed && lastBallData) {
                         renderOverlay(lastBallData);
                     }
-                } catch (e) {
-                    console.log("Synkroniserer...");
                 }
+            } catch (error) {
+                console.log("Prøver å hente hcp på nytt...");
             }
         }
 
+        // Kjører api-sjekken hvert 3. sekund
         setInterval(fetchLiveHandicaps, 3000);
 
-        // FIREBASE-STRØM (Dine originale)
+        // FIREBASE-STRØM
         db.ref('settings/ballStyle').on('value', snap => {
             currentBallStyle = snap.val() || 'dark';
             if (lastBallData) { renderOverlay(lastBallData); }
@@ -280,7 +263,7 @@
         db.ref('balls').on('value', snap => {
             lastBallData = snap.val();
             renderOverlay(lastBallData);
-            setTimeout(fetchLiveHandicaps, 400);
+            fetchLiveHandicaps(); // Kjører en kjapp API-sjekk med en gang kulene trigger
         });
     </script>
 </body>
