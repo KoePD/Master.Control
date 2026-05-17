@@ -10,32 +10,34 @@
             margin: 0; 
             display: flex; 
             justify-content: center; 
-            align-items: flex-start; /* Holder containeren låst til toppen av skjermen */
+            align-items: flex-start; 
             height: 100vh; 
             font-family: Arial, sans-serif;
             overflow: hidden;
         }
 
+        /* DIN ORIGINALE CONTAINER */
         .ball-container {
             display: flex;
             justify-content: center;
-            align-items: center; /* SIKRER AT KULENE ER SENTRERT VERTIKALT */
+            align-items: center; 
             gap: 10px; 
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 0 0 25px 25px;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.25);
+            background: rgba(255, 255, 255, 0.95); 
+            border-radius: 0 0 25px 25px; 
+            box-shadow: 0 8px 15px rgba(0,0,0,0.25); 
             min-width: 520px; 
             height: 60px; 
-            padding: 0 15px; /* Jevn padding på sidene, lar flex-center styre topp/bunn */
+            padding: 0 15px; 
             border-top: none;
+            overflow: visible !important; 
         }
 
- /* ==========================================================================
-           HANDICAP-BOKSER (Lagt til på utsiden uten å røre kule-stilen)
+        /* ==========================================================================
+           HANDICAP-BOKSER (Integrert og klistret til kulene)
            ========================================================================== */
         .hcp-box {
-            background: #083c2c; /* Mørkegrønn biljardfarge fra bildet */
-            height: 48px; /* Matcher høyden på kulene dine så det flukter pent */
+            background: #083c2c; /* Mørkegrønn */
+            height: 48px; 
             display: flex;
             align-items: center;
             padding: 0 16px;
@@ -47,9 +49,9 @@
             white-space: nowrap;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
         }
 
-        /* Selve tallet som hentes fra CueScore */
         .hcp-value {
             color: #00af79; /* Lysegrønt tall */
             font-weight: 900;
@@ -57,18 +59,21 @@
             font-size: 18px;
         }
 
-        /* VENSTRE BOKS: Runder kun venstre side */
+        /* Speilvendt form på venstre side */
         #hcp-A {
             border-radius: 24px 0 0 24px !important;
-            margin-right: 5px; /* Litt luft inn til første kule */
+            margin-right: 5px; 
         }
 
-        /* HØYRE BOKS: Runder kun høyre side */
+        /* Speilvendt form på høyre side */
         #hcp-B {
             border-radius: 0 24px 24px 0 !important;
-            margin-left: 5px; /* Litt luft inn til siste kule */
+            margin-left: 5px; 
         }
-        
+
+        /* ==========================================================================
+           DINE ORIGINALE KULER (100% URØRT)
+           ========================================================================== */
         .ball {
             width: 48px;
             height: 48px;
@@ -116,14 +121,8 @@
             visibility: hidden; 
         }
 
-        /* DYNAMISKE STILER FOR STRIPER */
-        .ball.striped.dark-set { 
-            background-color: #000000 !important; 
-        }
-
-        .ball.striped.classic-set { 
-            background-color: #ffffff !important; 
-        }
+        .ball.striped.dark-set { background-color: #000000 !important; }
+        .ball.striped.classic-set { background-color: #ffffff !important; }
 
         .stripe-band { 
             position: absolute; 
@@ -146,9 +145,7 @@
 <body>
 
     <div class="ball-container" id="display"></div>
-    
-    <iframe id="cuescore-bridge" src="https://cuescore.com/scoreboard/overlay/custom/?tableId=9158140"></iframe>
-    
+
     <script>
         const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
         firebase.initializeApp(firebaseConfig);
@@ -156,6 +153,10 @@
 
         let currentBallStyle = 'dark'; 
         let lastBallData = null;
+        
+        // Globale verdier for handicaps
+        let hcpA = "-";
+        let hcpB = "-";
 
         function renderOverlay(data) {
             const display = document.getElementById('display');
@@ -168,6 +169,14 @@
 
             display.innerHTML = '';
 
+            // 1. Venstre handicap-boks
+            const boxA = document.createElement('div');
+            boxA.className = 'hcp-box';
+            boxA.id = 'hcp-A';
+            boxA.innerHTML = `Handicap: <span class="hcp-value">${hcpA}</span>`;
+            display.appendChild(boxA);
+
+            // 2. Kulerads-generering
             for (let i = 1; i <= 15; i++) {
                 if (data[i] === undefined) continue;
 
@@ -198,18 +207,58 @@
                 
                 display.appendChild(b);
             }
+
+            // 3. Høyre handicap-boks
+            const boxB = document.createElement('div');
+            boxB.className = 'hcp-box';
+            boxB.id = 'hcp-B';
+            boxB.innerHTML = `Handicap: <span class="hcp-value">${hcpB}</span>`;
+            display.appendChild(boxB);
         }
 
+        // ==========================================================================
+        // SKUDDSIKKER OVERVÅKNING AV HOVEDTAVLEN I OBS
+        // ==========================================================================
+        function scrapeOBSOverlay() {
+            // Ser etter CueScore-browser sourcen som kjører i samme OBS-scene
+            const parentDoc = window.parent.document;
+            if (parentDoc) {
+                // Skanner alle tilgjengelige elementer etter navnegruppene fra koden din
+                const nameA = parentDoc.querySelector('#namePlayerA .handicap');
+                const nameB = parentDoc.querySelector('#namePlayerB .handicap');
+
+                let changed = false;
+
+                if (nameA) {
+                    // Stripper bort parentesene (f.eks "(2)" blir "2")
+                    let cleanA = nameA.innerText.replace(/[\(\)]/g, '').trim();
+                    if (hcpA !== cleanA) { hcpA = cleanA; changed = true; }
+                }
+                if (nameB) {
+                    let cleanB = nameB.innerText.replace(/[\(\)]/g, '').trim();
+                    if (hcpB !== cleanB) { hcpB = cleanB; changed = true; }
+                }
+
+                // Hvis tallene har endret seg på hovedtavla, oppdaterer vi boksene med en gang
+                if (changed && lastBallData) {
+                    renderOverlay(lastBallData);
+                }
+            }
+        }
+
+        // Kjører en skanning hvert 3. sekund for å sjekke om handicap har endret seg
+        setInterval(scrapeOBSOverlay, 3000);
+
+        // FIREBASE-STRØM (Dine originale)
         db.ref('settings/ballStyle').on('value', snap => {
             currentBallStyle = snap.val() || 'dark';
-            if (lastBallData) {
-                renderOverlay(lastBallData); 
-            }
+            if (lastBallData) { renderOverlay(lastBallData); }
         });
 
         db.ref('balls').on('value', snap => {
             lastBallData = snap.val();
             renderOverlay(lastBallData);
+            setTimeout(scrapeOBSOverlay, 200);
         });
     </script>
 </body>
