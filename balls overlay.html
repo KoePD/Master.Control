@@ -9,45 +9,52 @@
             background: transparent; 
             margin: 0; 
             display: flex; 
-            justify-content: center; 
-            align-items: flex-start; 
+            flex-direction: column; /* Legger kontrollpanelet UNDER kulene */
+            align-items: center; 
+            justify-content: flex-start;
             height: 100vh; 
             font-family: Arial, sans-serif;
             overflow: hidden;
             position: relative;
         }
 
-        /* 1. MANUELL KONTROLLPANEL (Vises kun når du hovrer over øverst til venstre i OBS Interager) */
+        /* 1. OBS-TRYGG KONTROLLPANEL (Helt usynlig på streamen, men 100% klikkbar) */
         .hcp-control {
-            position: absolute;
-            top: 5px;
-            left: 5px;
-            background: rgba(0,0,0,0.9);
+            margin-top: 15px;
+            background: #111111;
+            border: 2px solid #333333;
             padding: 10px;
-            border-radius: 6px;
+            border-radius: 8px;
             z-index: 9999;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            opacity: 1; /* Nesten helt usynlig på streamen */
-            transition: opacity 0.2s ease;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            opacity: 0; /* SKJULER PANELET FRA STREAMEN DIN */
+            pointer-events: auto; /* Sørger for at klikk registreres */
         }
-        .hcp-control:hover {
-            opacity: 1; /* Helt synlig når du konfigurerer i OBS */
+
+        /* MAGISK OBS-TRICKS: Gjør panelet synlig KUN når du åpner "Interager"-vinduet i OBS! */
+        :hover .hcp-control, 
+        body:focus-within .hcp-control,
+        .hcp-control:focus-within {
+            opacity: 1 !important;
         }
-        .hcp-control label { color: white; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
-        .hcp-control select { background: #222; color: white; border: 1px solid #444; padding: 2px; font-size: 11px; width: 50px; }
-        .hcp-control .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-        .hcp-control-toggle { border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 2px; }
+
+        .hcp-control label { color: #ffffff; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 6px; }
+        .hcp-control select { background: #252525; color: #ffffff; border: 1px solid #555555; padding: 4px; border-radius: 4px; font-size: 12px; width: 60px; }
+        .hcp-control .row { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+        .hcp-control-toggle { border-bottom: 1px solid #333333; padding-bottom: 6px; margin-bottom: 4px; }
 
         .main-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: visible;
+            margin-top: 25px; /* Litt luft fra toppen av skjermen */
         }
 
-        /* DIN ORIGINALE KULERAD-CONTAINER */
+        /* DIN ORIGINALE KULERAD-CONTAINER (100% Intakt) */
         .ball-container {
             display: flex;
             justify-content: center;
@@ -66,7 +73,7 @@
         /* HANDICAP-VINGENE */
         .hcp-wing {
             background: #083c2c; 
-            height: 24px; 
+            height: 24px; /* Din egne custom høyde */
             display: flex;
             align-items: center;
             padding: 0 18px;
@@ -79,10 +86,8 @@
             box-shadow: 0 6px 12px rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.1);
             z-index: 1;
-            align-self: center; 
         }
 
-        /* Denne klassen trigger når du fjerner haken i OBS, og gjemmer boksene helt */
         .hcp-wing.hidden {
             display: none !important;
         }
@@ -94,17 +99,17 @@
             font-size: 18px;
         }
 
-        /* 2. PLASSERING PÅ LINJE MED TOPPEN AV KULERADEN & RETTING AV SKRIVEFEIL */
+        /* 2. SPEILVENDTE HJØRNER & FLUKTER STRØKENT MED TOPPEN */
         #hcp-A {
-            border-radius: 0px 0px 0px 10px !important; /* Runder mykt på yttersiden */
+            border-radius: 10px 0px 0px 10px !important; /* Topp-venstre og Bunn-venstre */
             margin-right: -2px; 
-            transform: translateY(-20px) !important; /* Flyttet til -6px for å flukte perfekt med toppen */
+            transform: translateY(-18px) !important; /* Klistrer overkanten til kulerad-toppen */
         }
 
         #hcp-B {
-            border-radius: 0px 0px 10px 0px !important; /* Runder mykt på yttersiden */
+            border-radius: 0px 10px 10px 0px !important; /* Topp-høyre og Bunn-høyre */
             margin-left: -2px; 
-            transform: translateY(-20px) !important; /* Flyttet til -6px for å flukte perfekt med toppen */
+            transform: translateY(-18px) !important; /* Matcher høyden til A perfekt */
         }
 
         /* DINE ORIGINALE KULE-STILER */
@@ -178,6 +183,8 @@
 </head>
 <body>
 
+    <div class="main-wrapper" id="main-frame"></div>
+
     <div class="hcp-control">
         <div class="hcp-control-toggle">
             <label><input type="checkbox" id="toggle-hcp" onchange="updateManualHcp()"> Vis Handicap</label>
@@ -200,8 +207,6 @@
         </div>
     </div>
 
-    <div class="main-wrapper" id="main-frame"></div>
-
     <script>
         const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
         firebase.initializeApp(firebaseConfig);
@@ -210,10 +215,9 @@
         let currentBallStyle = 'dark'; 
         let lastBallData = null;
         
-        // 3. JAVASCRIPT-LOGIKK FOR Å HUSKE OM KNAPPEN ER AV ELLER PÅ
         let hcpA = localStorage.getItem('hcp_val_A') || "2";
         let hcpB = localStorage.getItem('hcp_val_B') || "3";
-        let showHcp = localStorage.getItem('hcp_show') !== "false"; // Starter som PÅ som standard
+        let showHcp = localStorage.getItem('hcp_show') !== "false"; 
 
         document.getElementById('select-hcpA').value = hcpA;
         document.getElementById('select-hcpB').value = hcpB;
@@ -244,7 +248,7 @@
 
             mainFrame.innerHTML = '';
 
-            // Venstre boks (gjemmes hvis showHcp er false)
+            // Venstre boks
             const boxA = document.createElement('div');
             boxA.className = `hcp-wing ${showHcp ? '' : 'hidden'}`;
             boxA.id = 'hcp-A';
@@ -288,7 +292,7 @@
             
             mainFrame.appendChild(ballContainer);
 
-            // Høyre boks (gjemmes hvis showHcp er false)
+            // Høyre boks
             const boxB = document.createElement('div');
             boxB.className = `hcp-wing ${showHcp ? '' : 'hidden'}`;
             boxB.id = 'hcp-B';
