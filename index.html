@@ -36,17 +36,44 @@
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
-            justify-content: space-between; /* Dette sprer innholdet ut over hele skjermen */
+            justify-content: space-between; 
         }
 
-        .top-nav { padding: 5px 0; flex: 0 0 auto; display: flex; justify-content: center; }
+        .top-nav { 
+            padding: 5px 0; 
+            flex: 0 0 auto; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 6px;
+        }
         .name-input {
             background: var(--btn-bg); border: 1px solid var(--border); color: var(--accent);
             text-align: center; font-size: 22px; width: 100%; max-width: 420px; 
             font-weight: 900; text-transform: uppercase; padding: 18px; border-radius: 12px;
         }
 
-        /* Ball-seksjon - Økt gap igjen for å fylle skjermen bedre */
+        /* NYTT: Stil for Handicap-raden under Match ID */
+        .hcp-input-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 420px;
+            gap: 8px;
+        }
+        .hcp-box {
+            flex: 1;
+            background: var(--btn-bg);
+            border: 1px solid var(--border);
+            color: #fff;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .hcp-box::placeholder { color: #555; }
+
         .pool-section { 
             flex: 1;
             display: flex; 
@@ -57,7 +84,7 @@
         }
         .ball-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 35px 25px; /* Tilbake til mer luft mellom kulene */
+            gap: 35px 25px; 
             justify-items: center; width: 100%; max-width: 420px;
         }
 
@@ -79,7 +106,6 @@
         .stripe-band { position: absolute; width: 100%; height: 38%; z-index: 1; }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* BUNNKONTROLLER */
         .bottom-controls { 
             flex: 0 0 auto;
             display: flex;
@@ -126,6 +152,11 @@
 <div class="container">
     <div class="top-nav">
         <input type="text" id="matchIDInput" class="name-input" placeholder="MATCH ID" oninput="updateMatchID()">
+        
+        <div class="hcp-input-row">
+            <input type="text" id="hcpInputL" class="hcp-box" placeholder="HCP Spiller 1 (Venstre)" oninput="updateHandicap()">
+            <input type="text" id="hcpInputR" class="hcp-box" placeholder="HCP Spiller 2 (Høyre)" oninput="updateHandicap()">
+        </div>
     </div>
 
     <div class="pool-section">
@@ -176,6 +207,17 @@
     function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
 
     function updateMatchID() { db.ref('settings/cueScoreMatchID').set(document.getElementById('matchIDInput').value); }
+    
+    // NYTT: Sender de nye handicap-verdiene direkte inn i Firebase
+    function updateHandicap() {
+        const hcpL = document.getElementById('hcpInputL').value;
+        const hcpR = document.getElementById('hcpInputR').value;
+        db.ref('stats/handicap').update({
+            left: hcpL,
+            right: hcpR
+        });
+    }
+
     function toggleBallSet() { vibe(); ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic'; db.ref('settings/ballStyle').set(ballStyle); renderBalls(); }
     function reputtActiveBalls() { vibe(); db.ref('balls').once('value', snap => { let u = snap.val() || {}; for (let i in u) { if (u[i] === false) u[i] = true; } db.ref('balls').set(u); }); }
 
@@ -220,6 +262,13 @@
     function startBreak() { vibe(60); db.ref('shotclock/cmd').set({action:'reset60', ts:Date.now()}); }
     function useExtension() { vibe(60); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
     function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
+
+    // NYTT: Sørger for at eksisterende handicap fylles ut i boksene når siden lastes
+    db.ref('stats/handicap').once('value', snap => {
+        const data = snap.val() || {};
+        if (data.left !== undefined) document.getElementById('hcpInputL').value = data.left;
+        if (data.right !== undefined) document.getElementById('hcpInputR').value = data.right;
+    });
 
     db.ref('activePlayer').on('value', snap => { const p = snap.val(); document.getElementById('btnL').className = `btn-main btn-player ${p === 'left' ? 'active-l' : ''}`; document.getElementById('btnR').className = `btn-main btn-player ${p === 'right' ? 'active-r' : ''}`; });
     db.ref('gameMode').on('value', snap => { currentGameMode = snap.val() || 9; renderBalls(); });
