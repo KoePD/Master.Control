@@ -14,13 +14,36 @@
             height: 100vh; 
             font-family: Arial, sans-serif;
             overflow: hidden;
+            position: relative;
         }
+
+        /* MANUELL KONTROLLPANEL (Vises kun når du holder musa over øverst til venstre i OBS) */
+        .hcp-control {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0,0,0,0.85);
+            padding: 8px;
+            border-radius: 6px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            opacity: 0.1; /* Nesten usynlig på streamen */
+            transition: opacity 0.2s ease;
+        }
+        .hcp-control:hover {
+            opacity: 1; /* Blir helt synlig når du skal endre tallet i OBS */
+        }
+        .hcp-control label { color: white; font-size: 11px; font-weight: bold; }
+        .hcp-control select { background: #222; color: white; border: 1px solid #444; padding: 2px; font-size: 11px; }
 
         .main-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: visible;
+            margin-top: 0px;
         }
 
         /* DIN ORIGINALE KULERAD-CONTAINER */
@@ -146,6 +169,25 @@
 </head>
 <body>
 
+    <div class="hcp-control">
+        <div>
+            <label>Hcp A:</label>
+            <select id="select-hcpA" onchange="updateManualHcp()">
+                <option value="0">0</option><option value="1">1</option><option value="2" selected>2</option>
+                <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                <option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+        </div>
+        <div>
+            <label>Hcp B:</label>
+            <select id="select-hcpB" onchange="updateManualHcp()">
+                <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+                <option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
+                <option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+        </div>
+    </div>
+
     <div class="main-wrapper" id="main-frame"></div>
 
     <script>
@@ -156,8 +198,26 @@
         let currentBallStyle = 'dark'; 
         let lastBallData = null;
         
-        let hcpA = "-";
-        let hcpB = "-";
+        // Henter lagret verdi fra nettleserminnet så du slipper å sette det på nytt hver gang OBS restarter
+        let hcpA = localStorage.getItem('hcp_val_A') || "2";
+        let hcpB = localStorage.getItem('hcp_val_B') || "3";
+
+        // Setter dropdown-menyene til de lagrede verdiene ved start
+        document.getElementById('select-hcpA').value = hcpA;
+        document.getElementById('select-hcpB').value = hcpB;
+
+        function updateManualHcp() {
+            hcpA = document.getElementById('select-hcpA').value;
+            hcpB = document.getElementById('select-hcpB').value;
+            
+            // Lagrer valget lokalt
+            localStorage.setItem('hcp_val_A', hcpA);
+            localStorage.setItem('hcp_val_B', hcpB);
+            
+            if (lastBallData) {
+                renderOverlay(lastBallData);
+            }
+        }
 
         function renderOverlay(data) {
             const mainFrame = document.getElementById('main-frame');
@@ -222,38 +282,6 @@
             mainFrame.appendChild(boxB);
         }
 
-        // ==========================================================================
-        // DIREKTE HENTING FRA CUESCORE SITT UTVIKLER-API (Sikker og godkjent metode)
-        // ==========================================================================
-        async function fetchLiveHandicaps() {
-            try {
-                // Henter de rå livescore-dataene direkte i JSON-format
-                const response = await fetch('https://cuescore.com/scoreboard/overlay/poll.php?tableId=9158140');
-                const json = await response.json();
-                
-                if (json && json.match) {
-                    let changed = false;
-
-                    // Henter ut handicap-verdiene direkte fra datastrømmen
-                    let newHcpA = json.match.playerA_handicap || "0";
-                    let newHcpB = json.match.playerB_handicap || "0";
-
-                    if (hcpA !== newHcpA) { hcpA = newHcpA; changed = true; }
-                    if (hcpB !== newHcpB) { hcpB = newHcpB; changed = true; }
-
-                    // Tegner boksene på nytt hvis verdiene har endret seg
-                    if (changed && lastBallData) {
-                        renderOverlay(lastBallData);
-                    }
-                }
-            } catch (error) {
-                console.log("Prøver å hente hcp på nytt...");
-            }
-        }
-
-        // Kjører api-sjekken hvert 3. sekund
-        setInterval(fetchLiveHandicaps, 3000);
-
         // FIREBASE-STRØM
         db.ref('settings/ballStyle').on('value', snap => {
             currentBallStyle = snap.val() || 'dark';
@@ -263,7 +291,6 @@
         db.ref('balls').on('value', snap => {
             lastBallData = snap.val();
             renderOverlay(lastBallData);
-            fetchLiveHandicaps(); // Kjører en kjapp API-sjekk med en gang kulene trigger
         });
     </script>
 </body>
