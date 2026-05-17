@@ -53,10 +53,11 @@
             font-weight: 900; text-transform: uppercase; padding: 18px; border-radius: 12px;
         }
 
-        /* NYTT: Stil for Handicap-raden under Match ID */
+        /* Handicap-raden under Match ID */
         .hcp-input-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             width: 100%;
             max-width: 420px;
             gap: 8px;
@@ -69,10 +70,31 @@
             text-align: center;
             font-size: 14px;
             font-weight: 700;
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
         }
         .hcp-box::placeholder { color: #555; }
+
+        /* NYTT: Stil for den dedikerte AV/PÅ-knappen for handicap */
+        .hcp-toggle-btn {
+            background: #222;
+            border: 1px solid #333;
+            color: #888;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 12px 10px;
+            border-radius: 8px;
+            min-width: 75px;
+            text-align: center;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+        .hcp-toggle-btn.active {
+            background: var(--green);
+            border-color: #22c55e;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(22, 163, 74, 0.4);
+        }
 
         .pool-section { 
             flex: 1;
@@ -154,8 +176,11 @@
         <input type="text" id="matchIDInput" class="name-input" placeholder="MATCH ID" oninput="updateMatchID()">
         
         <div class="hcp-input-row">
-            <input type="text" id="hcpInputL" class="hcp-box" placeholder="HCP Spiller 1 (Venstre)" oninput="updateHandicap()">
-            <input type="text" id="hcpInputR" class="hcp-box" placeholder="HCP Spiller 2 (Høyre)" oninput="updateHandicap()">
+            <input type="text" id="hcpInputL" class="hcp-box" placeholder="HCP S1" oninput="updateHandicap()">
+            
+            <button id="hcpToggleBtn" class="hcp-toggle-btn active" onclick="toggleHandicapVisibility()">HCP PÅ</button>
+            
+            <input type="text" id="hcpInputR" class="hcp-box" placeholder="HCP S2" oninput="updateHandicap()">
         </div>
     </div>
 
@@ -203,12 +228,12 @@
     
     let ballStyle = 'classic'; 
     let currentGameMode = 9;
+    let isHcpVisible = true; // Holder styr på lokal status for knappen
 
     function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
 
     function updateMatchID() { db.ref('settings/cueScoreMatchID').set(document.getElementById('matchIDInput').value); }
     
-    // NYTT: Sender de nye handicap-verdiene direkte inn i Firebase
     function updateHandicap() {
         const hcpL = document.getElementById('hcpInputL').value;
         const hcpR = document.getElementById('hcpInputR').value;
@@ -216,6 +241,28 @@
             left: hcpL,
             right: hcpR
         });
+    }
+
+    /* NYTT: Funksjon som veksler synligheten til handicap i databasen */
+    function toggleHandicapVisibility() {
+        vibe(40);
+        isHcpVisible = !isHcpVisible;
+        db.ref('stats/handicap').update({
+            visible: isHcpVisible
+        });
+        updateToggleBtnUI(isHcpVisible);
+    }
+
+    /* Oppdaterer knappens utseende (grønn/grå) og tekst */
+    function updateToggleBtnUI(visible) {
+        const btn = document.getElementById('hcpToggleBtn');
+        if (visible) {
+            btn.classList.add('active');
+            btn.innerText = "HCP PÅ";
+        } else {
+            btn.classList.remove('active');
+            btn.innerText = "HCP AV";
+        }
     }
 
     function toggleBallSet() { vibe(); ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic'; db.ref('settings/ballStyle').set(ballStyle); renderBalls(); }
@@ -263,11 +310,14 @@
     function useExtension() { vibe(60); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
     function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
 
-    // NYTT: Sørger for at eksisterende handicap fylles ut i boksene når siden lastes
-    db.ref('stats/handicap').once('value', snap => {
+    // Henter eksisterende handicap og synlighetsstatus når siden lastes
+    db.ref('stats/handicap').on('value', snap => {
         const data = snap.val() || {};
-        if (data.left !== undefined) document.getElementById('hcpInputL').value = data.left;
-        if (data.right !== undefined) document.getElementById('hcpInputR').value = data.right;
+        if (data.left !== undefined && document.activeElement !== document.getElementById('hcpInputL')) document.getElementById('hcpInputL').value = data.left;
+        if (data.right !== undefined && document.activeElement !== document.getElementById('hcpInputR')) document.getElementById('hcpInputR').value = data.right;
+        
+        isHcpVisible = data.visible !== false;
+        updateToggleBtnUI(isHcpVisible);
     });
 
     db.ref('activePlayer').on('value', snap => { const p = snap.val(); document.getElementById('btnL').className = `btn-main btn-player ${p === 'left' ? 'active-l' : ''}`; document.getElementById('btnR').className = `btn-main btn-player ${p === 'right' ? 'active-r' : ''}`; });
