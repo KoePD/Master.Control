@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Master Control v15</title>
+    <title>KØ-PÅDD Master Control v16</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -30,7 +30,7 @@
         }
         
         body { 
-            padding: env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px) 12px; 
+            padding: env(safe-area-inset-top) 10px calc(env(safe-area-inset-bottom) + 10px) 10px; 
             display: flex; 
             flex-direction: column; 
         }
@@ -40,7 +40,6 @@
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
-            justify-content: space-between;
         }
 
         /* TOPPEN: Match ID og HCP */
@@ -50,6 +49,7 @@
             flex-direction: column; 
             gap: 6px;
             width: 100%;
+            margin-bottom: 5px;
         }
         
         .name-input {
@@ -82,32 +82,32 @@
             background: var(--green); border-color: #22c55e; color: #fff;
         }
 
-        /* KULESEKSJONEN: Låst til en perfekt, romslig og trykkbar størrelse */
+        /* MIDTEN: Kuleseksjonen krymper eller ruller om nødvendig for å beskytte knappene */
         .pool-section { 
-            flex: 0 0 auto;
+            flex: 1 1 auto;
             display: flex; 
             justify-content: center; 
             align-items: center; 
             width: 100%; 
-            padding: 15px 0;
+            overflow-y: auto; /* Tillater rulling av kuler på ekstremt små skjermer framfor å moste knappene */
+            padding: 10px 0;
         }
         
         .ball-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 14px 28px; 
+            gap: 12px 24px; 
             justify-items: center; 
             width: 100%;
-            max-width: 330px;
+            max-width: 320px;
         }
 
         .ball-btn {
-            width: 19vw; height: 19vw; max-width: 72px; max-height: 72px;
+            width: 18vw; height: 18vw; max-width: 68px; max-height: 68px;
             border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.6);
             position: relative; display: flex; justify-content: center; align-items: center;
             background: radial-gradient(circle at 35% 35%, var(--ball-shine) 0%, rgba(255,255,255,0) 50%), 
                         radial-gradient(circle at 65% 65%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%), #fff;
-            box-shadow: inset -4px -4px 10px rgba(0,0,0,0.4), 4px 5px 8px rgba(0,0,0,0.6);
-            overflow: hidden;
+            box-shadow: inset -4px -4px 10px rgba(0,0,0,0.4), 4px 6px 10px rgba(0,0,0,0.6);
         }
         
         .num-label {
@@ -120,15 +120,15 @@
         .stripe-band { position: absolute; width: 100%; height: 48%; top: 26%; border-radius: 0; z-index: 1; }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* BUNNKONTROLLER: Kontrollert og ryddig panel */
+        /* BUNNEN: Låst struktur med faste, store høyder for perfekt tommelstyring */
         .bottom-controls { 
-            flex: 1 1 auto; 
+            flex: 0 0 auto; 
             display: flex;
             flex-direction: column;
-            justify-content: flex-end; /* Holder alt pent samlet mot bunnen */
-            gap: 5px;
+            gap: 6px;
             width: 100%;
-            min-height: 0;
+            background: var(--bg);
+            padding-top: 5px;
         }
         
         .mode-container { display: flex; flex-direction: column; gap: 5px; }
@@ -136,52 +136,52 @@
         
         .mode-btn {
             background: var(--btn-bg); border: 1px solid #222;
-            color: #eee; font-size: 12px; font-weight: 800; border-radius: 8px;
-            box-shadow: 0 2px 0 #000;
-            height: 38px;
+            color: #eee; font-size: 13px; font-weight: 800; border-radius: 10px;
+            box-shadow: 0 3px 0 #000;
+            height: 46px; /* Garantert stor nok for fingre */
             display: flex; align-items: center; justify-content: center;
         }
 
         .action-grid { 
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 6px;
         }
         
         .btn-main { 
             background: var(--btn-bg); border: 1px solid #222; color: white; 
-            font-weight: 900; text-transform: uppercase; border-radius: 10px;
-            box-shadow: 0 2px 0 #000;
+            font-weight: 900; text-transform: uppercase; border-radius: 12px;
+            box-shadow: 0 3px 0 #000;
             display: flex; align-items: center; justify-content: center;
             width: 100%;
         }
 
-        /* Start / Stopp */
-        .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .btn-status { height: 40px; font-size: 13px; }
-        .btn-start { color: var(--green); border-color: rgba(22, 163, 74, 0.3); }
-        .btn-stop { color: var(--red); border-color: rgba(220, 38, 38, 0.3); }
+        /* Start / Stopp Rad */
+        .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-status { height: 48px; font-size: 14px; }
+        .btn-start { color: var(--green); border-color: rgba(22, 163, 74, 0.4); }
+        .btn-stop { color: var(--red); border-color: rgba(220, 38, 38, 0.4); }
 
-        /* Spillerknapper (S1 / S2): Komfortabel og treffsikker tommelstørrelse */
-        .player-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .btn-player { height: 56px; font-size: 24px; }
+        /* Spillerknapper (S1 / S2): Svært store og fete, umulig å bomme på! */
+        .player-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-player { height: 75px; font-size: 26px; }
         .active-l { background: var(--green) !important; }
         .active-r { background: var(--blue) !important; }
 
         /* Foul-knapper */
-        .foul-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .btn-sub { height: 38px; font-size: 12px; }
-        .btn-foul { color: #ffaa00; border-color: rgba(255, 170, 0, 0.2); }
+        .foul-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-sub { height: 46px; font-size: 13px; }
+        .btn-foul { color: #ffaa00; border-color: rgba(255, 170, 0, 0.3); }
 
         /* Utility-rad (Pause og Break) */
-        .utility-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 5px; }
+        .utility-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 6px; }
 
-        /* Extension: Låst fast nederst, trygg mot å bli kuttet ut av nettleseren */
+        /* Extension-knappen: Helt trygg i bunnen, stor og god */
         .btn-extension-huge { 
             color: var(--blue); 
-            font-size: 15px; 
-            border-color: rgba(2, 132, 199, 0.5);
-            height: 42px;
+            font-size: 16px; 
+            border-color: rgba(2, 132, 199, 0.6);
+            height: 52px;
         }
     </style>
 </head>
