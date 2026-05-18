@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Master Control v12</title>
+    <title>KØ-PÅDD Master Control v13</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -23,16 +23,15 @@
 
         * { -webkit-tap-highlight-color: transparent; user-select: none; box-sizing: border-box; outline: none; }
 
-        html, body { 
-            height: 100vh; width: 100vw; margin: 0; padding: 0; 
-            background: var(--bg); color: white; font-family: -apple-system, sans-serif; 
-            overflow: hidden; position: fixed;
-        }
+        html { height: 100%; }
         
         body { 
-            padding: env(safe-area-inset-top) 10px calc(env(safe-area-inset-bottom) + 10px) 10px; 
-            display: flex; 
-            flex-direction: column; 
+            height: 100%; width: 100vw; margin: 0; 
+            padding: env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px) 12px; 
+            background: var(--bg); color: white; font-family: -apple-system, sans-serif; 
+            overflow: hidden; position: fixed;
+            display: flex;
+            flex-direction: column;
         }
 
         .container { 
@@ -42,13 +41,14 @@
             width: 100%; 
         }
 
-        /* 1. TOPPEN: Fast, låst høyde */
+        /* TOPPEN: Fast struktur */
         .top-nav { 
             flex: 0 0 auto; 
             display: flex; 
             flex-direction: column; 
             gap: 6px;
             width: 100%;
+            padding-bottom: 5px;
         }
         
         .name-input {
@@ -67,13 +67,13 @@
         .hcp-box {
             flex: 1;
             background: var(--btn-bg); border: 1px solid var(--border); color: #fff;
-            text-align: center; font-size: 14px; font-weight: 700; padding: 10px; border-radius: 8px;
+            text-align: center; font-size: 14px; font-weight: 700; padding: 11px; border-radius: 8px;
         }
         .hcp-box::placeholder { color: #555; }
 
         .hcp-toggle-btn {
             background: #222; border: 1px solid #333; color: #888;
-            font-size: 11px; font-weight: 900; padding: 10px 12px; border-radius: 8px;
+            font-size: 11px; font-weight: 900; padding: 11px 12px; border-radius: 8px;
             min-width: 75px; text-align: center; text-transform: uppercase;
         }
         
@@ -81,26 +81,26 @@
             background: var(--green); border-color: #22c55e; color: #fff;
         }
 
-        /* 2. BALLENE: Tar KUN den plassen som er til overs */
+        /* BALLENE: Bruker tomrommet i midten dynamisk */
         .pool-section { 
             flex: 1 1 auto;
             display: flex; 
             justify-content: center; 
             align-items: center; 
             width: 100%; 
-            min-height: 0; /* Viktig for å la den krympe fremfor knappene */
+            min-height: 0;
         }
         
         .ball-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 16px 24px; 
+            gap: 16px 26px; 
             justify-items: center; 
             width: 100%;
             max-width: 360px;
         }
 
         .ball-btn {
-            width: 22vw; height: 22vw; max-width: 80px; max-height: 80px;
+            width: 22vw; height: 22vw; max-width: 82px; max-height: 82px;
             border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.6);
             position: relative; display: flex; justify-content: center; align-items: center;
             background: radial-gradient(circle at 35% 35%, var(--ball-shine) 0%, rgba(255,255,255,0) 50%), 
@@ -119,27 +119,28 @@
         .stripe-band { position: absolute; width: 100%; height: 48%; top: 26%; border-radius: 0; z-index: 1; }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* 3. BUNNKONTROLLER: Fast, solid totalhøyde for god brukervennlighet */
+        /* BUNNKONTROLLER: Låst fast nederst med urokkelige, store knapper */
         .bottom-controls { 
             flex: 0 0 auto; 
             display: flex;
             flex-direction: column;
             gap: 6px;
             width: 100%;
-            padding-bottom: 5px;
+            background: var(--bg);
         }
         
-        /* Modusvelgere: Faste, gode høyder */
-        .mode-container { display: flex; flex-direction: column; gap: 5px; }
-        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+        .mode-container { display: flex; flex-direction: column; gap: 6px; }
+        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         
+        /* Knapper for spillmodus og resirkulering har fått god høyde */
         .mode-btn {
-            background: var(--btn-bg); border: 1px solid #222; padding: 14px 0;
-            color: #eee; font-size: 13px; font-weight: 800; border-radius: 10px;
+            background: var(--btn-bg); border: 1px solid #222;
+            color: #eee; font-size: 14px; font-weight: 800; border-radius: 10px;
             box-shadow: 0 3px 0 #000;
+            height: 48px;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        /* Hovedknapper: Bruker et definert grid i stedet for flex som kollapser */
         .action-grid { 
             display: flex;
             flex-direction: column;
@@ -155,30 +156,30 @@
 
         /* Start / Stopp */
         .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .btn-status { padding: 15px 0; font-size: 14px; }
-        .btn-start { color: var(--green); }
-        .btn-stop { color: var(--red); }
+        .btn-status { height: 44px; font-size: 14px; }
+        .btn-start { color: var(--green); border-color: rgba(22, 163, 74, 0.4); }
+        .btn-stop { color: var(--red); border-color: rgba(220, 38, 38, 0.4); }
 
-        /* S1 / S2 Spillerknapper: Store, men kontrollerte (Ikke for store, ikke pannekaker) */
+        /* S1 / S2 Spillerknapper: Store, solide og enkle å treffe */
         .player-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .btn-player { padding: 24px 0; font-size: 26px; }
+        .btn-player { height: 62px; font-size: 26px; }
         .active-l { background: var(--green) !important; }
         .active-r { background: var(--blue) !important; }
 
         /* Foul-knapper */
         .foul-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .btn-sub { padding: 15px 0; font-size: 13px; }
-        .btn-foul { color: #ffaa00; border-color: rgba(255, 170, 0, 0.2); }
+        .btn-sub { height: 44px; font-size: 13px; }
+        .btn-foul { color: #ffaa00; border-color: rgba(255, 170, 0, 0.3); }
 
         /* Pause / Break */
         .utility-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 6px; }
 
-        /* Extension-knappen: Nederst, trygg, og blir ALDRI kuttet av lenger */
+        /* Extension-knappen: Helt trygg i bunnen, med god padding og trykkflate */
         .btn-extension-huge { 
             color: var(--blue); 
-            font-size: 16px; 
-            border-color: rgba(2, 132, 199, 0.4);
-            padding: 16px 0;
+            font-size: 17px; 
+            border-color: rgba(2, 132, 199, 0.6);
+            height: 52px;
             width: 100%;
         }
     </style>
