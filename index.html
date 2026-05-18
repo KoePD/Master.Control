@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Master Control v6</title>
+    <title>KØ-PÅDD Master Control v7</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -29,38 +29,38 @@
             overflow: hidden; position: fixed;
         }
         
-        body { padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom) 8px; display: flex; flex-direction: column; }
+        body { padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px; display: flex; flex-direction: column; }
 
         .container { 
             display: flex; 
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
-            justify-content: flex-start; /* Samler innholdet tettere oppover */
+            justify-content: space-between; /* Fordeler toppen, kulene og bunnen jevnt utover */
         }
 
         .top-nav { 
-            padding: 2px 0; 
+            padding: 5px 0; 
             flex: 0 0 auto; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            gap: 4px;
+            gap: 6px;
+            width: 100%;
         }
         .name-input {
             background: var(--btn-bg); border: 1px solid var(--border); color: var(--accent);
-            text-align: center; font-size: 18px; width: 100%; max-width: 420px; 
-            font-weight: 900; text-transform: uppercase; padding: 10px; border-radius: 10px;
+            text-align: center; font-size: 22px; width: 100%; 
+            font-weight: 900; text-transform: uppercase; padding: 18px; border-radius: 12px;
         }
 
-        /* Handicap-raden under Match ID */
+        /* Handicap-raden bruker nå full bredde */
         .hcp-input-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            max-width: 420px;
-            gap: 6px;
+            gap: 8px;
         }
         .hcp-box {
             flex: 1;
@@ -68,10 +68,10 @@
             border: 1px solid var(--border);
             color: #fff;
             text-align: center;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
-            padding: 8px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 8px;
         }
         .hcp-box::placeholder { color: #555; }
 
@@ -79,11 +79,11 @@
             background: #222;
             border: 1px solid #333;
             color: #888;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 900;
-            padding: 8px 6px;
-            border-radius: 6px;
-            min-width: 70px;
+            padding: 12px 10px;
+            border-radius: 8px;
+            min-width: 75px;
             text-align: center;
             text-transform: uppercase;
             transition: all 0.2s ease;
@@ -95,24 +95,24 @@
             color: #fff;
         }
 
-        /* Ball-seksjon - Dratt oppover og strammet inn for å unngå tomrom */
         .pool-section { 
-            flex: 0 0 auto;
+            flex: 1;
             display: flex; 
             flex-direction: column; 
             justify-content: center; 
             align-items: center; 
             width: 100%; 
-            padding: 10px 0;
         }
+        /* Kuleraden bruker nå full bredde og brer seg utover */
         .ball-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 16px 25px; /* Kompakt vertikal avstand */
-            justify-items: center; width: 100%; max-width: 420px;
+            gap: 30px 25px; 
+            justify-items: center; 
+            width: 100%;
         }
 
         .ball-btn {
-            width: 27vw; height: 27vw; max-width: 105px; max-height: 105px;
+            width: 29vw; height: 29vw; max-width: 120px; max-height: 120px;
             border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.6);
             position: relative; display: flex; justify-content: center; align-items: center;
             background: radial-gradient(circle at 35% 35%, var(--ball-shine) 0%, rgba(255,255,255,0) 50%), 
@@ -121,14 +121,13 @@
             overflow: hidden;
         }
         
-        /* Den originale hvite sirkelen i midten beholdes urørt (55%) */
         .num-label {
             background: white; color: black; width: 55%; height: 55%; border-radius: 50%;
             display: flex; justify-content: center; align-items: center; 
             font-size: 5.2vw; font-weight: 900; border: 1px solid rgba(0,0,0,0.8); z-index: 10;
         }
         
-        /* FIKSET: Helt rett stripe uten bue, og gjort noe høyere (høyde økt til 48%, topp satt til 26%) */
+        /* Original flat og rett stripe som er litt høyere */
         .stripe-band { 
             position: absolute; 
             width: 100%; 
@@ -139,48 +138,48 @@
         }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* BUNNKONTROLLER - Komprimert og flyttet lenger opp */
+        /* BUNNKONTROLLER - Gjort større for å fylle skjermen godt ut */
         .bottom-controls { 
-            flex: 1;
+            flex: 0 0 auto;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
-            gap: 5px;
-            margin-top: 5px;
+            gap: 8px;
+            padding-bottom: 5px;
+            width: 100%;
         }
         
-        .mode-container { display: flex; flex-direction: column; gap: 4px; }
-        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        .mode-container { display: flex; flex-direction: column; gap: 6px; }
+        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .mode-btn {
-            background: var(--btn-bg); border: 1px solid #222; padding: 12px 0;
-            color: #eee; font-size: 12px; font-weight: 800; border-radius: 8px;
-            box-shadow: 0 2px 0 #000;
+            background: var(--btn-bg); border: 1px solid #222; padding: 18px 0;
+            color: #eee; font-size: 14px; font-weight: 800; border-radius: 10px;
+            box-shadow: 0 3px 0 #000;
         }
 
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .btn-main { 
             background: var(--btn-bg); border: 1px solid #222; color: white; 
-            font-weight: 900; text-transform: uppercase; border-radius: 10px;
-            box-shadow: 0 2px 0 #000;
+            font-weight: 900; text-transform: uppercase; border-radius: 12px;
+            box-shadow: 0 4px 0 #000;
         }
 
-        /* Justerte høyder for å tvinge Extension opp på skjermen */
-        .btn-status { padding: 18px 5px; font-size: 14px; }
+        /* Økt størrelse og padding betydelig på alle hovedknapper */
+        .btn-status { padding: 26px 5px; font-size: 16px; }
         .btn-start { color: var(--green); }
         .btn-stop { color: var(--red); }
 
-        .btn-player { padding: 38px 5px; font-size: 26px; }
+        .btn-player { padding: 54px 5px; font-size: 32px; }
         .active-l { background: var(--green) !important; }
         .active-r { background: var(--blue) !important; }
 
-        .btn-sub { padding: 20px 5px; font-size: 13px; }
+        .btn-sub { padding: 30px 5px; font-size: 15px; }
         
-        .bottom-row { grid-column: span 2; display: grid; grid-template-columns: 1fr 1.5fr; gap: 4px; }
+        .bottom-row { grid-column: span 2; display: grid; grid-template-columns: 1fr 1.5fr; gap: 6px; }
 
-        /* Extension-knappen har fått perfekt plass i bunnen */
+        /* Stor og god fyllende Extension-knapp i bunnen */
         .btn-extension-huge { 
-            grid-column: span 2; padding: 26px; color: var(--blue); 
-            font-size: 20px; border-color: rgba(2, 132, 199, 0.4);
+            grid-column: span 2; padding: 38px; color: var(--blue); 
+            font-size: 22px; border-color: rgba(2, 132, 199, 0.4);
         }
     </style>
 </head>
