@@ -30,10 +30,9 @@
         }
         
         body { 
-            padding: env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 10px) 12px; 
+            padding: env(safe-area-inset-top) 10px calc(env(safe-area-inset-bottom) + 10px) 10px; 
             display: flex; 
             flex-direction: column; 
-            justify-content: space-between;
         }
 
         .container { 
@@ -41,22 +40,21 @@
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
-            justify-content: space-between; 
         }
 
-        /* TOPPEN: Kompakt høyde */
+        /* 1. TOPPEN: Fast, låst høyde */
         .top-nav { 
+            flex: 0 0 auto; 
             display: flex; 
             flex-direction: column; 
-            gap: 5px;
+            gap: 6px;
             width: 100%;
-            margin-bottom: 5px;
         }
         
         .name-input {
             background: var(--btn-bg); border: 1px solid var(--border); color: var(--accent);
-            text-align: center; font-size: 18px; width: 100%; 
-            font-weight: 900; text-transform: uppercase; padding: 8px; border-radius: 10px;
+            text-align: center; font-size: 20px; width: 100%; 
+            font-weight: 900; text-transform: uppercase; padding: 12px; border-radius: 12px;
         }
 
         .hcp-input-row {
@@ -64,123 +62,124 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            gap: 6px;
+            gap: 8px;
         }
         .hcp-box {
             flex: 1;
             background: var(--btn-bg); border: 1px solid var(--border); color: #fff;
-            text-align: center; font-size: 13px; font-weight: 700; padding: 8px; border-radius: 6px;
+            text-align: center; font-size: 14px; font-weight: 700; padding: 10px; border-radius: 8px;
         }
         .hcp-box::placeholder { color: #555; }
 
         .hcp-toggle-btn {
             background: #222; border: 1px solid #333; color: #888;
-            font-size: 11px; font-weight: 900; padding: 8px 10px; border-radius: 6px;
-            min-width: 70px; text-align: center; text-transform: uppercase;
+            font-size: 11px; font-weight: 900; padding: 10px 12px; border-radius: 8px;
+            min-width: 75px; text-align: center; text-transform: uppercase;
         }
         
         .hcp-toggle-btn.active {
             background: var(--green); border-color: #22c55e; color: #fff;
         }
 
-        /* BALLENE: Mindre flate, frigjør vertikal plass */
+        /* 2. BALLENE: Tar KUN den plassen som er til overs */
         .pool-section { 
+            flex: 1 1 auto;
             display: flex; 
             justify-content: center; 
             align-items: center; 
             width: 100%; 
-            margin: 5px 0;
+            min-height: 0; /* Viktig for å la den krympe fremfor knappene */
         }
         
         .ball-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 10px 20px; 
+            gap: 16px 24px; 
             justify-items: center; 
             width: 100%;
-            max-width: 340px;
+            max-width: 360px;
         }
 
         .ball-btn {
-            width: 18vw; height: 18vw; max-width: 65px; max-height: 65px;
+            width: 22vw; height: 22vw; max-width: 80px; max-height: 80px;
             border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.6);
             position: relative; display: flex; justify-content: center; align-items: center;
             background: radial-gradient(circle at 35% 35%, var(--ball-shine) 0%, rgba(255,255,255,0) 50%), 
                         radial-gradient(circle at 65% 65%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%), #fff;
-            box-shadow: inset -3px -3px 8px rgba(0,0,0,0.4), 3px 4px 6px rgba(0,0,0,0.6);
+            box-shadow: inset -4px -4px 10px rgba(0,0,0,0.4), 4px 6px 10px rgba(0,0,0,0.6);
             overflow: hidden;
         }
         
         .num-label {
             background: white; color: black; width: 55%; height: 55%; border-radius: 50%;
             display: flex; justify-content: center; align-items: center; 
-            font-size: 3.8vw; font-weight: 900; border: 1px solid rgba(0,0,0,0.8); z-index: 10;
+            font-size: 5vw; font-weight: 900; border: 1px solid rgba(0,0,0,0.8); z-index: 10;
         }
-        
-        @media (min-width: 400px) { .num-label { font-size: 14px; } }
+        @media (min-width: 400px) { .num-label { font-size: 18px; } }
         
         .stripe-band { position: absolute; width: 100%; height: 48%; top: 26%; border-radius: 0; z-index: 1; }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* BUNNKONTROLLER: Kontrollert med makshøyder */
+        /* 3. BUNNKONTROLLER: Fast, solid totalhøyde for god brukervennlighet */
         .bottom-controls { 
+            flex: 0 0 auto; 
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 6px;
             width: 100%;
+            padding-bottom: 5px;
         }
         
-        .mode-container { display: flex; flex-direction: column; gap: 4px; }
-        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        /* Modusvelgere: Faste, gode høyder */
+        .mode-container { display: flex; flex-direction: column; gap: 5px; }
+        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
         
-        /* 8, 9, 10-ball og Resirkuler har fått en fin, trykkbar fast høyde */
         .mode-btn {
-            background: var(--btn-bg); border: 1px solid #222;
-            color: #eee; font-size: 13px; font-weight: 800; border-radius: 8px;
-            box-shadow: 0 2px 0 #000;
-            height: 42px;
-            display: flex; align-items: center; justify-content: center;
+            background: var(--btn-bg); border: 1px solid #222; padding: 14px 0;
+            color: #eee; font-size: 13px; font-weight: 800; border-radius: 10px;
+            box-shadow: 0 3px 0 #000;
         }
 
-        .action-flex { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 4px; 
+        /* Hovedknapper: Bruker et definert grid i stedet for flex som kollapser */
+        .action-grid { 
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
         
         .btn-main { 
             background: var(--btn-bg); border: 1px solid #222; color: white; 
-            font-weight: 900; text-transform: uppercase; border-radius: 10px;
-            box-shadow: 0 2px 0 #000;
+            font-weight: 900; text-transform: uppercase; border-radius: 12px;
+            box-shadow: 0 3px 0 #000;
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* Start / Stopp Rad */
-        .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        .btn-status { height: 38px; font-size: 13px; }
-        .btn-start { color: var(--green); border-color: rgba(22, 163, 74, 0.3); }
-        .btn-stop { color: var(--red); border-color: rgba(220, 38, 38, 0.3); }
+        /* Start / Stopp */
+        .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-status { padding: 15px 0; font-size: 14px; }
+        .btn-start { color: var(--green); }
+        .btn-stop { color: var(--red); }
 
-        /* S1 / S2 Spiller-Rad: Nedjustert og kontrollert */
-        .player-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        .btn-player { height: 55px; font-size: 22px; }
+        /* S1 / S2 Spillerknapper: Store, men kontrollerte (Ikke for store, ikke pannekaker) */
+        .player-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-player { padding: 24px 0; font-size: 26px; }
         .active-l { background: var(--green) !important; }
         .active-r { background: var(--blue) !important; }
 
-        /* Foul-rad */
-        .foul-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        .btn-sub { height: 36px; font-size: 12px; }
+        /* Foul-knapper */
+        .foul-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-sub { padding: 15px 0; font-size: 13px; }
         .btn-foul { color: #ffaa00; border-color: rgba(255, 170, 0, 0.2); }
 
-        /* Pause / Break Rad */
-        .utility-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 4px; }
+        /* Pause / Break */
+        .utility-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 6px; }
 
-        /* Låst Extension-knapp i bunnen */
+        /* Extension-knappen: Nederst, trygg, og blir ALDRI kuttet av lenger */
         .btn-extension-huge { 
             color: var(--blue); 
-            font-size: 15px; 
-            border-color: rgba(2, 132, 199, 0.5);
-            height: 44px;
-            margin-top: 2px;
+            font-size: 16px; 
+            border-color: rgba(2, 132, 199, 0.4);
+            padding: 16px 0;
+            width: 100%;
         }
     </style>
 </head>
@@ -214,7 +213,7 @@
             </div>
         </div>
 
-        <div class="action-flex">
+        <div class="action-grid">
             <div class="status-row">
                 <button class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START</button>
                 <button class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP</button>
