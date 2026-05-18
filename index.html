@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Master Control v7</title>
+    <title>KØ-PÅDD Master Control v8</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -29,14 +29,14 @@
             overflow: hidden; position: fixed;
         }
         
-        body { padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px; display: flex; flex-direction: column; }
+        body { padding: env(safe-area-inset-top) 10px calc(env(safe-area-inset-bottom) + 5px) 10px; display: flex; flex-direction: column; }
 
         .container { 
             display: flex; 
             flex-direction: column; 
             height: 100%; 
             width: 100%; 
-            justify-content: space-between; /* Fordeler toppen, kulene og bunnen jevnt utover */
+            justify-content: space-between; 
         }
 
         .top-nav { 
@@ -54,7 +54,6 @@
             font-weight: 900; text-transform: uppercase; padding: 18px; border-radius: 12px;
         }
 
-        /* Handicap-raden bruker nå full bredde */
         .hcp-input-row {
             display: flex;
             justify-content: space-between;
@@ -103,10 +102,9 @@
             align-items: center; 
             width: 100%; 
         }
-        /* Kuleraden bruker nå full bredde og brer seg utover */
         .ball-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 30px 25px; 
+            gap: 25px 25px; 
             justify-items: center; 
             width: 100%;
         }
@@ -127,7 +125,6 @@
             font-size: 5.2vw; font-weight: 900; border: 1px solid rgba(0,0,0,0.8); z-index: 10;
         }
         
-        /* Original flat og rett stripe som er litt høyere */
         .stripe-band { 
             position: absolute; 
             width: 100%; 
@@ -138,48 +135,49 @@
         }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* BUNNKONTROLLER - Gjort større for å fylle skjermen godt ut */
+        /* BUNNKONTROLLER - Gjort kraftig oppblåst for å fylle skjermen ordentlig ut */
         .bottom-controls { 
             flex: 0 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding-bottom: 5px;
+            gap: 10px;
             width: 100%;
         }
         
-        .mode-container { display: flex; flex-direction: column; gap: 6px; }
-        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .mode-container { display: flex; flex-direction: column; gap: 8px; }
+        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        
+        /* Modusknapper med mye mer høyde */
         .mode-btn {
-            background: var(--btn-bg); border: 1px solid #222; padding: 18px 0;
-            color: #eee; font-size: 14px; font-weight: 800; border-radius: 10px;
-            box-shadow: 0 3px 0 #000;
-        }
-
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .btn-main { 
-            background: var(--btn-bg); border: 1px solid #222; color: white; 
-            font-weight: 900; text-transform: uppercase; border-radius: 12px;
+            background: var(--btn-bg); border: 1px solid #222; padding: 26px 0;
+            color: #eee; font-size: 15px; font-weight: 800; border-radius: 12px;
             box-shadow: 0 4px 0 #000;
         }
 
-        /* Økt størrelse og padding betydelig på alle hovedknapper */
-        .btn-status { padding: 26px 5px; font-size: 16px; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-main { 
+            background: var(--btn-bg); border: 1px solid #222; color: white; 
+            font-weight: 900; text-transform: uppercase; border-radius: 14px;
+            box-shadow: 0 4px 0 #000;
+        }
+
+        /* Enorm padding på alle hovedknapper for å maksimere størrelsen */
+        .btn-status { padding: 36px 5px; font-size: 18px; }
         .btn-start { color: var(--green); }
         .btn-stop { color: var(--red); }
 
-        .btn-player { padding: 54px 5px; font-size: 32px; }
+        .btn-player { padding: 75px 5px; font-size: 38px; }
         .active-l { background: var(--green) !important; }
         .active-r { background: var(--blue) !important; }
 
-        .btn-sub { padding: 30px 5px; font-size: 15px; }
+        .btn-sub { padding: 45px 5px; font-size: 16px; }
         
-        .bottom-row { grid-column: span 2; display: grid; grid-template-columns: 1fr 1.5fr; gap: 6px; }
+        .bottom-row { grid-column: span 2; display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; }
 
-        /* Stor og god fyllende Extension-knapp i bunnen */
+        /* Gigantisk Extension-knapp i bunnen */
         .btn-extension-huge { 
-            grid-column: span 2; padding: 38px; color: var(--blue); 
-            font-size: 22px; border-color: rgba(2, 132, 199, 0.4);
+            grid-column: span 2; padding: 55px; color: var(--blue); 
+            font-size: 26px; border-color: rgba(2, 132, 199, 0.4);
         }
     </style>
 </head>
