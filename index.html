@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Master Control v19</title>
+    <title>KØ-PÅDD Master Control v20</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -30,7 +30,7 @@
         }
         
         body { 
-            padding: env(safe-area-inset-top) 10px calc(env(safe-area-inset-bottom) + 10px) 10px; 
+            padding: env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px) 12px; 
         }
 
         .container { 
@@ -71,7 +71,7 @@
         }
         .hcp-toggle-btn.active { background: var(--green); border-color: #22c55e; color: #fff; }
 
-        /* SONE 2: KULENE (Optimalisert for maksimal størrelse i midten) */
+        /* SONE 2: KULENE (Strukket helt ut til kantene for maksimal størrelse) */
         .pool-section { 
             display: flex; 
             justify-content: center; 
@@ -84,33 +84,32 @@
         .ball-grid {
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
-            gap: 12px 35px; /* Økt mellomrom sidelengs for å fylle bredden bedre */
+            gap: 12px 0; /* Vertikalt mellomrom beholdes, horisontalt styres av kolonnene */
             justify-items: center; 
             align-content: center;
-            width: 100%;
-            max-width: 380px; /* Tillater griddet å strekke seg bredere på skjermen */
+            width: 100%; /* Tar 100% av skjermbredden nå – ingen max-width! */
         }
 
-        /* Kulene har blitt skrudd opp i størrelse for å gjøre dem enkle å treffe */
+        /* Kulene fyller nå nesten hele kolonnebredden sin for maksimal trykkflate */
         .ball-btn {
-            width: 24vw; height: 24vw; max-width: 88px; max-height: 88px;
+            width: 27vw; height: 27vw; max-width: 105px; max-height: 105px;
             border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.6);
             position: relative; display: flex; justify-content: center; align-items: center;
             background: radial-gradient(circle at 35% 35%, var(--ball-shine) 0%, rgba(255,255,255,0) 50%), 
                         radial-gradient(circle at 65% 65%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%), #fff;
-            box-shadow: inset -4px -4px 10px rgba(0,0,0,0.4), 4px 5px 8px rgba(0,0,0,0.6);
+            box-shadow: inset -4px -4px 10px rgba(0,0,0,0.4), 4px 6px 10px rgba(0,0,0,0.6);
         }
         
         .num-label {
             background: white; color: black; width: 55%; height: 55%; border-radius: 50%;
             display: flex; justify-content: center; align-items: center; 
-            font-size: 5.5vw; font-weight: 900; border: 1px solid rgba(0,0,0,0.8); z-index: 10;
+            font-size: 6vw; font-weight: 900; border: 1px solid rgba(0,0,0,0.8); z-index: 10;
         }
-        @media (min-width: 400px) { .num-label { font-size: 20px; } }
+        @media (min-width: 400px) { .num-label { font-size: 24px; } }
         .stripe-band { position: absolute; width: 100%; height: 48%; top: 26%; border-radius: 0; z-index: 1; }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* SONE 3: BUNNKONTROLLER (Helt urørt layout fra forrige versjon) */
+        /* SONE 3: BUNNKONTROLLER (Layout 100% identisk med ditt forrige bilde) */
         .bottom-controls { 
             display: grid;
             grid-template-rows: 1.1fr 3.9fr;
