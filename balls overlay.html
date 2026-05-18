@@ -26,6 +26,31 @@
             margin-top: 25px;
         }
 
+        /* CONTAINER FOR PIL + HCP-VINGE (Holder ting samlet på sidene) */
+        .side-wrapper {
+            display: flex;
+            align-items: center;
+            transform: translateY(-18px); /* Samme høydejustering som vingene */
+        }
+
+        /* STYLING FOR SPILLER-PILENE */
+        .player-arrow {
+            width: 20px; /* Juster størrelsen på pilen her hvis nødvendig */
+            height: auto;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            opacity: 0; /* Skjult som standard */
+        }
+        
+        /* Vis pilen når spilleren er aktiv */
+        .player-arrow.active {
+            opacity: 1;
+        }
+
+        /* Speilvender pilen for høyre side slik at den peker inn mot navnet/scoren */
+        #arrow-B {
+            transform: scaleX(-1);
+        }
+
         /* KULERAD-CONTAINER */
         .ball-container {
             display: flex;
@@ -75,13 +100,11 @@
         #hcp-A {
             border-radius: 10px 0px 0px 10px !important; 
             margin-right: -2px; 
-            transform: translateY(-18px) !important; 
         }
 
         #hcp-B {
             border-radius: 0px 10px 10px 0px !important; 
             margin-left: -2px; 
-            transform: translateY(-18px) !important; 
         }
 
         /* KULE-STILER */
@@ -164,8 +187,8 @@
 
         let currentBallStyle = 'dark'; 
         let lastBallData = null;
+        let activePlayer = ""; // Holder styr på hvem som er på bordet
         
-        // Globale variabler for handicap som hentes fra Firebase i stedet
         let hcpA = "-";
         let hcpB = "-";
         let showHcp = true; 
@@ -181,14 +204,25 @@
 
             mainFrame.innerHTML = '';
 
-            // Venstre boks (Spiller 1 / A)
+            // VENSTRE SIDE (Pil A + HCP Vinge A)
+            const sideA = document.createElement('div');
+            sideA.className = 'side-wrapper';
+            
+            const arrowA = document.createElement('img');
+            arrowA.src = "https://koepd.github.io/assets/Player_Arrow.png";
+            arrowA.className = `player-arrow ${activePlayer === 'left' ? 'active' : ''}`;
+            arrowA.id = 'arrow-A';
+            sideA.appendChild(arrowA);
+
             const boxA = document.createElement('div');
             boxA.className = `hcp-wing ${showHcp ? '' : 'hidden'}`;
             boxA.id = 'hcp-A';
             boxA.innerHTML = `Handicap: <span class="hcp-value">${hcpA}</span>`;
-            mainFrame.appendChild(boxA);
+            sideA.appendChild(boxA);
+            
+            mainFrame.appendChild(sideA);
 
-            // Midten (Kulene)
+            // MIDTEN (Kulene)
             const ballContainer = document.createElement('div');
             ballContainer.className = 'ball-container';
 
@@ -225,12 +259,23 @@
             
             mainFrame.appendChild(ballContainer);
 
-            // Høyre boks (Spiller 2 / B)
+            // HØYRE SIDE (HCP Vinge B + Pil B)
+            const sideB = document.createElement('div');
+            sideB.className = 'side-wrapper';
+
             const boxB = document.createElement('div');
             boxB.className = `hcp-wing ${showHcp ? '' : 'hidden'}`;
             boxB.id = 'hcp-B';
             boxB.innerHTML = `Handicap: <span class="hcp-value">${hcpB}</span>`;
-            mainFrame.appendChild(boxB);
+            sideB.appendChild(boxB);
+
+            const arrowB = document.createElement('img');
+            arrowB.src = "https://koepd.github.io/assets/Player_Arrow.png";
+            arrowB.className = `player-arrow ${activePlayer === 'right' ? 'active' : ''}`;
+            arrowB.id = 'arrow-B';
+            sideB.appendChild(arrowB);
+            
+            mainFrame.appendChild(sideB);
         }
 
         // Lytter på stil-endringer
@@ -239,12 +284,18 @@
             if (lastBallData) { renderOverlay(lastBallData); }
         });
 
-        // NYTT: Lytt på handicap-verdier og synlighet fra Firebase
+        // Lytt på handicap-verdier og synlighet fra Firebase
         db.ref('stats/handicap').on('value', snap => {
             const hcpData = snap.val() || {};
             hcpA = hcpData.left !== undefined ? hcpData.left : "-";
             hcpB = hcpData.right !== undefined ? hcpData.right : "-";
-            showHcp = hcpData.visible !== false; // Standard til true hvis ikke definert
+            showHcp = hcpData.visible !== false;
+            if (lastBallData) { renderOverlay(lastBallData); }
+        });
+
+        // NYTT: Lytt på hvilken spiller som er aktiv (S1 eller S2)
+        db.ref('activePlayer').on('value', snap => {
+            activePlayer = snap.val() || "";
             if (lastBallData) { renderOverlay(lastBallData); }
         });
 
