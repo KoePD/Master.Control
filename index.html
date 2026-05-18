@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Ultra Pro Max</title>
+    <title>KØ-PÅDD Master Control v5</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -40,17 +40,17 @@
         }
 
         .top-nav { 
-            padding: 5px 0; 
+            padding: 2px 0; 
             flex: 0 0 auto; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            gap: 6px;
+            gap: 5px;
         }
         .name-input {
             background: var(--btn-bg); border: 1px solid var(--border); color: var(--accent);
-            text-align: center; font-size: 22px; width: 100%; max-width: 420px; 
-            font-weight: 900; text-transform: uppercase; padding: 18px; border-radius: 12px;
+            text-align: center; font-size: 20px; width: 100%; max-width: 420px; 
+            font-weight: 900; text-transform: uppercase; padding: 12px; border-radius: 12px;
         }
 
         /* Handicap-raden under Match ID */
@@ -59,6 +59,7 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
+            max-width: 420px;
             gap: 8px;
         }
         .hcp-box {
@@ -69,19 +70,18 @@
             text-align: center;
             font-size: 14px;
             font-weight: 700;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
         }
         .hcp-box::placeholder { color: #555; }
 
-        /* NYTT: Stil for den dedikerte AV/PÅ-knappen for handicap */
         .hcp-toggle-btn {
             background: #222;
             border: 1px solid #333;
             color: #888;
             font-size: 11px;
             font-weight: 900;
-            padding: 12px 10px;
+            padding: 10px 8px;
             border-radius: 8px;
             min-width: 75px;
             text-align: center;
@@ -93,7 +93,6 @@
             background: var(--green);
             border-color: #22c55e;
             color: #fff;
-            box-shadow: 0 0 10px rgba(22, 163, 74, 0.4);
         }
 
         .pool-section { 
@@ -106,66 +105,85 @@
         }
         .ball-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 35px 25px; 
+            gap: 25px 25px; /* Justert litt for optimal skjermplass */
             justify-items: center; width: 100%;
         }
 
         .ball-btn {
-            width: 29vw; height: 29vw; max-width: 120px; max-height: 120px;
+            width: 28vw; height: 28vw; max-width: 115px; max-height: 115px;
             border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.6);
             position: relative; display: flex; justify-content: center; align-items: center;
             background: radial-gradient(circle at 35% 35%, var(--ball-shine) 0%, rgba(255,255,255,0) 50%), 
                         radial-gradient(circle at 65% 65%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%), #fff;
             box-shadow: inset -4px -4px 10px rgba(0,0,0,0.4), 4px 6px 10px rgba(0,0,0,0.6);
+            overflow: hidden;
         }
         
         .num-label {
             background: white; color: black; width: 55%; height: 55%; border-radius: 50%;
             display: flex; justify-content: center; align-items: center; 
             font-size: 5.2vw; font-weight: 900; border: 1px solid rgba(0,0,0,0.8); z-index: 10;
+            transition: width 0.2s, height 0.2s;
         }
         
-        .stripe-band { position: absolute; width: 100%; height: 45%; z-index: 1; }
+        /* Krymper den hvite sirkelen på de stripete kulene slik at fargestripen blir høyere */
+        .ball-btn.is-striped-ball .num-label {
+            width: 42%;
+            height: 42%;
+            font-size: 4.2vw;
+        }
+        
+        /* FIKSET: Naturlig rund bue på stripene */
+        .stripe-band { 
+            position: absolute; 
+            width: 105%; 
+            height: 70%; 
+            top: 15%; 
+            border-radius: 50% / 22%; 
+            z-index: 1; 
+        }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
+        /* KONTROLLERPANEL NEDERST */
         .bottom-controls { 
             flex: 0 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding-bottom: 5px;
+            gap: 6px;
         }
         
-        .mode-container { display: flex; flex-direction: column; gap: 6px; }
-        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .mode-container { display: flex; flex-direction: column; gap: 4px; }
+        .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
         .mode-btn {
-            background: var(--btn-bg); border: 1px solid #222; padding: 20px 0;
-            color: #eee; font-size: 14px; font-weight: 800; border-radius: 10px;
+            background: var(--btn-bg); border: 1px solid #222; padding: 14px 0;
+            color: #eee; font-size: 13px; font-weight: 800; border-radius: 8px;
+            box-shadow: 0 2px 0 #000;
+        }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .btn-main { 
+            background: var(--btn-bg); border: 1px solid #222; color: white; 
+            font-weight: 900; text-transform: uppercase; border-radius: 10px;
             box-shadow: 0 3px 0 #000;
         }
 
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .btn-main { 
-            background: var(--btn-bg); border: 1px solid #222; color: white; 
-            font-weight: 900; text-transform: uppercase; border-radius: 12px;
-            box-shadow: 0 4px 0 #000;
-        }
-
-        .btn-status { padding: 30px 5px; font-size: 16px; }
+        /* Strammet inn høydene (padding) for å garantere at Extension vises */
+        .btn-status { padding: 22px 5px; font-size: 15px; }
         .btn-start { color: var(--green); }
         .btn-stop { color: var(--red); }
 
-        .btn-player { padding: 60px 5px; font-size: 32px; }
+        .btn-player { padding: 48px 5px; font-size: 30px; }
         .active-l { background: var(--green) !important; }
         .active-r { background: var(--blue) !important; }
 
-        .btn-sub { padding: 35px 5px; font-size: 15px; }
+        .btn-sub { padding: 25px 5px; font-size: 14px; }
         
-        .bottom-row { grid-column: span 2; display: grid; grid-template-columns: 1fr 1.5fr; gap: 6px; }
+        .bottom-row { grid-column: span 2; display: grid; grid-template-columns: 1fr 1.5fr; gap: 5px; }
 
+        /* Gjenopprettet og optimalisert gigantisk Extension-knapp i bunnen */
         .btn-extension-huge { 
-            grid-column: span 2; padding: 45px; color: var(--blue); 
-            font-size: 24px; border-color: rgba(2, 132, 199, 0.4);
+            grid-column: span 2; padding: 32px; color: var(--blue); 
+            font-size: 22px; border-color: rgba(2, 132, 199, 0.4);
         }
     </style>
 </head>
@@ -228,7 +246,7 @@
     
     let ballStyle = 'classic'; 
     let currentGameMode = 9;
-    let isHcpVisible = true; // Holder styr på lokal status for knappen
+    let isHcpVisible = true;
 
     function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
 
@@ -237,23 +255,16 @@
     function updateHandicap() {
         const hcpL = document.getElementById('hcpInputL').value;
         const hcpR = document.getElementById('hcpInputR').value;
-        db.ref('stats/handicap').update({
-            left: hcpL,
-            right: hcpR
-        });
+        db.ref('stats/handicap').update({ left: hcpL, right: hcpR });
     }
 
-    /* NYTT: Funksjon som veksler synligheten til handicap i databasen */
     function toggleHandicapVisibility() {
         vibe(40);
         isHcpVisible = !isHcpVisible;
-        db.ref('stats/handicap').update({
-            visible: isHcpVisible
-        });
+        db.ref('stats/handicap').update({ visible: isHcpVisible });
         updateToggleBtnUI(isHcpVisible);
     }
 
-    /* Oppdaterer knappens utseende (grønn/grå) og tekst */
     function updateToggleBtnUI(visible) {
         const btn = document.getElementById('hcpToggleBtn');
         if (visible) {
@@ -265,6 +276,7 @@
         }
     }
 
+    toggleBallSet;
     function toggleBallSet() { vibe(); ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic'; db.ref('settings/ballStyle').set(ballStyle); renderBalls(); }
     function reputtActiveBalls() { vibe(); db.ref('balls').once('value', snap => { let u = snap.val() || {}; for (let i in u) { if (u[i] === false) u[i] = true; } db.ref('balls').set(u); }); }
 
@@ -272,6 +284,8 @@
     for (let i = 1; i <= 15; i++) {
         const b = document.createElement('div');
         b.id = `btn-${i}`; b.className = 'ball-btn';
+        if (i > 8) b.classList.add('is-striped-ball'); // Legger til klasse for stripete kuler
+        
         let numLabel = document.createElement('div'); numLabel.className = 'num-label'; numLabel.innerText = i; b.appendChild(numLabel);
         let band = document.createElement('div'); band.id = `band-${i}`; band.className = 'stripe-band'; b.appendChild(band);
         b.onclick = () => { vibe(30); const ref = db.ref(`balls/${i}`); ref.once('value').then(snap => { ref.set(snap.val() === false); }); };
@@ -310,7 +324,6 @@
     function useExtension() { vibe(60); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
     function sendClock(cmd) { vibe(40); db.ref('shotclock/cmd').set({ action: cmd, ts: Date.now() }); }
 
-    // Henter eksisterende handicap og synlighetsstatus når siden lastes
     db.ref('stats/handicap').on('value', snap => {
         const data = snap.val() || {};
         if (data.left !== undefined && document.activeElement !== document.getElementById('hcpInputL')) document.getElementById('hcpInputL').value = data.left;
