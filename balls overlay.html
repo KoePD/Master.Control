@@ -26,29 +26,11 @@
             margin-top: 25px;
         }
 
-        /* CONTAINER FOR PIL + HCP-VINGE (Holder ting samlet på sidene) */
+        /* CONTAINER FOR HCP-VINGE */
         .side-wrapper {
             display: flex;
             align-items: center;
             transform: translateY(-18px); /* Samme høydejustering som vingene */
-        }
-
-        /* STYLING FOR SPILLER-PILENE */
-        .player-arrow {
-            width: 20px; /* Juster størrelsen på pilen her hvis nødvendig */
-            height: auto;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            opacity: 0; /* Skjult som standard */
-        }
-        
-        /* Vis pilen når spilleren er aktiv */
-        .player-arrow.active {
-            opacity: 1;
-        }
-
-        /* Speilvender pilen for høyre side slik at den peker inn mot navnet/scoren */
-        #arrow-B {
-            transform: scaleX(-1);
         }
 
         /* KULERAD-CONTAINER */
@@ -187,7 +169,6 @@
 
         let currentBallStyle = 'dark'; 
         let lastBallData = null;
-        let activePlayer = ""; // Holder styr på hvem som er på bordet
         
         let hcpA = "-";
         let hcpB = "-";
@@ -204,15 +185,9 @@
 
             mainFrame.innerHTML = '';
 
-            // VENSTRE SIDE (Pil A + HCP Vinge A)
+            // VENSTRE SIDE (HCP Vinge A)
             const sideA = document.createElement('div');
             sideA.className = 'side-wrapper';
-            
-            const arrowA = document.createElement('img');
-            arrowA.src = "https://koepd.github.io/assets/Player_Arrow.png";
-            arrowA.className = `player-arrow ${activePlayer === 'left' ? 'active' : ''}`;
-            arrowA.id = 'arrow-A';
-            sideA.appendChild(arrowA);
 
             const boxA = document.createElement('div');
             boxA.className = `hcp-wing ${showHcp ? '' : 'hidden'}`;
@@ -259,7 +234,7 @@
             
             mainFrame.appendChild(ballContainer);
 
-            // HØYRE SIDE (HCP Vinge B + Pil B)
+            // HØYRE SIDE (HCP Vinge B)
             const sideB = document.createElement('div');
             sideB.className = 'side-wrapper';
 
@@ -268,12 +243,6 @@
             boxB.id = 'hcp-B';
             boxB.innerHTML = `Handicap: <span class="hcp-value">${hcpB}</span>`;
             sideB.appendChild(boxB);
-
-            const arrowB = document.createElement('img');
-            arrowB.src = "https://koepd.github.io/assets/Player_Arrow.png";
-            arrowB.className = `player-arrow ${activePlayer === 'right' ? 'active' : ''}`;
-            arrowB.id = 'arrow-B';
-            sideB.appendChild(arrowB);
             
             mainFrame.appendChild(sideB);
         }
@@ -290,12 +259,6 @@
             hcpA = hcpData.left !== undefined ? hcpData.left : "-";
             hcpB = hcpData.right !== undefined ? hcpData.right : "-";
             showHcp = hcpData.visible !== false;
-            if (lastBallData) { renderOverlay(lastBallData); }
-        });
-
-        // NYTT: Lytt på hvilken spiller som er aktiv (S1 eller S2)
-        db.ref('activePlayer').on('value', snap => {
-            activePlayer = snap.val() || "";
             if (lastBallData) { renderOverlay(lastBallData); }
         });
 
