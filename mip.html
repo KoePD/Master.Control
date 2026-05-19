@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>🎙️ KØ-PÅDD Match Insight Pro v2.0</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { 
+            --gold: #ffcc00; 
+            --s1: #22c55e; /* Spiller 1 (Grønn) */
+            --s2: #0284c7; /* Spiller 2 (Blå) */
+            --bg: #050505; --card: #121212; --border: #222; --red: #ef4444;
+            --text-main: #f3f4f6; --text-dim: #9ca3af;
+        }
+        
+        body { background: var(--bg); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 25px; overflow: hidden; }
+        .dashboard { max-width: 1600px; margin: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        
+        /* HEADER / FOTBALL-KLOKKE */
+        .header { grid-column: span 4; text-align: center; border: 1px solid var(--border); padding: 20px; background: #0a0a0a; border-radius: 16px; position: relative; }
+        .header h1 { color: var(--gold); text-transform: uppercase; margin: 0; font-size: 1.8rem; letter-spacing: 6px; font-weight: 900; }
+        #matchTimeContainer { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 5px; }
+        #matchDuration { font-size: 2.5rem; font-family: monospace; font-weight: 900; color: white; }
+        .omgang-badge { background: var(--gold); color: black; font-weight: 900; padding: 4px 12px; border-radius: 6px; font-size: 0.9rem; text-transform: uppercase; }
+
+        /* KORT-LAYOUT */
+        .stat-card { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 16px; text-align: center; position: relative; display: flex; flex-direction: column; justify-content: center; }
+        .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800; letter-spacing: 1px; margin-bottom: 5px; }
+        .value { font-size: 2.2rem; font-weight: 900; color: #fff; }
+        .vs-display { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 2.2rem; font-weight: 900; }
+        .hc-badge { font-size: 0.8rem; background: #1a1a1a; padding: 4px 12px; border-radius: 6px; color: var(--gold); margin: 8px auto 0 auto; display: inline-block; border: 1px solid #333; font-weight: bold; }
+        
+        /* VISUELL BORD/BANE-DOMINANS */
+        .visual-pitch-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 16px; grid-column: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; }
+        .pool-table-pitch { width: 85%; height: 60%; background: #075e2f; border: 12px solid #5c4033; border-radius: 8px; position: relative; box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 10px 20px rgba(0,0,0,0.5); transition: all 0.5s ease; }
+        
+        /* Lys opp bordet basert på hvem som dominerer eller har turen */
+        .pool-table-pitch.dominance-s1 { box-shadow: inset 0 0 50px rgba(34, 197, 94, 0.5), 0 0 20px rgba(34, 197, 94, 0.3); border-color: var(--s1); }
+        .pool-table-pitch.dominance-s2 { box-shadow: inset 0 0 50px rgba(2, 132, 199, 0.5), 0 0 20px rgba(2, 132, 199, 0.3); border-color: var(--s2); }
+        
+        .center-circle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; border: 2px dashed rgba(255,255,255,0.15); border-radius: 50%; }
+        .kitchen-line { position: absolute; left: 25%; top: 0; bottom: 0; width: 2px; border-left: 2px dashed rgba(255,255,255,0.15); }
+        
+        .live-banner { position: absolute; top: 15px; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; border: 1px solid #333; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* HISTORIKK GRAF */
+        .graph-container { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 16px; grid-column: span 2; height: 400px; }
+        
+        /* BARS FOR PROSENTFORDELING */
+        .bar-container { grid-column: span 4; background: var(--card); padding: 20px; border-radius: 16px; border: 1px solid var(--border); display: grid; gap: 15px; }
+        .comparison-bar { height: 20px; background: #1a1a1a; border-radius: 10px; overflow: hidden; display: flex; margin-top: 6px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+        .bar-fill-s1 { height: 100%; background: linear-gradient(90deg, #15803d, var(--s1)); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bar-fill-s2 { height: 100%; background: linear-gradient(90deg, var(--s2), #0369a1); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <!-- TOPPEN: FOTBALL-INSPIRERT LIVE KLOKKE -->
+    <div class="header">
+        <h1>🎙️ KØ-PÅDD MATCH INSIGHT</h1>
+        <div id="matchTimeContainer">
+            <span id="omgangBadge" class="omgang-badge">FØR KAMPSTART</span>
+            <div id="matchDuration">00:00</div>
+        </div>
+    </div>
+
+    <!-- RAD 1: STATS KORT -->
+    <div class="stat-card">
+        <div class="label">Spilleform</div>
+        <div id="modeText" class="value" style="font-size:1.6rem; color: var(--gold);">-</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Kampstilling (Racks)</div>
+        <div class="vs-display"><span id="winsL" style="color:var(--s1)">0</span><span style="color:#333">:</span><span id="winsR" style="color:var(--s2)">0</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Live Angrepsbølge</div>
+        <div id="liveStreak" class="value" style="font-size: 1.4rem; color: #fff;">Ingen aktiv</div>
+        <div class="label" id="liveStreakSecs" style="font-size:0.65rem; margin-top:3px;">0 sekunder spilt</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Kuler Senket (Kampen)</div>
+        <div class="vs-display" style="font-size: 1.6rem;"><span id="totalPotsL" style="color:var(--s1)">0</span><span style="color:#333">/</span><span id="totalPotsR" style="color:var(--s2)">0</span></div>
+    </div>
+
+    <!-- SPILLER VENSTRE -->
+    <div class="stat-card">
+        <div class="value" id="nameLText" style="font-size: 1.6rem; color:var(--s1)">Spiller 1</div>
+        <div id="hcL" class="hc-badge">HCP: -</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Feil / Fouls (Gult Kort)</div>
+        <div id="vFoulL" class="value" style="color: var(--red);">0</div>
+    </div>
+    <!-- SPILLER HØYRE -->
+    <div class="stat-card">
+        <div class="value" id="nameRText" style="font-size: 1.6rem; color:var(--s2)">Spiller 2</div>
+        <div id="hcR" class="hc-badge">HCP: -</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">Feil / Fouls (Gult Kort)</div>
+        <div id="vFoulR" class="value" style="color: var(--red);">0</div>
+    </div>
+
+    <!-- RAD 2: FOTBALLBANEN (BILJARDBORDET) & LIVE TIMELINE-GRAF -->
+    <div class="visual-pitch-container">
+        <div class="live-banner">Banebalanse (Aktiv Spiller)</div>
+        <div id="poolPitch" class="pool-table-pitch">
+            <div class="kitchen-line"></div>
+            <div class="center-circle"></div>
+        </div>
+        <div id="pitchStatusText" style="margin-top: 15px; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Bordet er åpent</div>
+    </div>
+
+    <div class="graph-container">
+        <canvas id="possessionChart"></canvas>
+    </div>
+
+    <!-- RAD 3: LIVE PROSENTSTAVER (POSSESSION) -->
+    <div class="bar-container">
+        <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:900; letter-spacing: 1px;">
+                <span>BALLBESITTELSE % (POSSESSION)</span>
+                <span id="timeRatioText" style="color: var(--gold);">50 / 50</span>
+            </div>
+            <div class="comparison-bar">
+                <div id="bar-time-s1" class="bar-fill-s1" style="width:50%"></div>
+                <div id="bar-time-s2" class="bar-fill-s2" style="width:50%"></div>
+            </div>
+        </div>
+        
+        <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:900; letter-spacing: 1px;">
+                <span>ANDEL SENKEDE KULER</span>
+                <span id="potRatioText" style="color: var(--gold);">50 / 50</span>
+            </div>
+            <div class="comparison-bar">
+                <div id="bar-pots-s1" class="bar-fill-s1" style="width:50%"></div>
+                <div id="bar-pots-s2" class="bar-fill-s2" style="width:50%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    
+    let possessionChart;
+    let matchStartTimestamp = 0;
+    let historyTimeline = []; // For å tegne grafen over tid
+
+    // --- CUESCORE SCORE-SYNC ---
+    function syncCueScore() {
+        db.ref('settings/cueScoreMatchID').once('value', snap => {
+            let tID = snap.val() || "79253032";
+            const proxyUrl = "https://corsproxy.io/?";
+            const apiUrl = `https://api.cuescore.com/tournament/?id=${tID}`;
+            
+            fetch(proxyUrl + apiUrl)
+                .then(res => res.json())
+                .then(data => {
+                    const matches = data.matches || [];
+                    const tableID = "9158140";
+                    const match = matches.find(m => m.table_id == tableID || m.table_name == tableID);
+                    
+                    if (match) {
+                        document.getElementById('winsL').innerText = match.player1_score || 0;
+                        document.getElementById('winsR').innerText = match.player2_score || 0;
+                    }
+                }).catch(e => console.log("CueScore synkronisering venter på svar..."));
+        });
+    }
+
+    // --- FOTBALL-INSPIRERT TIMER-MOTOR ---
+    db.ref('stats/startTime').on('value', snap => { 
+        matchStartTimestamp = snap.val() || 0;
+        if (matchStartTimestamp > 0) syncCueScore(); 
+    });
+
+    setInterval(() => {
+        const display = document.getElementById('matchDuration');
+        const omgangText = document.getElementById('omgangBadge');
+        
+        if (matchStartTimestamp > 0) {
+            const diff = Date.now() - matchStartTimestamp;
+            const totalSeconds = Math.max(0, Math.floor(diff / 1000));
+            const totalMinutes = Math.floor(totalSeconds / 60);
+            
+            // Formatert tidvisning
+            const m = totalMinutes.toString().padStart(2, '0');
+            const s = (totalSeconds % 60).toString().padStart(2, '0');
+            display.innerText = `${m}:${s}`;
+
+            // Sjekk fotball-struktur: 2 x 45 min med 15 min pause
+            if (totalMinutes < 45) {
+                omgangText.innerText = "1. Omgang";
+                omgangText.style.background = "#22c55e";
+            } else if (totalMinutes >= 45 && totalMinutes < 60) {
+                omgangText.innerText = "PAUSE";
+                omgangText.style.background = var(--red);
+            } else if (totalMinutes >= 60 && totalMinutes < 105) {
+                // Viser opptil 90 minutter effektivt (justert for pausetiden på 15 min)
+                const fotballMinutter = totalMinutes - 15;
+                omgangText.innerText = "2. Omgang";
+                omgangText.style.background = "#0284c7";
+            } else {
+                omgangText.innerText = "Fulltid (E.T.O)";
+                omgangText.style.background = "#374151";
+            }
+        } else {
+            display.innerText = "00:00";
+            omgangText.innerText = "FØR KAMPSTART";
+            omgangText.style.background = "#374151";
+        }
+    }, 1000);
+
+    // --- LIVE BALLBESITTELSE (POSSESSION) & BORD-VISUALISERING ---
+    db.ref('stats/possession').on('value', snap => {
+        const data = snap.val() || { leftPercent: 50, rightPercent: 50, leftSeconds: 0, rightSeconds: 0 };
+        
+        const lp = data.leftPercent;
+        const rp = data.rightPercent;
+        
+        // Oppdater prosentstavene live
+        document.getElementById('bar-time-s1').style.width = lp + "%";
+        document.getElementById('bar-time-s2').style.width = rp + "%";
+        document.getElementById('timeRatioText').innerText = `${lp}% / ${rp}%`;
+
+        // Legg til i graf-historikken (max 30 datapunkter for fin flyt)
+        if (matchStartTimestamp > 0) {
+            historyTimeline.push(lp);
+            if (historyTimeline.length > 40) historyTimeline.shift();
+            
+            if (possessionChart) {
+                possessionChart.data.labels = historyTimeline.map((_, i) => "");
+                possessionChart.data.datasets[0].data = historyTimeline;
+                possessionChart.update('none');
+            }
+        }
+    });
+
+    // --- LIVE SPILLER-STREAK / "ANGREPSBØLGE" ---
+    db.ref('stats/currentStreak').on('value', snap => {
+        const streak = snap.val() || { player: "", ballsSunkThisTurn: 0, secondsThisTurn: 0 };
+        const streakText = document.getElementById('liveStreak');
+        const streakSecs = document.getElementById('liveStreakSecs');
+        const pitch = document.getElementById('poolPitch');
+        const pitchStatus = document.getElementById('pitchStatusText');
+        
+        if (streak.player === 'left') {
+            streakText.innerText = `S1 har flyten (+${streak.ballsSunkThisTurn} kuler)`;
+            streakSecs.innerText = `${streak.secondsThisTurn}s i angrep`;
+            
+            // Farg biljardbordet (fotballbanen) grønt for S1-dominans
+            pitch.className = "pool-table-pitch dominance-s1";
+            pitchStatus.innerText = "Spiller 1 presser i angrepssonen";
+            pitchStatus.style.color = "var(--s1)";
+        } else if (streak.player === 'right') {
+            streakText.innerText = `S2 har flyten (+${streak.ballsSunkThisTurn} kuler)`;
+            streakSecs.innerText = `${streak.secondsThisTurn}s i angrep`;
+            
+            // Farg biljardbordet (fotballbanen) blått for S2-dominans
+            pitch.className = "pool-table-pitch dominance-s2";
+            pitchStatus.innerText = "Spiller 2 presser i angrepssonen";
+            pitchStatus.style.color = "var(--s2)";
+        } else {
+            streakText.innerText = "Ingen aktiv";
+            streakSecs.innerText = "0 sekunder spilt";
+            pitch.className = "pool-table-pitch";
+            pitchStatus.innerText = "Bordet er åpent / Dødball";
+            pitchStatus.style.color = "white";
+        }
+    });
+
+    // --- TOTALE KAMP-DATA (Fouls, Kuler, Navn) ---
+    db.ref('stats').on('value', snap => {
+        const d = snap.val() || {};
+        const fouls = d.fouls || { left: 0, right: 0 };
+        const matchData = d.matchData || { totalBallsSunkLeft: 0, totalBallsSunkRight: 0 };
+
+        document.getElementById('vFoulL').innerText = fouls.left || 0;
+        document.getElementById('vFoulR').innerText = fouls.right || 0;
+        
+        const potsL = matchData.totalBallsSunkLeft || 0;
+        const potsR = matchData.totalBallsSunkRight || 0;
+        document.getElementById('totalPotsL').innerText = potsL;
+        document.getElementById('totalPotsR').innerText = potsR;
+
+        // Regn ut andel senkede kuler-bar
+        const totalPots = potsL + potsR;
+        const potLPercent = totalPots > 0 ? Math.round((potsL / totalPots) * 100) : 50;
+        document.getElementById('bar-pots-s1').style.width = potLPercent + "%";
+        document.getElementById('bar-pots-s2').style.width = (100 - potLPercent) + "%";
+        document.getElementById('potRatioText').innerText = `${potLPercent}% / ${100 - potLPercent}%`;
+    });
+
+    db.ref('gameMode').on('value', snap => {
+        document.getElementById('modeText').innerText = (snap.val() || 9) + "-Ball";
+    });
+
+    db.ref('stats/names').on('value', snap => {
+        const n = snap.val() || { left: "Player 1", right: "Player 2" };
+        document.getElementById('nameLText').innerText = n.left;
+        document.getElementById('nameRText').innerText = n.right;
+    });
+
+    db.ref('stats/handicap').on('value', snap => {
+        const h = snap.val() || { left: "-", right: "-" };
+        document.getElementById('hcL').innerText = "HCP: " + (h.left || "-");
+        document.getElementById('hcR').innerText = "HCP: " + (h.right || "-");
+    });
+
+    // --- INITIALISER GRAF (Tidslinje for Ballbesittelse) ---
+    window.onload = () => {
+        const ctx = document.getElementById('possessionChart').getContext('2d');
+        possessionChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Ballbesittelse trend (S1 %)',
+                    data: [],
+                    borderColor: '#ffcc00',
+                    borderWidth: 3,
+                    backgroundColor: 'rgba(255, 204, 0, 0.05)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { 
+                        min: 0, max: 100, 
+                        grid: { color: '#222' },
+                        ticks: { color: '#888', callback: value => value + "%" }
+                    }
+                }
+            }
+        });
+        
+        setInterval(syncCueScore, 15000);
+        syncCueScore();
+    };
+</script>
+</body>
+</html>
