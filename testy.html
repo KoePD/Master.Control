@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Master Control v36</title>
+    <title>KØ-PÅDD Master Control v37</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -33,9 +33,10 @@
             padding: env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px) 12px; 
         }
 
+        /* Økt toppen ørlite (til 14%) for å gi perfekt plass til den nye timeren */
         .container { 
             display: grid;
-            grid-template-rows: 12% 38% 50%; 
+            grid-template-rows: 14% 36% 50%; 
             height: 100%; 
             width: 100%; 
         }
@@ -45,28 +46,40 @@
             display: flex; 
             flex-direction: column; 
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
             width: 100%;
         }
         
         .name-input {
             background: var(--btn-bg); border: 1.5px solid var(--border); color: var(--accent);
-            text-align: center; font-size: 24px; width: 100%; height: 48px;
-            font-weight: 950; text-transform: uppercase; padding: 6px; border-radius: 10px;
+            text-align: center; font-size: 24px; width: 100%; height: 44px;
+            font-weight: 950; text-transform: uppercase; border-radius: 10px;
         }
+
+        /* Stil for den nye live-timeren */
+        .match-timer {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 900;
+            color: #aaa;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 2px 0;
+        }
+        .match-timer span { color: #fff; font-variant-numeric: tabular-nums; }
 
         .hcp-input-row {
             display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px;
         }
         .hcp-box {
             flex: 1; background: var(--btn-bg); border: 1.5px solid var(--border); color: #fff;
-            text-align: center; font-size: 24px; font-weight: 950; height: 48px; border-radius: 10px;
+            text-align: center; font-size: 24px; font-weight: 950; height: 44px; border-radius: 10px;
         }
         .hcp-box::placeholder { color: #444; }
 
         .hcp-toggle-btn {
             background: #1a1a1a; border: 1.5px solid #333; color: #aaa;
-            font-size: 16px; font-weight: 950; height: 48px; border-radius: 10px;
+            font-size: 16px; font-weight: 950; height: 44px; border-radius: 10px;
             min-width: 90px; text-align: center; text-transform: uppercase;
             display: flex; align-items: center; justify-content: center;
         }
@@ -108,7 +121,7 @@
         .ball-grid.fewer-balls .num-label { font-size: 8.5vw; }
         
         .num-label {
-            background: white; color: black; width: 45%; height: 45%; border-radius: 45%;
+            background: white; color: black; width: 55%; height: 55%; border-radius: 50%;
             display: flex; justify-content: center; align-items: center; 
             font-size: 7vw; font-weight: 950; border: 1.5px solid rgba(0,0,0,0.9); z-index: 10;
         }
@@ -117,7 +130,8 @@
             .ball-grid.fewer-balls .num-label { font-size: 34px; }
         }
 
-        .stripe-band { position: absolute; width: 100%; height: 60%; top: 20%; z-index: 1; left: 0; }
+        /* Her kan du justere stripehøyden (height og top) slik du ønsker */
+        .stripe-band { position: absolute; width: 100%; height: 48%; top: 26%; z-index: 1; left: 0; }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
         /* SONE 3: BUNNKONTROLLER */
@@ -213,6 +227,9 @@
 <div class="container">
     <div class="top-nav">
         <input type="text" id="matchIDInput" class="name-input" placeholder="MATCH ID" oninput="updateMatchID()">
+        
+        <div class="match-timer">Tid: <span id="timerDisplay">00:00:00</span></div>
+        
         <div class="hcp-input-row">
             <input type="text" id="hcpInputL" class="hcp-box" placeholder="HCP S1" oninput="updateHandicap()">
             <button id="hcpToggleBtn" class="hcp-toggle-btn active" onclick="toggleHandicapVisibility()">HCP PÅ</button>
@@ -273,6 +290,11 @@
     let isHcpVisible = true;
     let isPaused = false;
 
+    // Timer-variabler
+    let matchStartTimestamp = 0;
+    let timerInterval = null;
+    let accumulatedTime = 0; // Holder styr på tid brukt før eventuelle pauser
+
     function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
 
     function applyBlink(elementId, className) {
@@ -282,6 +304,33 @@
             el.offsetHeight; 
             el.classList.add(className);
             setTimeout(() => { el.classList.remove(className); }, 150);
+        }
+    }
+
+    // NYTT: Timer-logikk (Regner ut timer-teksten og oppdaterer skjermen)
+    function runTimer() {
+        if (matchStartTimestamp === 0 || isPaused) return;
+        
+        const totalMs = (Date.now() - matchStartTimestamp) + accumulatedTime;
+        const totalSeconds = Math.floor(totalMs / 1000);
+        
+        const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(totalSeconds % 60).padStart(2, '0');
+        
+        document.getElementById('timerDisplay').innerText = `${hrs}:${mins}:${secs}`;
+    }
+
+    function startTimerInterval() {
+        if (!timerInterval) {
+            timerInterval = setInterval(runTimer, 1000);
+        }
+    }
+
+    function stopTimerInterval() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
         }
     }
 
@@ -367,7 +416,15 @@
     function startMatch() { 
         vibe(80); 
         applyBlink('btnStart', 'click-blink-green');
-        db.ref('stats').update({ startTime: Date.now() }); 
+        
+        // Start timeren lokalt
+        matchStartTimestamp = Date.now();
+        accumulatedTime = 0;
+        isPaused = false;
+        document.getElementById('toggleBtn').innerText = "▶ PAUSE";
+        startTimerInterval();
+
+        db.ref('stats').update({ startTime: matchStartTimestamp }); 
         db.ref('shotclock/visibility').set(true); 
         db.ref('activePlayer').set(""); 
         resetPool(currentGameMode); 
@@ -377,6 +434,14 @@
         vibe(80); 
         applyBlink('btnStop', 'click-blink-red');
         if(confirm("AVSLUTT?")) { 
+            // Nullstill timeren fullstendig
+            stopTimerInterval();
+            matchStartTimestamp = 0;
+            accumulatedTime = 0;
+            isPaused = false;
+            document.getElementById('timerDisplay').innerText = "00:00:00";
+            document.getElementById('toggleBtn').innerText = "▶ PAUSE";
+
             db.ref('shotclock/visibility').set(false); 
             db.ref('stats').update({ startTime: 0 }); 
             db.ref('activePlayer').set(null); 
@@ -425,13 +490,36 @@
         vibe(40);
         isPaused = !isPaused;
         const btn = document.getElementById('toggleBtn');
+        
         if (isPaused) {
             btn.innerText = "⏸ RESUME";
+            // Fryser tiden og lagrer det vi har oppnådd så langt
+            accumulatedTime += (Date.now() - matchStartTimestamp);
+            matchStartTimestamp = 0;
         } else {
             btn.innerText = "▶ PAUSE";
+            // Starter opp igjen fra nåværende øyeblikk
+            matchStartTimestamp = Date.now();
         }
         db.ref('shotclock/cmd').set({ action: 'toggle', ts: Date.now() });
     }
+
+    // Lytter på start-tid fra Firebase for å synkronisere hvis siden laster på nytt midt i en match
+    db.ref('stats/startTime').on('value', snap => {
+        const startTs = snap.val() || 0;
+        if (startTs > 0) {
+            if (matchStartTimestamp === 0 && !isPaused) {
+                matchStartTimestamp = startTs;
+                accumulatedTime = 0;
+                startTimerInterval();
+            }
+        } else {
+            stopTimerInterval();
+            matchStartTimestamp = 0;
+            accumulatedTime = 0;
+            document.getElementById('timerDisplay').innerText = "00:00:00";
+        }
+    });
 
     db.ref('stats/handicap').on('value', snap => {
         const data = snap.val() || {};
