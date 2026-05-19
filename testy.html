@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Master Control v34</title>
+    <title>KØ-PÅDD Master Control v35</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -170,21 +170,39 @@
             100% { filter: brightness(1); }
         }
 
-        /* FIKSET: Både tekst og ramme er rød nå */
         .foul-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
         .btn-sub { font-size: 26px; } 
-        .btn-foul { 
-            color: var(--red); 
-            border: 2px solid var(--red) !important; 
-        }
+        .btn-foul { color: var(--red); border: 2px solid var(--red) !important; }
         
-        .foul-blink {
-            animation: flash-foul 0.15s ease-out;
-        }
-
+        /* KLASSER FOR DYNAMISK BLINKING VIA JAVASCRIPT */
+        .foul-blink { animation: flash-foul 0.15s ease-out; }
         @keyframes flash-foul {
             0% { background: var(--red); color: #fff; }
             100% { background: var(--btn-bg); color: var(--red); }
+        }
+
+        .click-blink-green { animation: flash-green-anim 0.15s ease-out; }
+        @keyframes flash-green-anim {
+            0% { background: var(--green); color: #fff; }
+            100% { background: var(--btn-bg); color: var(--green); }
+        }
+
+        .click-blink-red { animation: flash-red-anim 0.15s ease-out; }
+        @keyframes flash-red-anim {
+            0% { background: var(--red); color: #fff; }
+            100% { background: var(--btn-bg); color: var(--red); }
+        }
+
+        .click-blink-accent { animation: flash-accent-anim 0.15s ease-out; }
+        @keyframes flash-accent-anim {
+            0% { background: var(--accent); color: #000; }
+            100% { background: var(--btn-bg); color: var(--accent); }
+        }
+
+        .click-blink-blue { animation: flash-blue-anim 0.15s ease-out; }
+        @keyframes flash-blue-anim {
+            0% { background: #38bdf8; color: #fff; }
+            100% { background: var(--btn-bg); color: #38bdf8; }
         }
 
         .utility-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 5px; }
@@ -222,8 +240,8 @@
 
         <div class="action-grid">
             <div class="status-row">
-                <button class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START</button>
-                <button class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP</button>
+                <button id="btnStart" class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START</button>
+                <button id="btnStop" class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP</button>
             </div>
             
             <div class="player-row">
@@ -238,10 +256,10 @@
 
             <div class="utility-row">
                 <button id="toggleBtn" class="btn-main btn-sub" onclick="handlePauseToggle()">▶ PAUSE</button>
-                <button class="btn-main btn-sub" style="color: var(--accent); border-color: rgba(255, 204, 0, 0.3);" onclick="startBreak()">⚡ 60s BREAK</button>
+                <button id="btnBreak" class="btn-main btn-sub" style="color: var(--accent); border-color: rgba(255, 204, 0, 0.3);" onclick="triggerBreak()">⚡ 60s BREAK</button>
             </div>
             
-            <button class="btn-main btn-extension-huge" onclick="useExtension()">+ BRUK EXTENSION</button>
+            <button id="btnExtension" class="btn-main btn-extension-huge" onclick="triggerExtension()">+ BRUK EXTENSION</button>
         </div>
     </div>
 </div>
@@ -257,6 +275,17 @@
     let isPaused = false;
 
     function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+    // Hjelpefunksjon for å håndtere blink på knapper raskt og stabilt
+    function applyBlink(elementId, className) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.classList.remove(className);
+            el.offsetHeight; /* Trigger reflow */
+            el.classList.add(className);
+            setTimeout(() => { el.classList.remove(className); }, 150);
+        }
+    }
 
     function updateMatchID() { vibe(30); db.ref('settings/cueScoreMatchID').set(document.getElementById('matchIDInput').value); }
     
@@ -331,8 +360,26 @@
         }
     }
 
-    function startMatch() { vibe(80); db.ref('stats').update({ startTime: Date.now() }); db.ref('shotclock/visibility').set(true); db.ref('activePlayer').set(""); resetPool(currentGameMode); }
-    function avsluttMatch() { vibe(80); if(confirm("AVSLUTT?")) { db.ref('shotclock/visibility').set(false); db.ref('stats').update({ startTime: 0 }); db.ref('activePlayer').set(null); db.ref('balls').set(null); db.ref('shotclock/cmd').set({ action: 'stop' }); } }
+    function startMatch() { 
+        vibe(80); 
+        applyBlink('btnStart', 'click-blink-green');
+        db.ref('stats').update({ startTime: Date.now() }); 
+        db.ref('shotclock/visibility').set(true); 
+        db.ref('activePlayer').set(""); 
+        resetPool(currentGameMode); 
+    }
+    
+    function avsluttMatch() { 
+        vibe(80); 
+        applyBlink('btnStop', 'click-blink-red');
+        if(confirm("AVSLUTT?")) { 
+            db.ref('shotclock/visibility').set(false); 
+            db.ref('stats').update({ startTime: 0 }); 
+            db.ref('activePlayer').set(null); 
+            db.ref('balls').set(null); 
+            db.ref('shotclock/cmd').set({ action: 'stop' }); 
+        } 
+    }
     
     function shotReset(player) { 
         vibe(40); 
@@ -353,18 +400,22 @@
     function addFoul(player) { 
         vibe(60); 
         db.ref(`stats/fouls/${player}`).transaction(c => (c || 0) + 1); 
-        
         const btnId = player === 'left' ? 'foulL' : 'foulR';
-        const el = document.getElementById(btnId);
-        if (el) {
-            el.classList.remove('foul-blink');
-            el.offsetHeight; 
-            el.classList.add('foul-blink');
-        }
+        applyBlink(btnId, 'foul-blink');
     }
     
-    function startBreak() { vibe(60); db.ref('shotclock/cmd').set({action:'reset60', ts:Date.now()}); }
-    function useExtension() { vibe(60); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
+    function triggerBreak() { 
+        vibe(60); 
+        applyBlink('btnBreak', 'click-blink-accent');
+        db.ref('shotclock/cmd').set({action:'reset60', ts:Date.now()}); 
+    }
+    
+    function triggerExtension() { 
+        vibe(60); 
+        applyBlink('btnExtension', 'click-blink-blue');
+        db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); 
+        db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); 
+    }
     
     function handlePauseToggle() {
         vibe(40);
