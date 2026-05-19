@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>KØ-PÅDD Fotball Scorebug Overlay</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: transparent; /* Gjennomsiktig for OBS */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Hovedrammen til "Scorebugen" inspirert av fotballsendinger */
+        .scorebug {
+            display: flex;
+            align-items: center;
+            background: rgba(15, 15, 15, 0.92);
+            border: 1px solid #252525;
+            border-left: 5px solid #ffcc00; /* Gul Kø-Pådd signatur-stripe på kanten */
+            border-radius: 4px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+            color: #ffffff;
+            height: 46px;
+            width: fit-content;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Spillerseksjoner */
+        .player-block {
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            height: 100%;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Indikator på TV som lyser opp når spilleren er på bordet (har aktivt støt) */
+        .player-block.active-turn {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 -3px 0 #ffcc00; /* Underlinje som viser hvem som skyter */
+        }
+
+        .player-name {
+            color: #ffffff;
+            margin-right: 8px;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .player-hcp {
+            font-size: 12px;
+            color: #888888;
+            background: #1e1e1e;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: 700;
+        }
+
+        /* Score-boksene (Fotball-stil med farget bakgrunn bak tallene) */
+        .score-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 100%;
+            font-size: 22px;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        
+        .score-box.s1 { background: #16a34a; } /* Spiller 1 Grønn */
+        .score-box.s2 { background: #0284c7; } /* Spiller 2 Blå */
+
+        /* Delelinje i midten */
+        .vs-divider {
+            width: 1px;
+            height: 60%;
+            background: #333;
+        }
+
+        /* Tidsburs-seksjonen på flanken (Akkurat som på fotball-TV) */
+        .time-box {
+            background: #000000;
+            height: 100%;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+            font-weight: 900;
+            color: #ffffff;
+            border-top-right-radius: 3px;
+            border-bottom-right-radius: 3px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Liten foul-teller som dukker opp under navnene ved behov */
+        .foul-badge {
+            font-size: 11px;
+            color: #ff3b30;
+            font-weight: 900;
+            margin-left: 6px;
+        }
+
+        /* Hvis matchen pauses, blinker klokken rolig gult */
+        .timer-paused {
+            color: #ffcc00 !important;
+            animation: tvPulse 2s infinite ease-in-out;
+        }
+
+        @keyframes tvPulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="scorebug">
+    <div id="blockL" class="player-block">
+        <span id="nameDisplayL" class="player-name">SPILLER 1</span>
+        <span id="hcpDisplayL" class="player-hcp">0</span>
+        <span id="foulDisplayL" class="foul-badge" style="display:none;">⚠ F1</span>
+    </div>
+    <div id="scoreL" class="score-box s1">0</div>
+    
+    <div class="vs-divider"></div>
+    
+    <div id="scoreR" class="score-box s2">0</div>
+    <div id="blockR" class="player-block">
+        <span id="nameDisplayR" class="player-name">SPILLER 2</span>
+        <span id="hcpDisplayR" class="player-hcp">0</span>
+        <span id="foulDisplayR" class="foul-badge" style="display:none;">⚠ F1</span>
+    </div>
+    
+    <div id="timeContainer" class="time-box">
+        <span id="obsTimerDisplay">00:00</span>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let matchStartTimestamp = 0;
+    let timerInterval = null;
+    let isPaused = false;
+    let accumulatedTime = 0;
+
+    function updateOverlayTimer() {
+        if (matchStartTimestamp === 0) {
+            document.getElementById('obsTimerDisplay').innerText = "00:00";
+            return;
+        }
+        if (isPaused) return;
+
+        const totalMs = (Date.now() - matchStartTimestamp) + accumulatedTime;
+        const totalSeconds = Math.floor(totalMs / 1000);
+        
+        const hrs = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+        
+        // Viser timer-format (f.eks 45:12 som i fotball i stedet for 00:45:12 hvis det bikker en time)
+        const displayMins = hrs > 0 ? (hrs * 60) + mins : mins;
+        
+        document.getElementById('obsTimerDisplay').innerText = 
+            `${String(displayMins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // Synkroniserer pause/resume live
+    db.ref('shotclock/cmd').on('value', snap => {
+        const cmd = snap.val() || {};
+        const timeBox = document.getElementById('timeContainer');
+        
+        if (cmd.action === 'toggle') {
+            if (!isPaused && matchStartTimestamp > 0) {
+                isPaused = true;
+                accumulatedTime += (cmd.ts - matchStartTimestamp);
+                matchStartTimestamp = 0;
+                timeBox.classList.add('timer-paused');
+            } else if (isPaused) {
+                isPaused = false;
+                matchStartTimestamp = cmd.ts;
+                timeBox.classList.remove('timer-paused');
+            }
+        }
+    });
+
+    // Lytter på start- og stoppsignaler og synkroniserer klokken
+    db.ref('stats/startTime').on('value', snap => {
+        const startTs = snap.val() || 0;
+        const timeBox = document.getElementById('timeContainer');
+        
+        if (startTs > 0) {
+            if (!isPaused) {
+                matchStartTimestamp = startTs;
+                accumulatedTime = 0;
+                timeBox.classList.remove('timer-paused');
+                if (!timerInterval) timerInterval = setInterval(updateOverlayTimer, 1000);
+            }
+        } else {
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            matchStartTimestamp = 0; accumulatedTime = 0; isPaused = false;
+            timeBox.classList.remove('timer-paused');
+            document.getElementById('obsTimerDisplay').innerText = "00:00";
+        }
+        updateOverlayTimer();
+    });
+
+    // Henter Match ID og bruker det som turnering eller spillnavn hvis spillerne ikke har navn
+    db.ref('settings/cueScoreMatchID').on('value', snap => {
+        const id = snap.val() || "";
+        // Valgfritt: Kan brukes til å oppdatere en tittel-tekst over scorebugen om ønskelig
+    });
+
+    // Henter Handicap og oppdaterer visningen live
+    db.ref('stats/handicap').on('value', snap => {
+        const data = snap.val() || {};
+        document.getElementById('hcpDisplayL').innerText = data.left || "0";
+        document.getElementById('hcpDisplayR').innerText = data.right || "0";
+        
+        const showHcp = data.visible !== false;
+        document.getElementById('hcpDisplayL').style.display = showHcp ? 'inline-block' : 'none';
+        document.getElementById('hcpDisplayR').style.display = showHcp ? 'inline-block' : 'none';
+    });
+
+    // Henter Fouls live og viser et varsel hvis en spiller pådrar seg feil
+    db.ref('stats/fouls').on('value', snap => {
+        const data = snap.val() || {};
+        const fL = data.left || 0;
+        const fR = data.right || 0;
+        
+        const elL = document.getElementById('foulDisplayL');
+        const elR = document.getElementById('foulDisplayR');
+        
+        if(fL > 0) { elL.innerText = `⚠ F${fL}`; elL.style.display = 'inline-block'; } else { elL.style.display = 'none'; }
+        if(fR > 0) { elR.innerText = `⚠ F${fR}`; elR.style.display = 'inline-block'; } else { elR.style.display = 'none'; }
+    });
+
+    // Speiler hvem som har det aktive støtet på bordet akkurat nå
+    db.ref('activePlayer').on('value', snap => {
+        const active = snap.val();
+        const blockL = document.getElementById('blockL');
+        const blockR = document.getElementById('blockR');
+        
+        blockL.classList.toggle('active-turn', active === 'left');
+        blockR.classList.toggle('active-turn', active === 'right');
+    });
+
+    // Finner ut hvor mange kuler som er senket for å gi live poengsum/score til fotballtavla
+    db.ref('balls').on('value', snap => {
+        const balls = snap.val() || {};
+        let sunkL = 0;
+        let sunkR = 0;
+        
+        // Her kan du eventuelt tilpasse din egen logikk for hvordan poeng summeres i databasen din, 
+        // foreløpig speiler vi bare ball-telling eller lar den stå klar til å hente rene score-tall:
+        document.getElementById('scoreL').innerText = window.scoreLeft || 0;
+        document.getElementById('scoreR').innerText = window.scoreRight || 0;
+    });
+</script>
+</body>
+</html>
