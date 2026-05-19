@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Master Control v32</title>
+    <title>KØ-PÅDD Master Control v33</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -170,9 +170,23 @@
             100% { filter: brightness(1); }
         }
 
+        /* OPPDATERT: Foul-knapper med rød ramme og blinke-animasjon */
         .foul-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
         .btn-sub { font-size: 26px; } 
-        .btn-foul { color: #ffbb00; border-color: rgba(255, 187, 0, 0.3); }
+        .btn-foul { 
+            color: #ffbb00; 
+            border: 2px solid var(--red) !important; 
+        }
+        
+        /* Triggeres via JS når knappen klikkes */
+        .foul-blink {
+            animation: flash-foul 0.15s ease-out;
+        }
+
+        @keyframes flash-foul {
+            0% { background: var(--red); color: #fff; }
+            100% { background: var(--btn-bg); color: #ffbb00; }
+        }
 
         .utility-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 5px; }
         .btn-extension-huge { color: #38bdf8; font-size: 30px; font-weight: 950; border-color: rgba(2, 132, 199, 0.6); }
@@ -219,8 +233,8 @@
             </div>
             
             <div class="foul-row">
-                <button class="btn-main btn-sub btn-foul" onclick="addFoul('left')">⚠ FOUL S1</button>
-                <button class="btn-main btn-sub btn-foul" onclick="addFoul('right')">⚠ FOUL S2</button>
+                <button id="foulL" class="btn-main btn-sub btn-foul" onclick="addFoul('left')">⚠ FOUL S1</button>
+                <button id="foulR" class="btn-main btn-sub btn-foul" onclick="addFoul('right')">⚠ FOUL S2</button>
             </div>
 
             <div class="utility-row">
@@ -336,7 +350,21 @@
     }
     
     function resetPool(max) { let updates = {}; const limit = (max === 8) ? 15 : max; for (let i = 1; i <= 15; i++) updates[i] = (i <= limit) ? true : null; db.ref('balls').set(updates); db.ref('gameMode').set(max); }
-    function addFoul(player) { vibe(60); db.ref(`stats/fouls/${player}`).transaction(c => (c || 0) + 1); }
+    
+    function addFoul(player) { 
+        vibe(60); 
+        db.ref(`stats/fouls/${player}`).transaction(c => (c || 0) + 1); 
+        
+        // Utløser det røde blinket ved klikk
+        const btnId = player === 'left' ? 'foulL' : 'foulR';
+        const el = document.getElementById(btnId);
+        if (el) {
+            el.classList.remove('foul-blink');
+            el.offsetHeight; /* Trigger reflow */
+            el.classList.add('foul-blink');
+        }
+    }
+    
     function startBreak() { vibe(60); db.ref('shotclock/cmd').set({action:'reset60', ts:Date.now()}); }
     function useExtension() { vibe(60); db.ref('activePlayer').once('value', s => { if (s.val()) db.ref(`stats/extensions/${s.val()}`).transaction(c => (c || 0) + 1); }); db.ref('shotclock/cmd').set({action:'extension', ts:Date.now()}); }
     
