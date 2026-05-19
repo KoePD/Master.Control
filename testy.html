@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Master Control v35</title>
+    <title>KØ-PÅDD Master Control v36</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -174,7 +174,6 @@
         .btn-sub { font-size: 26px; } 
         .btn-foul { color: var(--red); border: 2px solid var(--red) !important; }
         
-        /* KLASSER FOR DYNAMISK BLINKING VIA JAVASCRIPT */
         .foul-blink { animation: flash-foul 0.15s ease-out; }
         @keyframes flash-foul {
             0% { background: var(--red); color: #fff; }
@@ -228,7 +227,7 @@
     <div class="bottom-controls">
         <div class="mode-container">
             <div class="mode-row">
-                <button class="mode-btn" style="grid-column: span 2; border-color: var(--green);" onclick="reputtActiveBalls()">♻️ RESIRKULER</button>
+                <button id="btnReRack" class="mode-btn" style="grid-column: span 2; border-color: var(--green);" onclick="reputtActiveBalls()">♻️ RE-RACK</button>
                 <button class="mode-btn" onclick="toggleBallSet()">🎨 STIL</button>
             </div>
             <div class="mode-row">
@@ -276,12 +275,11 @@
 
     function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
 
-    // Hjelpefunksjon for å håndtere blink på knapper raskt og stabilt
     function applyBlink(elementId, className) {
         const el = document.getElementById(elementId);
         if (el) {
             el.classList.remove(className);
-            el.offsetHeight; /* Trigger reflow */
+            el.offsetHeight; 
             el.classList.add(className);
             setTimeout(() => { el.classList.remove(className); }, 150);
         }
@@ -315,7 +313,13 @@
     }
 
     function toggleBallSet() { vibe(40); ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic'; db.ref('settings/ballStyle').set(ballStyle); renderBalls(); }
-    function reputtActiveBalls() { vibe(50); db.ref('balls').once('value', snap => { let u = snap.val() || {}; for (let i in u) { if (u[i] === false) u[i] = true; } db.ref('balls').set(u); }); }
+    
+    function reputtActiveBalls() { 
+        vibe(50); 
+        applyBlink('btnReRack', 'click-blink-green');
+        db.ref('balls').once('value', snap => { let u = snap.val() || {}; for (let i in u) { if (u[i] === false) u[i] = true; } db.ref('balls').set(u); }); 
+    }
+    
     function handleModeSelection(mode) { vibe(50); resetPool(mode); }
 
     const grid = document.getElementById('ball-grid');
