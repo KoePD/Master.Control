@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Master Control v33</title>
+    <title>KØ-PÅDD Master Control v34</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -170,22 +170,21 @@
             100% { filter: brightness(1); }
         }
 
-        /* OPPDATERT: Foul-knapper med rød ramme og blinke-animasjon */
+        /* FIKSET: Både tekst og ramme er rød nå */
         .foul-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
         .btn-sub { font-size: 26px; } 
         .btn-foul { 
-            color: #ffbb00; 
+            color: var(--red); 
             border: 2px solid var(--red) !important; 
         }
         
-        /* Triggeres via JS når knappen klikkes */
         .foul-blink {
             animation: flash-foul 0.15s ease-out;
         }
 
         @keyframes flash-foul {
             0% { background: var(--red); color: #fff; }
-            100% { background: var(--btn-bg); color: #ffbb00; }
+            100% { background: var(--btn-bg); color: var(--red); }
         }
 
         .utility-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 5px; }
@@ -355,12 +354,11 @@
         vibe(60); 
         db.ref(`stats/fouls/${player}`).transaction(c => (c || 0) + 1); 
         
-        // Utløser det røde blinket ved klikk
         const btnId = player === 'left' ? 'foulL' : 'foulR';
         const el = document.getElementById(btnId);
         if (el) {
             el.classList.remove('foul-blink');
-            el.offsetHeight; /* Trigger reflow */
+            el.offsetHeight; 
             el.classList.add('foul-blink');
         }
     }
