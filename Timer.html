@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>KØ-PÅDD OBS Live Match Timer</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        /* Gjør hele siden transparent og klar for OBS overlay */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-weight: 900;
+            font-size: 48px; /* Juster denne hvis du vil ha teksten større/mindre i OBS */
+            text-align: center;
+            overflow: hidden;
+            /* Sørger for at tallene ikke hopper sidelengs når de teller */
+            font-variant-numeric: tabular-nums;
+            /* Gir knallgod kontrast uansett hva som skjer på streamen bak */
+            text-shadow: 3px 3px 0px #000000, -1px -1px 0px #000000, 1px -1px 0px #000000, -1px 1px 0px #000000, 1px 1px 0px #000000;
+            letter-spacing: 1px;
+        }
+
+        .timer-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Enkel animasjon som gjør teksten litt transparent hvis matchen er satt på pause */
+        .paused {
+            opacity: 0.6;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 0.7; }
+            100% { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="timer-container">
+    <span id="obsTimerDisplay">00:00:00</span>
+</div>
+
+<script>
+    // Konfigurer mot samme database
+    const firebaseConfig = { databaseURL: "https://pool-balls-60509-default-rtdb.europe-west1.firebasedatabase.app" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let matchStartTimestamp = 0;
+    let timerInterval = null;
+    let isPaused = false;
+    let accumulatedTime = 0;
+
+    function updateOBSTimer() {
+        // Hvis matchen ikke har startet, eller den er slettet, vis nullstilt tid
+        if (matchStartTimestamp === 0) {
+            document.getElementById('obsTimerDisplay').innerText = "00:00:00";
+            return;
+        }
+
+        // Hvis den er på pause, ikke rekk ut ny tid live (frys på lagret verdi)
+        if (isPaused) return;
+
+        const totalMs = (Date.now() - matchStartTimestamp) + accumulatedTime;
+        const totalSeconds = Math.floor(totalMs / 1000);
+        
+        const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(totalSeconds % 60).padStart(2, '0');
+        
+        document.getElementById('obsTimerDisplay').innerText = `${hrs}:${mins}:${secs}`;
+    }
+
+    // Synkroniserer pauser og oppdaterer pausetilstander live fra fjernkontrollen
+    db.ref('shotclock/cmd').on('value', snap => {
+        const cmd = snap.val() || {};
+        const display = document.getElementById('obsTimerDisplay');
+        
+        if (cmd.action === 'toggle') {
+            // Siden vi trykket pause/resume på kontrollen, må vi sjekke hva statusen blir
+            // Vi speiler logikken: hvis matchStartTimestamp var aktiv, fryser vi den nå.
+            if (!isPaused && matchStartTimestamp > 0) {
+                isPaused = true;
+                accumulatedTime += (cmd.ts - matchStartTimestamp);
+                matchStartTimestamp = 0;
+                display.classList.add('paused');
+            } else if (isPaused) {
+                isPaused = false;
+                matchStartTimestamp = cmd.ts;
+                display.classList.remove('paused');
+            }
+        }
+    });
+
+    // Lytter på start- og stoppsignaler direkte fra hoveddatabasen
+    db.ref('stats/startTime').on('value', snap => {
+        const startTs = snap.val() || 0;
+        const display = document.getElementById('obsTimerDisplay');
+        
+        if (startTs > 0) {
+            // Matchen kjører eller har blitt lastet inn på nytt
+            if (!isPaused) {
+                matchStartTimestamp = startTs;
+                accumulatedTime = 0;
+                display.classList.remove('paused');
+                
+                if (!timerInterval) {
+                    timerInterval = setInterval(updateOBSTimer, 1000);
+                }
+            }
+        } else {
+            // Starttid er 0 (Stopp er trykket) -> Nullstill alt fullstendig
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            matchStartTimestamp = 0;
+            accumulatedTime = 0;
+            isPaused = false;
+            display.classList.remove('paused');
+            display.innerText = "00:00:00";
+        }
+        updateOBSTimer();
+    });
+</script>
+</body>
+</html>
