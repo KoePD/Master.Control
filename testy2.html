@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Tommel-Control v40</title>
+    <title>KØ-PÅDD Tommel-Control v42</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -41,7 +41,7 @@
             width: 100%; 
         }
 
-        /* SONE 1: TOPPEN (Nå med innstillingsknapp) */
+        /* SONE 1: TOPPEN */
         .top-nav { 
             display: flex; 
             flex-direction: column; 
@@ -65,11 +65,10 @@
             font-weight: 950; text-transform: uppercase; border-radius: 10px;
         }
 
-        /* Liten fiks for tekniker-tannhjulet */
         .settings-trigger {
             background: #111;
             border: 1.5px solid var(--border);
-            color: #666;
+            color: #fff;
             font-size: 20px;
             height: 44px;
             width: 44px;
@@ -77,23 +76,24 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 2px 0 #000;
         }
 
-        /* SKJULT TEKNIKERPANEL (Glir ned ved klikk) */
+        /* FIKSET: Stor, rå og supertydelig tekniker-meny */
         .tech-panel {
             display: none;
             position: absolute;
             top: 48px;
             left: 0;
             width: 100%;
-            background: #0a0a0a;
-            border: 2px solid #222;
-            border-radius: 12px;
-            padding: 10px;
+            background: #050505;
+            border: 2px solid #262626;
+            border-radius: 14px;
+            padding: 12px;
             z-index: 9999;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 20px 40px rgba(0,0,0,1);
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
         }
         .tech-panel.open { display: flex; }
 
@@ -154,15 +154,13 @@
             .ball-grid.fewer-balls .num-label { font-size: 32px; }
         }
 
-        /* Kulestripen forblir helt urørt, flat og fin som i v37 */
         .stripe-band { position: absolute; width: 100%; height: 48%; top: 26%; z-index: 1; left: 0; }
         .sunk { opacity: 0.03 !important; filter: grayscale(1); transform: scale(0.8); }
 
-        /* SONE 3: DET NYE DYNAMISKE TOMMELPANEL */
+        /* SONE 3: KONTROLLERPANEL */
         .bottom-controls { 
             display: grid;
-            /* 5 Rader med perfekt vektlegging for en tommel i arbeid */
-            grid-template-rows: 1fr 1fr 1.2fr 1fr 1.8fr; 
+            grid-template-rows: 0.9fr 1fr 1fr 1.2fr 1fr 1.8fr; 
             gap: 6px;
             width: 100%;
             height: 100%;
@@ -177,26 +175,37 @@
 
         .split-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; height: 100%; }
         
-        /* Rad 1: Drift (Mindre viktig under spill - flyttet opp) */
+        .btn-rerack-main { border-color: var(--green); font-size: 18px; color: #fff; }
+
         .btn-status { font-size: 20px; } 
         .btn-start { color: var(--green); border-color: rgba(22, 163, 74, 0.3); }
         .btn-stop { color: var(--red); border-color: rgba(220, 38, 38, 0.3); }
 
-        /* Rad 2: Klokke/Avbrudd */
         .btn-sub { font-size: 18px; }
 
-        /* Rad 3: Extension-beltet (Gjort dominerende i midten) */
         .btn-extension-huge { color: #38bdf8; font-size: 24px; font-weight: 950; border-color: rgba(2, 132, 199, 0.5); }
 
-        /* Rad 4: Straff/Foul (Rett over hovedknappene) */
         .btn-foul { color: var(--red); border: 1.5px solid var(--red) !important; font-size: 18px; }
 
-        /* Rad 5: Spillere (S1 / S2 er nå gigantiske og ligger helt i bunnen der tommelen hviler!) */
         .btn-player { font-size: 42px; font-weight: 950; border-radius: 14px; box-shadow: 0 4px 0 #000; } 
         .active-l { background: var(--green) !important; color: #fff; animation: flash-click 0.15s ease-out; }
         .active-r { background: var(--blue) !important; color: #fff; animation: flash-click 0.15s ease-out; }
 
-        /* Blinking-animasjoner fra v37 */
+        /* FIKSET: Fete, svære knapper inne i selve innstillingsmenyen */
+        .mode-btn { 
+            font-size: 20px; 
+            font-weight: 950; 
+            background: #161616; 
+            border: 1.5px solid #333; 
+            padding: 22px 0; 
+            border-radius: 10px; 
+            color: #fff; 
+            width: 100%;
+            text-transform: uppercase;
+            box-shadow: 0 3px 0 #000;
+        }
+        .mode-btn:active { background: #222; }
+
         @keyframes flash-click { 0% { filter: brightness(0.4); } 100% { filter: brightness(1); } }
         .foul-blink { animation: flash-foul 0.15s ease-out; }
         @keyframes flash-foul { 0% { background: var(--red); color: #fff; } 100% { background: var(--btn-bg); color: var(--red); } }
@@ -228,16 +237,11 @@
         </div>
 
         <div id="techPanel" class="tech-panel">
-            <div class="mode-container">
-                <div class="mode-row">
-                    <button id="btnReRack" class="mode-btn btn-main" style="border-color: var(--green); background: #111;" onclick="reputtActiveBalls()">♻️ RE-RACK</button>
-                    <button class="mode-btn btn-main" style="background: #111;" onclick="toggleBallSet()">🎨 STIL</button>
-                </div>
-                <div class="mode-row" style="margin-top: 4px;">
-                    <button class="mode-btn btn-main" style="background: #111;" onclick="handleModeSelection(9)">9-BALL</button>
-                    <button class="mode-btn btn-main" style="background: #111;" onclick="handleModeSelection(10)">10-BALL</button>
-                    <button class="mode-btn btn-main" style="background: #111;" onclick="handleModeSelection(8)">8-BALL</button>
-                </div>
+            <button class="mode-btn" onclick="toggleBallSet()">🎨 BYTT STIL (LYS/MØRK)</button>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px;">
+                <button class="mode-btn" style="border-color: rgba(255,204,0,0.3);" onclick="handleModeSelection(9)">9-BALL</button>
+                <button class="mode-btn" style="border-color: rgba(2,132,199,0.3);" onclick="handleModeSelection(10)">10-BALL</button>
+                <button class="mode-btn" style="border-color: rgba(22,163,74,0.3);" onclick="handleModeSelection(8)">8-BALL</button>
             </div>
         </div>
     </div>
@@ -247,8 +251,10 @@
     </div>
 
     <div class="bottom-controls">
+        <button id="btnReRack" class="btn-main btn-rerack-main" onclick="reputtActiveBalls()">♻️ RE-RACK PARTI</button>
+
         <div class="split-row">
-            <button id="btnStart" class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START</button>
+            <button id="btnStart" class="btn-main btn-status btn-start" onclick="startMatch()">🟢 START MATCH</button>
             <button id="btnStop" class="btn-main btn-status btn-stop" onclick="avsluttMatch()">🔴 STOPP</button>
         </div>
         
@@ -287,7 +293,6 @@
 
     function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
 
-    // Åpner og lukker teknikermenyen
     function toggleTechPanel() {
         vibe(30);
         document.getElementById('techPanel').classList.toggle('open');
@@ -338,7 +343,7 @@
         else { btn.classList.remove('active'); btn.innerText = "HCP AV"; }
     }
 
-    function toggleBallSet() { vibe(40); ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic'; db.ref('settings/ballStyle').set(ballStyle); renderBalls(); }
+    function toggleBallSet() { vibe(40); ballStyle = (ballStyle === 'classic') ? 'dark' : 'classic'; db.ref('settings/ballStyle').set(ballStyle); document.getElementById('techPanel').classList.remove('open'); renderBalls(); }
     
     function reputtActiveBalls() { 
         vibe(50); 
