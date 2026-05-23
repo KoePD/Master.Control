@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Tommel-Control v47</title>
+    <title>KØ-PÅDD Tommel-Control v48</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -33,7 +33,7 @@
             padding: env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px) 12px; 
         }
 
-        /* FIKSET: Justert gridet fra 15% 28% 57% til 15% 33% 52% for å gi kulene nok plass uten kutting */
+        /* 3 Hovedsoner: Topp-nav (15%), Kuler (33%), Tommel-Kontrollpanel (52%) */
         .container { 
             display: grid;
             grid-template-rows: 15% 33% 52%; 
@@ -124,8 +124,10 @@
             align-items: center; 
             width: 100%; 
             height: 100%; 
-            overflow: hidden;
+            /* FIKSET: Endret fra hidden til visible så de nederste kulene ikke klippes av veggen */
+            overflow: visible; 
             background: transparent;
+            padding-bottom: 10px; /* Gir litt ekstra luft ned til kontrollpanelet */
         }
         
         .ball-grid {
@@ -135,8 +137,6 @@
             justify-items: center; 
             align-content: center; 
             width: 100%;
-            /* FIKSET: Fjernet negativ margin så kulene ikke kuttes av containeren */
-            margin-top: 0; 
         }
 
         .ball-btn {
@@ -146,7 +146,7 @@
             position: relative; display: flex; justify-content: center; align-items: center;
             background: radial-gradient(circle at 35% 35%, var(--ball-shine) 0%, rgba(255,255,255,0) 50%), 
                         radial-gradient(circle at 65% 65%, var(--ball-shadow) 0%, rgba(0,0,0,0) 60%), #fff;
-            box-shadow: inset -5px -5px 12px rgba(0,0,0,0.5), 4px 6px 12px rgba(0,0,0,0.7);
+            box-shadow: inset -5px -5px 12 rgba(0,0,0,0.5), 4px 6px 12px rgba(0,0,0,0.7);
             overflow: hidden; transition: all 0.2s ease-in-out;
         }
 
