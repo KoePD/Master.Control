@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Tommel-Control v46</title>
+    <title>KØ-PÅDD Tommel-Control v47</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -33,7 +33,7 @@
             padding: env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px) 12px; 
         }
 
-        /* TILBAKESTILT: Satt bunnen tilbake til 52% (som i v43) så knappene ikke flytter seg opp */
+        /* FIKSET: Justert gridet fra 15% 28% 57% til 15% 33% 52% for å gi kulene nok plass uten kutting */
         .container { 
             display: grid;
             grid-template-rows: 15% 33% 52%; 
@@ -128,7 +128,6 @@
             background: transparent;
         }
         
-        /* FIKSET: Lagt til negativ margin-top for å trekke KUN kulene høyere opp på skjermen */
         .ball-grid {
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -136,7 +135,8 @@
             justify-items: center; 
             align-content: center; 
             width: 100%;
-            margin-top: -35px; /* Trekker kulene oppover mot timeren og vekk fra knappene */
+            /* FIKSET: Fjernet negativ margin så kulene ikke kuttes av containeren */
+            margin-top: 0; 
         }
 
         .ball-btn {
