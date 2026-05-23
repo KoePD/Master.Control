@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>KØ-PÅDD Tommel-Control v42</title>
+    <title>KØ-PÅDD Tommel-Control v43</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -79,7 +79,7 @@
             box-shadow: 0 2px 0 #000;
         }
 
-        /* FIKSET: Stor, rå og supertydelig tekniker-meny */
+        /* Stor, rå og supertydelig tekniker-meny som legger seg over kulene uten å dytte linjer */
         .tech-panel {
             display: none;
             position: absolute;
@@ -118,10 +118,11 @@
         }
         .hcp-toggle-btn.active { background: var(--green); border-color: #22c55e; color: #fff; }
 
-        /* SONE 2: KULENE */
+        /* SONE 2: KULENE (Fjernet unødvendig boks-skygge og kant-linjer over for maksimal plass) */
         .pool-section { 
             display: flex; justify-content: center; align-items: center; 
             width: 100%; height: 100%; overflow: hidden;
+            background: transparent;
         }
         
         .ball-grid {
@@ -191,7 +192,6 @@
         .active-l { background: var(--green) !important; color: #fff; animation: flash-click 0.15s ease-out; }
         .active-r { background: var(--blue) !important; color: #fff; animation: flash-click 0.15s ease-out; }
 
-        /* FIKSET: Fete, svære knapper inne i selve innstillingsmenyen */
         .mode-btn { 
             font-size: 20px; 
             font-weight: 950; 
@@ -222,10 +222,10 @@
 <body>
 
 <div class="container">
-    <div class="top-nav">
+    <div class="top-nav" id="topNavZone">
         <div class="match-id-wrapper">
             <input type="text" id="matchIDInput" class="name-input" placeholder="MATCH ID" oninput="updateMatchID()">
-            <button class="settings-trigger" onclick="toggleTechPanel()">⚙️</button>
+            <button id="settingsBtn" class="settings-trigger" onclick="toggleTechPanel(event)">⚙️</button>
         </div>
         
         <div class="match-timer">Tid: <span id="timerDisplay">00:00:00</span></div>
@@ -293,10 +293,21 @@
 
     function vibe(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
 
-    function toggleTechPanel() {
+    // Endret til å stoppe bobling slik at click-outside-lytteren fungerer optimalt
+    function toggleTechPanel(event) {
+        if (event) event.stopPropagation();
         vibe(30);
         document.getElementById('techPanel').classList.toggle('open');
     }
+
+    // NYTT: Global lytter som lukker tekniker-menyen hvis du klikker på utsiden
+    document.addEventListener('click', function(event) {
+        const panel = document.getElementById('techPanel');
+        const btn = document.getElementById('settingsBtn');
+        if (panel.classList.contains('open') && !panel.contains(event.target) && event.target !== btn) {
+            panel.classList.remove('open');
+        }
+    });
 
     function applyBlink(elementId, className) {
         const el = document.getElementById(elementId);
